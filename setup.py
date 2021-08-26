@@ -16,10 +16,8 @@
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 
-
 """The setup script."""
 
-from setuptools import setup
-
+from setuptools import setup  # type: ignore
 
 setup()

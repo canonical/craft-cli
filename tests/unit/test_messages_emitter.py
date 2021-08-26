@@ -17,11 +17,22 @@
 """Tests that check the whole Emitter machinery."""
 
 import sys
-from unittest.mock import patch, call
+from unittest.mock import call, patch
 
 import pytest
 
 from craft_cli.messages import Emitter, EmitterMode
+
+
+class RecordingEmitter(Emitter):
+    """Class to cheat pyright.
+
+    Otherwise it complains I'm setting printer_class to Emitter.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.printer_calls = []
 
 
 @pytest.fixture
@@ -34,14 +45,14 @@ def get_initiated_emitter():
     """
     with patch("craft_cli.messages._Printer", autospec=True) as mock_printer:
 
-        def f(mode, greeting="default greeting"):
-            e = Emitter()
-            e.init(mode, greeting)
-            e.printer_calls = mock_printer.mock_calls
-            e.printer_calls.clear()
-            return e
+        def func(mode, greeting="default greeting"):
+            emitter = RecordingEmitter()
+            emitter.init(mode, greeting)
+            emitter.printer_calls = mock_printer.mock_calls
+            emitter.printer_calls.clear()
+            return emitter
 
-        yield f
+        yield func
 
 
 # -- tests for init and setting mode
@@ -88,6 +99,15 @@ def test_init_verboseish(mode):
     ]
 
 
+@pytest.mark.parametrize("method_name", ["set_mode", "message", "ended_ok"])
+def test_needs_init(method_name):
+    """Check that calling other methods needs emitter first to be initiated."""
+    emitter = Emitter()
+    method = getattr(emitter, method_name)
+    with pytest.raises(RuntimeError, match="Emitter needs to be initiated first"):
+        method()
+
+
 @pytest.mark.parametrize(
     "mode",
     [
@@ -127,15 +147,7 @@ def test_set_mode_verboseish(get_initiated_emitter, mode):
 # -- tests for emitting messages of all kind
 
 
-@pytest.mark.parametrize(
-    "mode",
-    [
-        EmitterMode.QUIET,
-        EmitterMode.NORMAL,
-        EmitterMode.VERBOSE,
-        EmitterMode.TRACE,
-    ],
-)
+@pytest.mark.parametrize("mode", EmitterMode)  # all modes!
 def test_message_final(get_initiated_emitter, mode):
     """Emit a final message."""
     emitter = get_initiated_emitter(mode)

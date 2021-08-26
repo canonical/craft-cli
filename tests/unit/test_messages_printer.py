@@ -23,8 +23,7 @@ from datetime import datetime
 import pytest
 
 from craft_cli import messages
-from craft_cli.messages import _Printer, _MessageInfo
-
+from craft_cli.messages import _MessageInfo, _Printer
 
 # -- simple helpers
 
@@ -82,7 +81,7 @@ def test_writeline_with_timestamp(capsys, monkeypatch):
     msg = _MessageInfo(sys.stdout, "test text", use_timestamp=True, created_at=fake_now)
     printer._write_line(msg)
 
-    out, err = capsys.readouterr()
+    out, _ = capsys.readouterr()
 
     # output completes the terminal width (leaving space for the cursor), and
     # without a finishing newline
@@ -94,7 +93,6 @@ def test_writeline_having_previous_message_out(capsys, monkeypatch):
     """There is a previous message to be completed (in stdout)."""
     monkeypatch.setattr(messages, "get_terminal_width", lambda: 40)
     printer = _Printer()
-    test_writeline_having_previous_message_out
     printer.prv_msg = _MessageInfo(sys.stdout, "previous text")
 
     test_text = "test text"
@@ -127,7 +125,6 @@ def test_writeline_having_previous_message_complete(capsys, monkeypatch):
     """There is a previous message which is already complete."""
     monkeypatch.setattr(messages, "get_terminal_width", lambda: 40)
     printer = _Printer()
-    test_writeline_having_previous_message_out
     printer.prv_msg = _MessageInfo(sys.stdout, "previous text", end_line=True)
 
     test_text = "test text"
@@ -160,26 +157,30 @@ def test_writeline_indicated_to_complete(capsys, monkeypatch):
 # -- tests for message showing external API
 
 
-@pytest.fixture
-def printer():
-    """Provide a Printer isolated from outputs.
+class RecordingPrinter(_Printer):
+    """A Printer isolated from outputs.
 
     Instead, it records all messages to print.
     """
-    p = _Printer()
-    p.written_lines = []
-    p._write_line = lambda msg: p.written_lines.append(msg)
-    return p
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.written_lines = []
+
+    def _write_line(self, message):
+        """Overwrite the real one to avoid it and record the message."""
+        self.written_lines.append(message)
 
 
 @pytest.mark.parametrize("stream", [None, sys.stdout, sys.stderr])
-def test_show_defaults(printer, stream):
+def test_show_defaults(stream):
     """Write a message with all defaults (for the different valid streams)."""
     before = datetime.now()
+    printer = RecordingPrinter()
     printer.show(stream, "test text")
 
     # check message written
-    (msg,) = printer.written_lines
+    (msg,) = printer.written_lines  # pylint: disable=unbalanced-tuple-unpacking
     assert msg.stream == stream
     assert msg.text == "test text"
     assert msg.use_timestamp is False
@@ -190,17 +191,19 @@ def test_show_defaults(printer, stream):
     assert printer.prv_msg is msg  # verify it's the same, not that it was rebuilt, for timestamp
 
 
-def test_show_use_timestamp(printer):
+def test_show_use_timestamp():
     """Control on message's use_timestamp flag."""
+    printer = RecordingPrinter()
     printer.show(sys.stdout, "test text", use_timestamp=True)
-    (msg,) = printer.written_lines
+    (msg,) = printer.written_lines  # pylint: disable=unbalanced-tuple-unpacking
     assert msg.use_timestamp is True
 
 
-def test_show_end_line(printer):
+def test_show_end_line():
     """Control on message's end_line flag."""
+    printer = RecordingPrinter()
     printer.show(sys.stdout, "test text", end_line=True)
-    (msg,) = printer.written_lines
+    (msg,) = printer.written_lines  # pylint: disable=unbalanced-tuple-unpacking
     assert msg.end_line is True
 
 

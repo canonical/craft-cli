@@ -21,7 +21,7 @@ import shutil
 import sys
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Union, Optional, TextIO
+from typing import Optional, TextIO, Union
 
 
 @dataclass
@@ -96,6 +96,7 @@ class _Printer:
         use_timestamp: bool = False,
         end_line: bool = False,
     ) -> None:
+        """Show a text to the given stream."""
         msg = _MessageInfo(
             stream=stream,
             text=text.rstrip(),
@@ -114,6 +115,17 @@ class _Printer:
             print(flush=True, file=self.unfinished_stream)
 
 
+def _init_guard(wrapped_func):
+    """Decorate Emitter methods to be called *after* init."""
+
+    def func(self, *args, **kwargs):
+        if not self.initiated:
+            raise RuntimeError("Emitter needs to be initiated first")
+        return wrapped_func(self, *args, **kwargs)
+
+    return func
+
+
 class Emitter:
     """Main interface to all the messages emitting functionality.
 
@@ -121,21 +133,37 @@ class Emitter:
     with the formal logging infrastructure to get messages from it.
     """
 
+    def __init__(self):
+        # these attributes will be set at "real init time", with the `init` method below
+        self.greeting = None
+        self.printer = None
+        self.mode = None
+        self.initiated = False
+
     def init(self, mode: EmitterMode, greeting: str):
+        """Initialize the emitter; this must be called once and before emitting any messages."""
         self.greeting = greeting
 
         # bootstrap the printer
         self.printer = _Printer()
+        self.initiated = True
 
         self.set_mode(mode)
 
+    @_init_guard
     def set_mode(self, mode: EmitterMode) -> None:
+        """Set the mode of the emitter."""
+        # these are a waste of resources only to make pyright happy
+        assert self.printer is not None
+        assert self.greeting is not None
+
         self.mode = mode
 
         if self.mode == EmitterMode.VERBOSE or self.mode == EmitterMode.TRACE:
             # send the greeting to the screen before any further messages
             self.printer.show(sys.stderr, self.greeting, use_timestamp=True, end_line=True)
 
+    @_init_guard
     def message(self, text: str, intermediate: bool = False) -> None:
         """Show an important message to the user.
 
@@ -143,12 +171,14 @@ class Emitter:
         also be used for important messages during the command's execution,
         with intermediate=True (which will include timestamp in verbose/trace mode).
         """
-        if intermediate and (self.mode == EmitterMode.VERBOSE or self.mode == EmitterMode.TRACE):
-            use_timestamp = True
-        else:
-            use_timestamp = False
+        assert self.printer is not None  # this is a waste of resources only to make pyright happy
+        use_timestamp = bool(
+            intermediate and (self.mode == EmitterMode.VERBOSE or self.mode == EmitterMode.TRACE)
+        )
         self.printer.show(sys.stdout, text, use_timestamp=use_timestamp)
 
+    @_init_guard
     def ended_ok(self) -> None:
         """Finish the messaging system gracefully."""
+        assert self.printer is not None  # this is a waste of resources only to make pyright happy
         self.printer.stop()

@@ -33,7 +33,6 @@ import pytest
 from craft_cli import messages
 from craft_cli.messages import Emitter, EmitterMode
 
-
 # the timestamp format (including final separator space)
 TIMESTAMP_FORMAT = r"\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d.\d\d\d "
 
@@ -77,9 +76,9 @@ def compare_lines(expected_lines, raw_stream):
 
         # the timestamp (if should be there), the text to compare, some spaces, and the CR/LN
         template = f"{timestamp}(.*?) *{end_of_line}"
-        m = re.match(template, real)
-        assert m, f"Line {real!r} didn't match {template!r}"
-        assert m.groups()[0] == expected.text
+        match = re.match(template, real)
+        assert match, f"Line {real!r} didn't match {template!r}"
+        assert match.groups()[0] == expected.text
 
 
 def assert_outputs(capsys, emit, expected_out=None, expected_err=None):
@@ -95,16 +94,12 @@ def assert_outputs(capsys, emit, expected_out=None, expected_err=None):
     else:
         compare_lines(expected_err, err)
 
+    # XXX Facundo 2021-08-26: using this so pylint does not complain; it will *really* be used
+    # in next branches
+    assert emit
 
-@pytest.mark.parametrize(
-    "mode",
-    [
-        EmitterMode.QUIET,
-        EmitterMode.NORMAL,
-        EmitterMode.VERBOSE,
-        EmitterMode.TRACE,
-    ],
-)
+
+@pytest.mark.parametrize("mode", EmitterMode)  # all modes!
 def test_01_expected_cmd_result(capsys, mode):
     """Show a simple message, the expected command result."""
     emit = Emitter()
