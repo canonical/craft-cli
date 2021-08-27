@@ -153,15 +153,13 @@ class Emitter:
     @_init_guard
     def set_mode(self, mode: EmitterMode) -> None:
         """Set the mode of the emitter."""
-        # these are a waste of resources only to make pyright happy
-        assert self.printer is not None
-        assert self.greeting is not None
-
         self.mode = mode
 
         if self.mode == EmitterMode.VERBOSE or self.mode == EmitterMode.TRACE:
             # send the greeting to the screen before any further messages
-            self.printer.show(sys.stderr, self.greeting, use_timestamp=True, end_line=True)
+            self.printer.show(  # type: ignore
+                sys.stderr, self.greeting, use_timestamp=True, end_line=True  # type: ignore
+            )
 
     @_init_guard
     def message(self, text: str, intermediate: bool = False) -> None:
@@ -171,14 +169,12 @@ class Emitter:
         also be used for important messages during the command's execution,
         with intermediate=True (which will include timestamp in verbose/trace mode).
         """
-        assert self.printer is not None  # this is a waste of resources only to make pyright happy
         use_timestamp = bool(
             intermediate and (self.mode == EmitterMode.VERBOSE or self.mode == EmitterMode.TRACE)
         )
-        self.printer.show(sys.stdout, text, use_timestamp=use_timestamp)
+        self.printer.show(sys.stdout, text, use_timestamp=use_timestamp)  # type: ignore
 
     @_init_guard
     def ended_ok(self) -> None:
         """Finish the messaging system gracefully."""
-        assert self.printer is not None  # this is a waste of resources only to make pyright happy
-        self.printer.stop()
+        self.printer.stop()  # type: ignore
