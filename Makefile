@@ -1,3 +1,5 @@
+SOURCES=$(wildcard *.py) craft_cli tests
+
 .PHONY: help
 help: ## Show this help.
 	@printf "%-40s %s\n" "Target" "Description"
@@ -6,9 +8,9 @@ help: ## Show this help.
 
 .PHONY: autoformat
 autoformat: ## Run automatic code formatters.
-	isort .
-	autoflake --remove-all-unused-imports --ignore-init-module-imports -ri .
-	black .
+	isort $(SOURCES)
+	autoflake --remove-all-unused-imports --ignore-init-module-imports -ri $(SOURCES)
+	black $(SOURCES)
 
 .PHONY: clean
 clean: ## Clean artifacts from building, testing, etc.
@@ -66,15 +68,15 @@ release: dist ## Release with twine.
 
 .PHONY: test-black
 test-black:
-	black --check --diff .
+	black --check --diff $(SOURCES)
 
 .PHONY: test-codespell
 test-codespell:
-	codespell .
+	codespell $(SOURCES)
 
 .PHONY: test-flake8
 test-flake8:
-	flake8 .
+	flake8 $(SOURCES)
 
 .PHONY: test-integrations
 test-integrations: ## Run integration tests.
@@ -82,11 +84,11 @@ test-integrations: ## Run integration tests.
 
 .PHONY: test-isort
 test-isort:
-	isort --check craft_cli tests
+	isort --check $(SOURCES)
 
 .PHONY: test-mypy
 test-mypy:
-	mypy craft_cli tests
+	mypy $(SOURCES)
 
 .PHONY: test-pydocstyle
 test-pydocstyle:
@@ -95,11 +97,11 @@ test-pydocstyle:
 .PHONY: test-pylint
 test-pylint:
 	pylint craft_cli
-	pylint tests --disable=missing-module-docstring,missing-function-docstring,redefined-outer-name
+	pylint tests --disable=missing-module-docstring,missing-function-docstring,redefined-outer-name,protected-access
 
 .PHONY: test-pyright
 test-pyright:
-	pyright .
+	pyright $(SOURCES)
 
 .PHONY: test-units
 test-units: ## Run unit tests.
