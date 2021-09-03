@@ -19,6 +19,7 @@
 import enum
 import shutil
 import sys
+import tempfile
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional, TextIO, Union
@@ -38,21 +39,48 @@ class _MessageInfo:
 # the different modes the Emitter can be set
 EmitterMode = enum.Enum("EmitterMode", "QUIET NORMAL VERBOSE TRACE")
 
+# the limit to how many rotated files to have in logs
+ROTATION_LIMIT = 5
+
 
 def get_terminal_width():
     """Return the number of columns of the terminal."""
     return shutil.get_terminal_size().columns
 
 
+def get_log_filepath(appname):
+    """Provide a filepath for logging into.
+
+    Rules:
+    - use an appdirs provided directory
+    - base filename is <appname>.<timestamp with microseconds>.log
+    - it rotates until it gets to ROTATION_LIMIT
+    - when rotated, gzip them
+    - after limit is achieved, remove them
+    """
+    _, filepath = tempfile.mkstemp(prefix="charmcraft-log-")
+    assert appname
+    # FIXME save the current one in
+    #       appdirs.user_log_dir() / appname / "appname-<timestamp with microseconds>.log"
+    # FIXME: rotate them! rules:
+    #     - <filename> -> <filename>.1.gz
+    #     - <filename>.<N>.gz -> <filename>.<N+1>.gz
+    #     - <filename>.<N>.gz (for N>=LIMIT) -- remove!
+    return filepath
+
+
 class _Printer:
     """Handle writing the different messages to the different outputs (out, err and log)."""
 
-    def __init__(self):
+    def __init__(self, log_filepath: str):
         # holder of the previous message
-        self.prv_msg = None
+        self.prv_msg: Optional[_MessageInfo] = None
+
+        # the open log file (will be closed explicitly when the thread ends)
+        self.log = open(log_filepath, "wt", encoding="utf8")  # pylint: disable=consider-using-with
 
         # keep account of output streams with unfinished lines
-        self.unfinished_stream = None
+        self.unfinished_stream: Optional[TextIO] = None
 
     def _write_line(self, message: _MessageInfo) -> None:
         """Write a simple line message to the screen."""
@@ -84,9 +112,19 @@ class _Printer:
 
     def _show(self, msg: _MessageInfo) -> None:
         """Show the composed message."""
+        # show the message in one way or the other only if there is a stream
+        if msg.stream is None:
+            return
+
         # regular message, write it
         self._write_line(msg)
         self.prv_msg = msg
+
+    def _log(self, message: _MessageInfo) -> None:
+        """Write the line message to the log file."""
+        # prepare the text with (maybe) the timestamp
+        timestamp_str = message.created_at.isoformat(sep=" ", timespec="milliseconds")
+        self.log.write(f"{timestamp_str} {message.text}\n")
 
     def show(
         self,
@@ -95,6 +133,7 @@ class _Printer:
         *,
         use_timestamp: bool = False,
         end_line: bool = False,
+        avoid_logging: bool = False,
     ) -> None:
         """Show a text to the given stream."""
         msg = _MessageInfo(
@@ -104,15 +143,19 @@ class _Printer:
             end_line=end_line,
         )
         self._show(msg)
+        if not avoid_logging:
+            self._log(msg)
 
     def stop(self) -> None:
         """Stop the printing infrastructure.
 
         In detail:
         - add a new line to the screen (if needed)
+        - close the log file
         """
         if self.unfinished_stream is not None:
             print(flush=True, file=self.unfinished_stream)
+        self.log.close()
 
 
 def _init_guard(wrapped_func):
@@ -139,15 +182,19 @@ class Emitter:
         self.printer = None
         self.mode = None
         self.initiated = False
+        self.log_filepath = None
 
-    def init(self, mode: EmitterMode, greeting: str):
+    def init(self, mode: EmitterMode, appname: str, greeting: str):
         """Initialize the emitter; this must be called once and before emitting any messages."""
         self.greeting = greeting
 
-        # bootstrap the printer
-        self.printer = _Printer()
-        self.initiated = True
+        # create a log file, bootstrap the printer, and before anything else send the greeting
+        # to the file
+        self.log_filepath = get_log_filepath(appname)
+        self.printer = _Printer(self.log_filepath)
+        self.printer.show(None, greeting)
 
+        self.initiated = True
         self.set_mode(mode)
 
     @_init_guard
@@ -157,9 +204,14 @@ class Emitter:
 
         if self.mode == EmitterMode.VERBOSE or self.mode == EmitterMode.TRACE:
             # send the greeting to the screen before any further messages
-            self.printer.show(  # type: ignore
-                sys.stderr, self.greeting, use_timestamp=True, end_line=True  # type: ignore
-            )
+            msgs = [
+                self.greeting,
+                f"Logging execution to {str(self.log_filepath)!r}",
+            ]
+            for msg in msgs:
+                self.printer.show(  # type: ignore
+                    sys.stderr, msg, use_timestamp=True, avoid_logging=True, end_line=True
+                )
 
     @_init_guard
     def message(self, text: str, intermediate: bool = False) -> None:
