@@ -21,6 +21,7 @@ from unittest.mock import call, patch
 
 import pytest
 
+from craft_cli import messages
 from craft_cli.messages import Emitter, EmitterMode
 
 
@@ -36,13 +37,15 @@ class RecordingEmitter(Emitter):
 
 
 @pytest.fixture
-def get_initiated_emitter():
+def get_initiated_emitter(tmp_path, monkeypatch):
     """Provide an initiated Emitter ready to test.
 
     It has a patched "printer" and an easy way to test its calls (after it was initiated).
 
     It's used almost in all tests (except those that test the init call).
     """
+    fake_logpath = str(tmp_path / "fakelog.log")
+    monkeypatch.setattr(messages, "get_log_filepath", lambda appname: fake_logpath)
     with patch("craft_cli.messages._Printer", autospec=True) as mock_printer:
 
         def func(mode, greeting="default greeting"):
@@ -65,8 +68,12 @@ def get_initiated_emitter():
         EmitterMode.NORMAL,
     ],
 )
-def test_init_quietish(mode):
+def test_init_quietish(mode, tmp_path, monkeypatch):
     """Init the class in some quiet-ish mode."""
+    # avoid using a real log file
+    fake_logpath = str(tmp_path / "fakelog.log")
+    monkeypatch.setattr(messages, "get_log_filepath", lambda appname: fake_logpath)
+
     greeting = "greeting"
     emitter = Emitter()
     with patch("craft_cli.messages._Printer") as mock_printer:
@@ -74,7 +81,7 @@ def test_init_quietish(mode):
 
     assert emitter.mode == mode
     assert mock_printer.mock_calls == [
-        call(),  # the _Printer instantiation
+        call(fake_logpath),  # the _Printer instantiation, passing the log filepath
     ]
 
 
@@ -85,8 +92,12 @@ def test_init_quietish(mode):
         EmitterMode.TRACE,
     ],
 )
-def test_init_verboseish(mode):
+def test_init_verboseish(mode, tmp_path, monkeypatch):
     """Init the class in some verbose-ish mode."""
+    # avoid using a real log file
+    fake_logpath = str(tmp_path / "fakelog.log")
+    monkeypatch.setattr(messages, "get_log_filepath", lambda appname: fake_logpath)
+
     greeting = "greeting"
     emitter = Emitter()
     with patch("craft_cli.messages._Printer") as mock_printer:
@@ -94,7 +105,7 @@ def test_init_verboseish(mode):
 
     assert emitter.mode == mode
     assert mock_printer.mock_calls == [
-        call(),  # the _Printer instantiation
+        call(fake_logpath),  # the _Printer instantiation, passing the log filepath
         call().show(sys.stderr, greeting, use_timestamp=True, end_line=True),
     ]
 
