@@ -19,6 +19,7 @@
 import enum
 import shutil
 import sys
+import tempfile
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional, TextIO, Union
@@ -44,15 +45,25 @@ def get_terminal_width():
     return shutil.get_terminal_size().columns
 
 
+def get_log_filepath(appname):
+    """Provide a filepath for logging into."""
+    # XXX Facundo 2021-09-03: this will change heavily in next couple of branches
+    _, filepath = tempfile.mkstemp(prefix=f"{appname}-")
+    return filepath
+
+
 class _Printer:
     """Handle writing the different messages to the different outputs (out, err and log)."""
 
-    def __init__(self):
+    def __init__(self, log_filepath: str) -> None:
         # holder of the previous message
-        self.prv_msg = None
+        self.prv_msg: Optional[_MessageInfo] = None
+
+        # the open log file (will be closed explicitly when the thread ends)
+        self.log = open(log_filepath, "wt", encoding="utf8")  # pylint: disable=consider-using-with
 
         # keep account of output streams with unfinished lines
-        self.unfinished_stream = None
+        self.unfinished_stream: Optional[TextIO] = None
 
     def _write_line(self, message: _MessageInfo) -> None:
         """Write a simple line message to the screen."""
@@ -84,9 +95,19 @@ class _Printer:
 
     def _show(self, msg: _MessageInfo) -> None:
         """Show the composed message."""
+        # show the message in one way or the other only if there is a stream
+        if msg.stream is None:
+            return
+
         # regular message, write it
         self._write_line(msg)
         self.prv_msg = msg
+
+    def _log(self, message: _MessageInfo) -> None:
+        """Write the line message to the log file."""
+        # prepare the text with (maybe) the timestamp
+        timestamp_str = message.created_at.isoformat(sep=" ", timespec="milliseconds")
+        self.log.write(f"{timestamp_str} {message.text}\n")
 
     def show(
         self,
@@ -95,6 +116,7 @@ class _Printer:
         *,
         use_timestamp: bool = False,
         end_line: bool = False,
+        avoid_logging: bool = False,
     ) -> None:
         """Show a text to the given stream."""
         msg = _MessageInfo(
@@ -104,15 +126,19 @@ class _Printer:
             end_line=end_line,
         )
         self._show(msg)
+        if not avoid_logging:
+            self._log(msg)
 
     def stop(self) -> None:
         """Stop the printing infrastructure.
 
         In detail:
         - add a new line to the screen (if needed)
+        - close the log file
         """
         if self.unfinished_stream is not None:
             print(flush=True, file=self.unfinished_stream)
+        self.log.close()
 
 
 def _init_guard(wrapped_func):
@@ -139,15 +165,18 @@ class Emitter:
         self.printer = None
         self.mode = None
         self.initiated = False
+        self.log_filepath = None
 
     def init(self, mode: EmitterMode, greeting: str):
         """Initialize the emitter; this must be called once and before emitting any messages."""
         self.greeting = greeting
 
         # bootstrap the printer
-        self.printer = _Printer()
-        self.initiated = True
+        # XXX Facundo 2021-09-03: in the next branch Emitter will receive the appname
+        self.log_filepath = get_log_filepath("appname")
+        self.printer = _Printer(self.log_filepath)
 
+        self.initiated = True
         self.set_mode(mode)
 
     @_init_guard
