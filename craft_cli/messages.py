@@ -48,14 +48,14 @@ def get_terminal_width():
 def get_log_filepath(appname):
     """Provide a filepath for logging into."""
     # XXX Facundo 2021-09-03: this will change heavily in next couple of branches
-    _, filepath = tempfile.mkstemp(prefix=f"charmcraft-{appname}-log-")
+    _, filepath = tempfile.mkstemp(prefix=f"{appname}-")
     return filepath
 
 
 class _Printer:
     """Handle writing the different messages to the different outputs (out, err and log)."""
 
-    def __init__(self, log_filepath: str):
+    def __init__(self, log_filepath: str) -> None:
         # holder of the previous message
         self.prv_msg: Optional[_MessageInfo] = None
 
