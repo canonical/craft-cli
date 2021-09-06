@@ -53,6 +53,8 @@ def get_terminal_width() -> int:
 def get_log_filepath(appname: str) -> pathlib.Path:
     """Provide a filepath for logging into.
 
+    The app name is used for both the directory where the logs are located and each log name.
+
     Rules:
     - use an appdirs provided directory
     - base filename is <appname>.<timestamp with microseconds>.log
