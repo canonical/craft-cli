@@ -155,8 +155,11 @@ def _init_guard(wrapped_func):
 class Emitter:
     """Main interface to all the messages emitting functionality.
 
-    This handling everything that goes to screen and to the log file, even interfacing
+    This handles everything that goes to screen and to the log file, even interfacing
     with the formal logging infrastructure to get messages from it.
+
+    This class is not meant to be instantiated by the application, just use `emit` from
+    this module.
     """
 
     def __init__(self):
