@@ -50,7 +50,7 @@ def get_initiated_emitter(tmp_path, monkeypatch):
 
         def func(mode, greeting="default greeting"):
             emitter = RecordingEmitter()
-            emitter.init(mode, greeting)
+            emitter.init(mode, "testappname", greeting)
             emitter.printer_calls = mock_printer.mock_calls
             emitter.printer_calls.clear()
             return emitter
@@ -77,11 +77,12 @@ def test_init_quietish(mode, tmp_path, monkeypatch):
     greeting = "greeting"
     emitter = Emitter()
     with patch("craft_cli.messages._Printer") as mock_printer:
-        emitter.init(mode, greeting)
+        emitter.init(mode, "testappname", greeting)
 
     assert emitter.mode == mode
     assert mock_printer.mock_calls == [
         call(fake_logpath),  # the _Printer instantiation, passing the log filepath
+        call().show(None, "greeting"),  # the greeting, only sent to the log
     ]
 
 
@@ -101,12 +102,15 @@ def test_init_verboseish(mode, tmp_path, monkeypatch):
     greeting = "greeting"
     emitter = Emitter()
     with patch("craft_cli.messages._Printer") as mock_printer:
-        emitter.init(mode, greeting)
+        emitter.init(mode, "testappname", greeting)
 
     assert emitter.mode == mode
+    log_locat = f"Logging execution to '{fake_logpath}'"
     assert mock_printer.mock_calls == [
         call(fake_logpath),  # the _Printer instantiation, passing the log filepath
-        call().show(sys.stderr, greeting, use_timestamp=True, end_line=True),
+        call().show(None, "greeting"),  # the greeting, only sent to the log
+        call().show(sys.stderr, greeting, use_timestamp=True, end_line=True, avoid_logging=True),
+        call().show(sys.stderr, log_locat, use_timestamp=True, end_line=True, avoid_logging=True),
     ]
 
 
@@ -150,8 +154,10 @@ def test_set_mode_verboseish(get_initiated_emitter, mode):
     emitter.set_mode(mode)
 
     assert emitter.mode == mode
+    log_locat = f"Logging execution to '{emitter.log_filepath}'"
     assert emitter.printer_calls == [
-        call().show(sys.stderr, greeting, use_timestamp=True, end_line=True),
+        call().show(sys.stderr, greeting, use_timestamp=True, avoid_logging=True, end_line=True),
+        call().show(sys.stderr, log_locat, use_timestamp=True, avoid_logging=True, end_line=True),
     ]
 
 

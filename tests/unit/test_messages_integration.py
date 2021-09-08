@@ -36,8 +36,22 @@ from craft_cli.messages import Emitter, EmitterMode
 # the timestamp format (including final separator space)
 TIMESTAMP_FORMAT = r"\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d.\d\d\d "
 
-# the greeting sent, normalized across the tests so we can automatically ignore it
+# the greeting sent and logfile, normalized across the tests so we can automatically ignore them
 GREETING = "Specific greeting to be ignored"
+FAKE_LOGNAME = "testapp-ignored.log"
+
+
+@pytest.fixture(autouse=True)
+def fake_log_filepath(tmp_path, monkeypatch):
+    """Provide a fake log filepath, outside of user's appdir."""
+    fake_logpath = str(tmp_path / FAKE_LOGNAME)
+    monkeypatch.setattr(messages, "get_log_filepath", lambda appname: fake_logpath)
+
+
+@pytest.fixture(autouse=True)
+def fix_terminal_width(monkeypatch):
+    """Set a very big terminal width so messages are normally not wrapped."""
+    monkeypatch.setattr(messages, "get_terminal_width", lambda: 500)
 
 
 @pytest.fixture
@@ -68,8 +82,10 @@ def compare_lines(expected_lines, raw_stream):
     lines = ["".join(x) for x in zip(*args)]
     if lines and GREETING in lines[0]:
         lines = lines[1:]
+    if lines and FAKE_LOGNAME in lines[0]:
+        lines = lines[1:]
 
-    assert len(expected_lines) == len(lines)
+    assert len(expected_lines) == len(lines), repr(lines)
     for expected, real in zip(expected_lines, lines):
         end_of_line = "\n" if expected.permanent else "\r"
         timestamp = TIMESTAMP_FORMAT if expected.timestamp else ""
@@ -81,7 +97,7 @@ def compare_lines(expected_lines, raw_stream):
         assert match.groups()[0] == expected.text
 
 
-def assert_outputs(capsys, emit, expected_out=None, expected_err=None):
+def assert_outputs(capsys, emit, expected_out=None, expected_err=None, expected_log=None):
     """Verify that the outputs are correct according to the expected lines."""
     # check the expected stdout and stderr outputs
     out, err = capsys.readouterr()
@@ -90,27 +106,41 @@ def assert_outputs(capsys, emit, expected_out=None, expected_err=None):
     else:
         compare_lines(expected_out, out)
     if expected_err is None:
-        compare_lines([], err)  # this comparison will eliminate the greeting
+        compare_lines([], err)  # this comparison will eliminate the greeting and log path lines
     else:
         compare_lines(expected_err, err)
 
-    # XXX Facundo 2021-08-26: using this so pylint does not complain; it will *really* be used
-    # in next branches
-    assert emit
+    # get the logged text, always validating a valid timestamp format at the beginning
+    # of each line
+    with open(emit.log_filepath, "rt", encoding="utf8") as filehandler:
+        log_lines = filehandler.readlines()
+    logged_texts = []
+    for line in log_lines:
+        match = re.match(rf"{TIMESTAMP_FORMAT}(.*)\n", line)
+        assert match
+        logged_texts.append(match.groups()[0])
+    if logged_texts and GREETING in logged_texts[0]:
+        logged_texts = logged_texts[1:]
+
+    if expected_log is None:
+        assert not logged_texts
+    else:
+        expected_logged_texts = [x.text for x in expected_log]
+        assert expected_logged_texts == logged_texts
 
 
 @pytest.mark.parametrize("mode", EmitterMode)  # all modes!
 def test_01_expected_cmd_result(capsys, mode):
     """Show a simple message, the expected command result."""
     emit = Emitter()
-    emit.init(mode, GREETING)
+    emit.init(mode, "testapp", GREETING)
     emit.message("The meaning of life is 42.")
     emit.ended_ok()
 
     expected = [
         Line("The meaning of life is 42."),
     ]
-    assert_outputs(capsys, emit, expected_out=expected)
+    assert_outputs(capsys, emit, expected_out=expected, expected_log=expected)
 
 
 @pytest.mark.parametrize(
@@ -123,14 +153,14 @@ def test_01_expected_cmd_result(capsys, mode):
 def test_01_intermediate_message_quiet(capsys, mode):
     """Show an intermediate message, in more quiet modes."""
     emit = Emitter()
-    emit.init(mode, GREETING)
+    emit.init(mode, "testapp", GREETING)
     emit.message("The meaning of life is 42.", intermediate=True)
     emit.ended_ok()
 
     expected = [
         Line("The meaning of life is 42."),
     ]
-    assert_outputs(capsys, emit, expected_out=expected)
+    assert_outputs(capsys, emit, expected_out=expected, expected_log=expected)
 
 
 @pytest.mark.parametrize(
@@ -143,14 +173,14 @@ def test_01_intermediate_message_quiet(capsys, mode):
 def test_01_intermediate_message_verbose(capsys, mode):
     """Show an intermediate message, in more verbose modes."""
     emit = Emitter()
-    emit.init(mode, GREETING)
+    emit.init(mode, "testapp", GREETING)
     emit.message("The meaning of life is 42.", intermediate=True)
     emit.ended_ok()
 
     expected = [
         Line("The meaning of life is 42.", timestamp=True),
     ]
-    assert_outputs(capsys, emit, expected_out=expected)
+    assert_outputs(capsys, emit, expected_out=expected, expected_log=expected)
 
 
 @pytest.mark.parametrize(
@@ -160,11 +190,15 @@ def test_01_intermediate_message_verbose(capsys, mode):
         EmitterMode.NORMAL,
     ],
 )
-def test_greeting_when_quiet(capsys, mode):
-    """Check when the greeting is sent when setting the mode to more quiet modes."""
+def test_initial_messages_when_quietish(capsys, mode, monkeypatch, tmp_path):
+    """Check the initial messages are sent when setting the mode to more quiet modes."""
+    # use different greeting and file logpath so we can actually test them
     different_greeting = "different greeting to not be ignored"
+    different_logpath = str(tmp_path / "otherfile.log")
+    monkeypatch.setattr(messages, "get_log_filepath", lambda appname: different_logpath)
+
     emit = Emitter()
-    emit.init(EmitterMode.NORMAL, different_greeting)
+    emit.init(EmitterMode.NORMAL, "testapp", different_greeting)
     emit.set_mode(mode)
     emit.message("final message")
     emit.ended_ok()
@@ -172,14 +206,22 @@ def test_greeting_when_quiet(capsys, mode):
     expected_out = [
         Line("final message"),
     ]
-    assert_outputs(capsys, emit, expected_out=expected_out)
+    expected_log = [
+        Line(different_greeting),
+        Line("final message"),
+    ]
+    assert_outputs(capsys, emit, expected_out=expected_out, expected_log=expected_log)
 
 
-def test_greeting_when_verbose(capsys):
-    """Check when the greeting is sent when setting the mode to VERBOSE."""
+def test_initial_messages_when_verbose(capsys, tmp_path, monkeypatch):
+    """Check the initial messages are sent when setting the mode to VERBOSE."""
+    # use different greeting and file logpath so we can actually test them
     different_greeting = "different greeting to not be ignored"
+    different_logpath = str(tmp_path / "otherfile.log")
+    monkeypatch.setattr(messages, "get_log_filepath", lambda appname: different_logpath)
+
     emit = Emitter()
-    emit.init(EmitterMode.NORMAL, different_greeting)
+    emit.init(EmitterMode.NORMAL, "testapp", different_greeting)
     emit.set_mode(EmitterMode.VERBOSE)
     emit.message("final message")
     emit.ended_ok()
@@ -189,15 +231,30 @@ def test_greeting_when_verbose(capsys):
     ]
     expected_err = [
         Line(different_greeting, timestamp=True),
+        Line(f"Logging execution to '{different_logpath}'", timestamp=True),
     ]
-    assert_outputs(capsys, emit, expected_out=expected_out, expected_err=expected_err)
+    expected_log = [
+        Line(different_greeting),
+        Line("final message"),
+    ]
+    assert_outputs(
+        capsys,
+        emit,
+        expected_out=expected_out,
+        expected_err=expected_err,
+        expected_log=expected_log,
+    )
 
 
-def test_greeting_when_trace(capsys):
-    """Check when the greeting is sent when setting the mode to TRACE."""
+def test_initial_messages_when_trace(capsys, tmp_path, monkeypatch):
+    """Check the initial messages are sent when setting the mode to TRACE."""
+    # use different greeting and file logpath so we can actually test them
     different_greeting = "different greeting to not be ignored"
+    different_logpath = str(tmp_path / "otherfile.log")
+    monkeypatch.setattr(messages, "get_log_filepath", lambda appname: different_logpath)
+
     emit = Emitter()
-    emit.init(EmitterMode.NORMAL, different_greeting)
+    emit.init(EmitterMode.NORMAL, "testapp", different_greeting)
     emit.set_mode(EmitterMode.TRACE)
     emit.message("final message")
     emit.ended_ok()
@@ -207,5 +264,16 @@ def test_greeting_when_trace(capsys):
     ]
     expected_err = [
         Line(different_greeting, timestamp=True),
+        Line(f"Logging execution to '{different_logpath}'", timestamp=True),
     ]
-    assert_outputs(capsys, emit, expected_out=expected_out, expected_err=expected_err)
+    expected_log = [
+        Line(different_greeting),
+        Line("final message"),
+    ]
+    assert_outputs(
+        capsys,
+        emit,
+        expected_out=expected_out,
+        expected_err=expected_err,
+        expected_log=expected_log,
+    )

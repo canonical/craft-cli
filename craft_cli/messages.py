@@ -40,7 +40,7 @@ class _MessageInfo:
 EmitterMode = enum.Enum("EmitterMode", "QUIET NORMAL VERBOSE TRACE")
 
 
-def get_terminal_width():
+def get_terminal_width() -> int:
     """Return the number of columns of the terminal."""
     return shutil.get_terminal_size().columns
 
@@ -155,8 +155,11 @@ def _init_guard(wrapped_func):
 class Emitter:
     """Main interface to all the messages emitting functionality.
 
-    This handling everything that goes to screen and to the log file, even interfacing
+    This handles everything that goes to screen and to the log file, even interfacing
     with the formal logging infrastructure to get messages from it.
+
+    This class is not meant to be instantiated by the application, just use `emit` from
+    this module.
     """
 
     def __init__(self):
@@ -167,14 +170,15 @@ class Emitter:
         self.initiated = False
         self.log_filepath = None
 
-    def init(self, mode: EmitterMode, greeting: str):
+    def init(self, mode: EmitterMode, appname: str, greeting: str):
         """Initialize the emitter; this must be called once and before emitting any messages."""
         self.greeting = greeting
 
-        # bootstrap the printer
-        # XXX Facundo 2021-09-03: in the next branch Emitter will receive the appname
-        self.log_filepath = get_log_filepath("appname")
+        # create a log file, bootstrap the printer, and before anything else send the greeting
+        # to the file
+        self.log_filepath = get_log_filepath(appname)
         self.printer = _Printer(self.log_filepath)
+        self.printer.show(None, greeting)
 
         self.initiated = True
         self.set_mode(mode)
@@ -186,9 +190,14 @@ class Emitter:
 
         if self.mode == EmitterMode.VERBOSE or self.mode == EmitterMode.TRACE:
             # send the greeting to the screen before any further messages
-            self.printer.show(  # type: ignore
-                sys.stderr, self.greeting, use_timestamp=True, end_line=True  # type: ignore
-            )
+            msgs = [
+                self.greeting,
+                f"Logging execution to {str(self.log_filepath)!r}",
+            ]
+            for msg in msgs:
+                self.printer.show(  # type: ignore
+                    sys.stderr, msg, use_timestamp=True, avoid_logging=True, end_line=True
+                )
 
     @_init_guard
     def message(self, text: str, intermediate: bool = False) -> None:
