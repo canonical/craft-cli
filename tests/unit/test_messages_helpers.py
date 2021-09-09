@@ -74,7 +74,7 @@ def test_getlogpath_one_file_already_present(test_log_dir):
 
 def test_getlogpath_several_files_already_present(test_log_dir, monkeypatch):
     """There are several files in the destination dir."""
-    monkeypatch.setattr(messages, "LOG_FILES_LIMIT", 100)
+    monkeypatch.setattr(messages, "_MAX_LOG_FILES", 100)
     previous_fpath = get_log_filepath("testapp")
     previous_fpath.touch()
     new_fpath = get_log_filepath("testapp")
@@ -85,7 +85,7 @@ def test_getlogpath_several_files_already_present(test_log_dir, monkeypatch):
 
 def test_getlogpath_hit_rotation_limit(test_log_dir, monkeypatch):
     """The rotation limit is hit."""
-    monkeypatch.setattr(messages, "LOG_FILES_LIMIT", 3)
+    monkeypatch.setattr(messages, "_MAX_LOG_FILES", 3)
     previous_fpaths = [get_log_filepath("testapp") for _ in range(2)]
     for fpath in previous_fpaths:
         fpath.touch()
@@ -97,7 +97,7 @@ def test_getlogpath_hit_rotation_limit(test_log_dir, monkeypatch):
 
 def test_getlogpath_exceeds_rotation_limit(test_log_dir, monkeypatch):
     """The rotation limit is exceeded."""
-    monkeypatch.setattr(messages, "LOG_FILES_LIMIT", 3)
+    monkeypatch.setattr(messages, "_MAX_LOG_FILES", 3)
     previous_fpaths = [get_log_filepath("testapp") for _ in range(3)]
     for fpath in previous_fpaths:
         fpath.touch()
@@ -109,7 +109,7 @@ def test_getlogpath_exceeds_rotation_limit(test_log_dir, monkeypatch):
 
 def test_getlogpath_ignore_other_files(test_log_dir, monkeypatch):
     """Only affect logs of the given app."""
-    monkeypatch.setattr(messages, "LOG_FILES_LIMIT", 3)
+    monkeypatch.setattr(messages, "_MAX_LOG_FILES", 3)
 
     # old files to trigger some removal
     previous_fpaths = [get_log_filepath("testapp") for _ in range(3)]

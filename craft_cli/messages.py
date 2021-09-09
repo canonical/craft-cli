@@ -42,7 +42,7 @@ class _MessageInfo:
 EmitterMode = enum.Enum("EmitterMode", "QUIET NORMAL VERBOSE TRACE")
 
 # the limit to how many log files to have
-LOG_FILES_LIMIT = 5
+_MAX_LOG_FILES = 5
 
 
 def get_terminal_width() -> int:
@@ -51,19 +51,19 @@ def get_terminal_width() -> int:
 
 
 def get_log_filepath(appname: str) -> pathlib.Path:
-    """Provide a filepath for logging into.
+    """Provide a unique filepath for logging.
 
     The app name is used for both the directory where the logs are located and each log name.
 
     Rules:
     - use an appdirs provided directory
     - base filename is <appname>.<timestamp with microseconds>.log
-    - it rotates until it gets to ROTATION_LIMIT
+    - it rotates until it gets to reaches :data:`._MAX_LOG_FILES`
     - after limit is achieved, remove the exceeding files
     - ignore other non-log files in the directory
 
     Existing files are not renamed (no need, as each name is unique) nor gzipped (they may
-    be currently in use by other process).
+    be currently in use by another process).
     """
     basedir = pathlib.Path(appdirs.user_log_dir()) / appname
     filename = f"{appname}-{datetime.now():%Y%m%d-%H%M%S.%f}.log"
@@ -71,10 +71,10 @@ def get_log_filepath(appname: str) -> pathlib.Path:
     # ensure the basedir is there
     basedir.mkdir(exist_ok=True)
 
-    # check if we doesn't have too many logs in the dir, and remove the exceeding ones (note
+    # check if we have too many logs in the dir, and remove the exceeding ones (note
     # that the defined limit includes the about-to-be-created file, that's why the "-1")
     present_files = list(basedir.glob(f"{appname}-*.log"))
-    limit = LOG_FILES_LIMIT - 1
+    limit = _MAX_LOG_FILES - 1
     if len(present_files) > limit:
         for fpath in sorted(present_files)[:-limit]:
             fpath.unlink()
