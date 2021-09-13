@@ -209,6 +209,34 @@ def test_message_intermediate_verboseish(get_initiated_emitter, mode):
     ]
 
 
+@pytest.mark.parametrize(
+    "mode",
+    [
+        EmitterMode.QUIET,
+        EmitterMode.NORMAL,
+        EmitterMode.VERBOSE,
+    ],
+)
+def test_trace_in_non_trace_modes(get_initiated_emitter, mode):
+    """Only log the message."""
+    emitter = get_initiated_emitter(mode)
+    emitter.trace("some text")
+
+    assert emitter.printer_calls == [
+        call().show(None, "some text", use_timestamp=True),
+    ]
+
+
+def test_trace_in_trace_mode(get_initiated_emitter):
+    """Lof the message and show it in stderr."""
+    emitter = get_initiated_emitter(EmitterMode.TRACE)
+    emitter.trace("some text")
+
+    assert emitter.printer_calls == [
+        call().show(sys.stderr, "some text", use_timestamp=True),
+    ]
+
+
 # -- tests for stopping the machinery
 
 
