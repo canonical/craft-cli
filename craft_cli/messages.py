@@ -249,10 +249,6 @@ class Emitter:
         This is to record everything that the user may not want to normally see, but it's
         useful for postmortem analysis.
         """
-        # if self.mode == EmitterMode.TRACE:
-        #     stream = sys.stderr
-        # else:
-        #     stream = None
         stream = sys.stderr if self.mode == EmitterMode.TRACE else None
         self.printer.show(stream, text, use_timestamp=True)  # type: ignore
 
