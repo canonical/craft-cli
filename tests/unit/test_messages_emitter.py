@@ -45,7 +45,7 @@ def get_initiated_emitter(tmp_path, monkeypatch):
     It's used almost in all tests (except those that test the init call).
     """
     fake_logpath = str(tmp_path / "fakelog.log")
-    monkeypatch.setattr(messages, "get_log_filepath", lambda appname: fake_logpath)
+    monkeypatch.setattr(messages, "_get_log_filepath", lambda appname: fake_logpath)
     with patch("craft_cli.messages._Printer", autospec=True) as mock_printer:
 
         def func(mode, greeting="default greeting"):
@@ -72,7 +72,7 @@ def test_init_quietish(mode, tmp_path, monkeypatch):
     """Init the class in some quiet-ish mode."""
     # avoid using a real log file
     fake_logpath = str(tmp_path / "fakelog.log")
-    monkeypatch.setattr(messages, "get_log_filepath", lambda appname: fake_logpath)
+    monkeypatch.setattr(messages, "_get_log_filepath", lambda appname: fake_logpath)
 
     greeting = "greeting"
     emitter = Emitter()
@@ -97,7 +97,7 @@ def test_init_verboseish(mode, tmp_path, monkeypatch):
     """Init the class in some verbose-ish mode."""
     # avoid using a real log file
     fake_logpath = str(tmp_path / "fakelog.log")
-    monkeypatch.setattr(messages, "get_log_filepath", lambda appname: fake_logpath)
+    monkeypatch.setattr(messages, "_get_log_filepath", lambda appname: fake_logpath)
 
     greeting = "greeting"
     emitter = Emitter()

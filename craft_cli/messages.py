@@ -17,12 +17,14 @@
 """Support for all messages, ok or after errors, to screen and log file."""
 
 import enum
+import pathlib
 import shutil
 import sys
-import tempfile
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional, TextIO, Union
+
+import appdirs
 
 
 @dataclass
@@ -39,23 +41,51 @@ class _MessageInfo:
 # the different modes the Emitter can be set
 EmitterMode = enum.Enum("EmitterMode", "QUIET NORMAL VERBOSE TRACE")
 
+# the limit to how many log files to have
+_MAX_LOG_FILES = 5
 
-def get_terminal_width() -> int:
+
+def _get_terminal_width() -> int:
     """Return the number of columns of the terminal."""
     return shutil.get_terminal_size().columns
 
 
-def get_log_filepath(appname):
-    """Provide a filepath for logging into."""
-    # XXX Facundo 2021-09-03: this will change heavily in next couple of branches
-    _, filepath = tempfile.mkstemp(prefix=f"{appname}-")
-    return filepath
+def _get_log_filepath(appname: str) -> pathlib.Path:
+    """Provide a unique filepath for logging.
+
+    The app name is used for both the directory where the logs are located and each log name.
+
+    Rules:
+    - use an appdirs provided directory
+    - base filename is <appname>.<timestamp with microseconds>.log
+    - it rotates until it gets to reaches :data:`._MAX_LOG_FILES`
+    - after limit is achieved, remove the exceeding files
+    - ignore other non-log files in the directory
+
+    Existing files are not renamed (no need, as each name is unique) nor gzipped (they may
+    be currently in use by another process).
+    """
+    basedir = pathlib.Path(appdirs.user_log_dir()) / appname
+    filename = f"{appname}-{datetime.now():%Y%m%d-%H%M%S.%f}.log"
+
+    # ensure the basedir is there
+    basedir.mkdir(exist_ok=True)
+
+    # check if we have too many logs in the dir, and remove the exceeding ones (note
+    # that the defined limit includes the about-to-be-created file, that's why the "-1")
+    present_files = list(basedir.glob(f"{appname}-*.log"))
+    limit = _MAX_LOG_FILES - 1
+    if len(present_files) > limit:
+        for fpath in sorted(present_files)[:-limit]:
+            fpath.unlink()
+
+    return basedir / filename
 
 
 class _Printer:
     """Handle writing the different messages to the different outputs (out, err and log)."""
 
-    def __init__(self, log_filepath: str) -> None:
+    def __init__(self, log_filepath: pathlib.Path) -> None:
         # holder of the previous message
         self.prv_msg: Optional[_MessageInfo] = None
 
@@ -80,7 +110,7 @@ class _Printer:
 
         # fill with spaces until the very end, on one hand to clear a possible previous message,
         # but also to always have the cursor at the very end
-        width = get_terminal_width()
+        width = _get_terminal_width()
         usable = width - 1  # the 1 is the cursor itself
         cleaner = " " * (usable - len(text) % width)
 
@@ -176,7 +206,7 @@ class Emitter:
 
         # create a log file, bootstrap the printer, and before anything else send the greeting
         # to the file
-        self.log_filepath = get_log_filepath(appname)
+        self.log_filepath = _get_log_filepath(appname)
         self.printer = _Printer(self.log_filepath)
         self.printer.show(None, greeting)
 
