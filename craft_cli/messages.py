@@ -45,12 +45,12 @@ EmitterMode = enum.Enum("EmitterMode", "QUIET NORMAL VERBOSE TRACE")
 _MAX_LOG_FILES = 5
 
 
-def get_terminal_width() -> int:
+def _get_terminal_width() -> int:
     """Return the number of columns of the terminal."""
     return shutil.get_terminal_size().columns
 
 
-def get_log_filepath(appname: str) -> pathlib.Path:
+def _get_log_filepath(appname: str) -> pathlib.Path:
     """Provide a unique filepath for logging.
 
     The app name is used for both the directory where the logs are located and each log name.
@@ -110,7 +110,7 @@ class _Printer:
 
         # fill with spaces until the very end, on one hand to clear a possible previous message,
         # but also to always have the cursor at the very end
-        width = get_terminal_width()
+        width = _get_terminal_width()
         usable = width - 1  # the 1 is the cursor itself
         cleaner = " " * (usable - len(text) % width)
 
@@ -206,7 +206,7 @@ class Emitter:
 
         # create a log file, bootstrap the printer, and before anything else send the greeting
         # to the file
-        self.log_filepath = get_log_filepath(appname)
+        self.log_filepath = _get_log_filepath(appname)
         self.printer = _Printer(self.log_filepath)
         self.printer.show(None, greeting)
 

@@ -37,7 +37,7 @@ def log_filepath(tmp_path):
 
 def test_terminal_width():
     """Check the terminal width helper."""
-    assert messages.get_terminal_width() == shutil.get_terminal_size().columns
+    assert messages._get_terminal_width() == shutil.get_terminal_size().columns
 
 
 # -- tests for the writing line function
@@ -45,7 +45,7 @@ def test_terminal_width():
 
 def test_writeline_simple_complete(capsys, monkeypatch, log_filepath):
     """Complete verification of _write_line for a simple case."""
-    monkeypatch.setattr(messages, "get_terminal_width", lambda: 40)
+    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 40)
     printer = _Printer(log_filepath)
 
     test_text = "test text"
@@ -63,7 +63,7 @@ def test_writeline_simple_complete(capsys, monkeypatch, log_filepath):
 
 def test_writeline_different_stream(capsys, monkeypatch, log_filepath):
     """Use a different stream."""
-    monkeypatch.setattr(messages, "get_terminal_width", lambda: 40)
+    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 40)
     printer = _Printer(log_filepath)
 
     test_text = "test text"
@@ -81,7 +81,7 @@ def test_writeline_different_stream(capsys, monkeypatch, log_filepath):
 
 def test_writeline_with_timestamp(capsys, monkeypatch, log_filepath):
     """A timestamp was indicated to use."""
-    monkeypatch.setattr(messages, "get_terminal_width", lambda: 40)
+    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 40)
     printer = _Printer(log_filepath)
 
     fake_now = datetime(2009, 9, 1, 12, 13, 15, 123456)
@@ -98,7 +98,7 @@ def test_writeline_with_timestamp(capsys, monkeypatch, log_filepath):
 
 def test_writeline_having_previous_message_out(capsys, monkeypatch, log_filepath):
     """There is a previous message to be completed (in stdout)."""
-    monkeypatch.setattr(messages, "get_terminal_width", lambda: 40)
+    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 40)
     printer = _Printer(log_filepath)
     printer.prv_msg = _MessageInfo(sys.stdout, "previous text")
 
@@ -114,7 +114,7 @@ def test_writeline_having_previous_message_out(capsys, monkeypatch, log_filepath
 
 def test_writeline_having_previous_message_err(capsys, monkeypatch, log_filepath):
     """There is a previous message to be completed (in stderr)."""
-    monkeypatch.setattr(messages, "get_terminal_width", lambda: 40)
+    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 40)
     printer = _Printer(log_filepath)
     printer.prv_msg = _MessageInfo(sys.stderr, "previous text")
 
@@ -130,7 +130,7 @@ def test_writeline_having_previous_message_err(capsys, monkeypatch, log_filepath
 
 def test_writeline_having_previous_message_complete(capsys, monkeypatch, log_filepath):
     """There is a previous message which is already complete."""
-    monkeypatch.setattr(messages, "get_terminal_width", lambda: 40)
+    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 40)
     printer = _Printer(log_filepath)
     printer.prv_msg = _MessageInfo(sys.stdout, "previous text", end_line=True)
 
@@ -146,7 +146,7 @@ def test_writeline_having_previous_message_complete(capsys, monkeypatch, log_fil
 
 def test_writeline_indicated_to_complete(capsys, monkeypatch, log_filepath):
     """The message is indicated to complete the line."""
-    monkeypatch.setattr(messages, "get_terminal_width", lambda: 40)
+    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 40)
     printer = _Printer(log_filepath)
 
     test_text = "test text"

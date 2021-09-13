@@ -23,7 +23,7 @@ import appdirs
 import pytest
 
 from craft_cli import messages
-from craft_cli.messages import get_log_filepath
+from craft_cli.messages import _get_log_filepath
 
 # -- tests for the log filepath provider
 
@@ -40,7 +40,7 @@ def test_log_dir(tmp_path, monkeypatch):
 def test_getlogpath_firstcall(test_log_dir):
     """The very first call."""
     before = datetime.datetime.now()
-    fpath = get_log_filepath("testapp")
+    fpath = _get_log_filepath("testapp")
     after = datetime.datetime.now()
 
     # check the file is inside the proper dir and that it exists
@@ -58,15 +58,15 @@ def test_getlogpath_directory_empty(test_log_dir):
     """Works with the directory already created."""
     parent = test_log_dir / "testapp"
     parent.mkdir()
-    fpath = get_log_filepath("testapp")
+    fpath = _get_log_filepath("testapp")
     assert fpath.parent == parent
 
 
 def test_getlogpath_one_file_already_present(test_log_dir):
     """There's already one file in the destination dir."""
-    previous_fpath = get_log_filepath("testapp")
+    previous_fpath = _get_log_filepath("testapp")
     previous_fpath.touch()
-    new_fpath = get_log_filepath("testapp")
+    new_fpath = _get_log_filepath("testapp")
     new_fpath.touch()
     present_logs = sorted((test_log_dir / "testapp").iterdir())
     assert present_logs == [previous_fpath, new_fpath]
@@ -75,9 +75,9 @@ def test_getlogpath_one_file_already_present(test_log_dir):
 def test_getlogpath_several_files_already_present(test_log_dir, monkeypatch):
     """There are several files in the destination dir."""
     monkeypatch.setattr(messages, "_MAX_LOG_FILES", 100)
-    previous_fpath = get_log_filepath("testapp")
+    previous_fpath = _get_log_filepath("testapp")
     previous_fpath.touch()
-    new_fpath = get_log_filepath("testapp")
+    new_fpath = _get_log_filepath("testapp")
     new_fpath.touch()
     present_logs = sorted((test_log_dir / "testapp").iterdir())
     assert present_logs == [previous_fpath, new_fpath]
@@ -86,10 +86,10 @@ def test_getlogpath_several_files_already_present(test_log_dir, monkeypatch):
 def test_getlogpath_hit_rotation_limit(test_log_dir, monkeypatch):
     """The rotation limit is hit."""
     monkeypatch.setattr(messages, "_MAX_LOG_FILES", 3)
-    previous_fpaths = [get_log_filepath("testapp") for _ in range(2)]
+    previous_fpaths = [_get_log_filepath("testapp") for _ in range(2)]
     for fpath in previous_fpaths:
         fpath.touch()
-    new_fpath = get_log_filepath("testapp")
+    new_fpath = _get_log_filepath("testapp")
     new_fpath.touch()
     present_logs = sorted((test_log_dir / "testapp").iterdir())
     assert present_logs == previous_fpaths + [new_fpath]
@@ -98,10 +98,10 @@ def test_getlogpath_hit_rotation_limit(test_log_dir, monkeypatch):
 def test_getlogpath_exceeds_rotation_limit(test_log_dir, monkeypatch):
     """The rotation limit is exceeded."""
     monkeypatch.setattr(messages, "_MAX_LOG_FILES", 3)
-    previous_fpaths = [get_log_filepath("testapp") for _ in range(3)]
+    previous_fpaths = [_get_log_filepath("testapp") for _ in range(3)]
     for fpath in previous_fpaths:
         fpath.touch()
-    new_fpath = get_log_filepath("testapp")
+    new_fpath = _get_log_filepath("testapp")
     new_fpath.touch()
     present_logs = sorted((test_log_dir / "testapp").iterdir())
     assert present_logs == previous_fpaths[1:] + [new_fpath]
@@ -112,7 +112,7 @@ def test_getlogpath_ignore_other_files(test_log_dir, monkeypatch):
     monkeypatch.setattr(messages, "_MAX_LOG_FILES", 3)
 
     # old files to trigger some removal
-    previous_fpaths = [get_log_filepath("testapp") for _ in range(3)]
+    previous_fpaths = [_get_log_filepath("testapp") for _ in range(3)]
     for fpath in previous_fpaths:
         fpath.touch()
 
@@ -123,7 +123,7 @@ def test_getlogpath_ignore_other_files(test_log_dir, monkeypatch):
     f_zzz = parent / "zzz"
     f_zzz.touch()
 
-    new_fpath = get_log_filepath("testapp")
+    new_fpath = _get_log_filepath("testapp")
     new_fpath.touch()
     present_logs = sorted((test_log_dir / "testapp").iterdir())
     assert present_logs == [f_aaa] + previous_fpaths[1:] + [new_fpath, f_zzz]

@@ -45,13 +45,13 @@ FAKE_LOGNAME = "testapp-ignored.log"
 def fake_log_filepath(tmp_path, monkeypatch):
     """Provide a fake log filepath, outside of user's appdir."""
     fake_logpath = str(tmp_path / FAKE_LOGNAME)
-    monkeypatch.setattr(messages, "get_log_filepath", lambda appname: fake_logpath)
+    monkeypatch.setattr(messages, "_get_log_filepath", lambda appname: fake_logpath)
 
 
 @pytest.fixture(autouse=True)
 def fix_terminal_width(monkeypatch):
     """Set a very big terminal width so messages are normally not wrapped."""
-    monkeypatch.setattr(messages, "get_terminal_width", lambda: 500)
+    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 500)
 
 
 @pytest.fixture
@@ -74,7 +74,7 @@ class Line:
 
 def compare_lines(expected_lines, raw_stream):
     """Helper to compare expected lines to what was written to the terminal."""
-    width = messages.get_terminal_width()
+    width = messages._get_terminal_width()
     if expected_lines:
         assert len(raw_stream) > 0
     assert len(raw_stream) % width == 0, f"Bad length {len(raw_stream)} ({width=}) {raw_stream=!r}"
@@ -195,7 +195,7 @@ def test_initial_messages_when_quietish(capsys, mode, monkeypatch, tmp_path):
     # use different greeting and file logpath so we can actually test them
     different_greeting = "different greeting to not be ignored"
     different_logpath = str(tmp_path / "otherfile.log")
-    monkeypatch.setattr(messages, "get_log_filepath", lambda appname: different_logpath)
+    monkeypatch.setattr(messages, "_get_log_filepath", lambda appname: different_logpath)
 
     emit = Emitter()
     emit.init(EmitterMode.NORMAL, "testapp", different_greeting)
@@ -218,7 +218,7 @@ def test_initial_messages_when_verbose(capsys, tmp_path, monkeypatch):
     # use different greeting and file logpath so we can actually test them
     different_greeting = "different greeting to not be ignored"
     different_logpath = str(tmp_path / "otherfile.log")
-    monkeypatch.setattr(messages, "get_log_filepath", lambda appname: different_logpath)
+    monkeypatch.setattr(messages, "_get_log_filepath", lambda appname: different_logpath)
 
     emit = Emitter()
     emit.init(EmitterMode.NORMAL, "testapp", different_greeting)
@@ -251,7 +251,7 @@ def test_initial_messages_when_trace(capsys, tmp_path, monkeypatch):
     # use different greeting and file logpath so we can actually test them
     different_greeting = "different greeting to not be ignored"
     different_logpath = str(tmp_path / "otherfile.log")
-    monkeypatch.setattr(messages, "get_log_filepath", lambda appname: different_logpath)
+    monkeypatch.setattr(messages, "_get_log_filepath", lambda appname: different_logpath)
 
     emit = Emitter()
     emit.init(EmitterMode.NORMAL, "testapp", different_greeting)
