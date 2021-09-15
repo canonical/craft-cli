@@ -188,6 +188,40 @@ def test_01_intermediate_message_verbose(capsys, mode):
     [
         EmitterMode.QUIET,
         EmitterMode.NORMAL,
+        EmitterMode.VERBOSE,
+    ],
+)
+def test_04_5_trace_other_modes(capsys, mode, monkeypatch):
+    """Internal trace for other modes."""
+    emit = Emitter()
+    emit.init(mode, "testapp", GREETING)
+    emit.trace("The meaning of life is 42.")
+    emit.ended_ok()
+
+    expected = [
+        Line("The meaning of life is 42.", timestamp=True),
+    ]
+    assert_outputs(capsys, emit, expected_log=expected)
+
+
+def test_04_5_trace_in_trace(capsys):
+    """Internal trace when in trace mode."""
+    emit = Emitter()
+    emit.init(EmitterMode.TRACE, "testapp", GREETING)
+    emit.trace("The meaning of life is 42.")
+    emit.ended_ok()
+
+    expected = [
+        Line("The meaning of life is 42.", timestamp=True),
+    ]
+    assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)
+
+
+@pytest.mark.parametrize(
+    "mode",
+    [
+        EmitterMode.QUIET,
+        EmitterMode.NORMAL,
     ],
 )
 def test_initial_messages_when_quietish(capsys, mode, monkeypatch, tmp_path):
@@ -199,7 +233,9 @@ def test_initial_messages_when_quietish(capsys, mode, monkeypatch, tmp_path):
 
     emit = Emitter()
     emit.init(EmitterMode.NORMAL, "testapp", different_greeting)
+    emit.trace("initial trace")
     emit.set_mode(mode)
+    emit.trace("second trace")
     emit.message("final message")
     emit.ended_ok()
 
@@ -208,6 +244,8 @@ def test_initial_messages_when_quietish(capsys, mode, monkeypatch, tmp_path):
     ]
     expected_log = [
         Line(different_greeting),
+        Line("initial trace"),
+        Line("second trace"),
         Line("final message"),
     ]
     assert_outputs(capsys, emit, expected_out=expected_out, expected_log=expected_log)
@@ -222,7 +260,9 @@ def test_initial_messages_when_verbose(capsys, tmp_path, monkeypatch):
 
     emit = Emitter()
     emit.init(EmitterMode.NORMAL, "testapp", different_greeting)
+    emit.trace("initial trace")
     emit.set_mode(EmitterMode.VERBOSE)
+    emit.trace("second trace")
     emit.message("final message")
     emit.ended_ok()
 
@@ -235,6 +275,8 @@ def test_initial_messages_when_verbose(capsys, tmp_path, monkeypatch):
     ]
     expected_log = [
         Line(different_greeting),
+        Line("initial trace"),
+        Line("second trace"),
         Line("final message"),
     ]
     assert_outputs(
@@ -255,7 +297,9 @@ def test_initial_messages_when_trace(capsys, tmp_path, monkeypatch):
 
     emit = Emitter()
     emit.init(EmitterMode.NORMAL, "testapp", different_greeting)
+    emit.trace("initial trace")
     emit.set_mode(EmitterMode.TRACE)
+    emit.trace("second trace")
     emit.message("final message")
     emit.ended_ok()
 
@@ -265,9 +309,12 @@ def test_initial_messages_when_trace(capsys, tmp_path, monkeypatch):
     expected_err = [
         Line(different_greeting, timestamp=True),
         Line(f"Logging execution to '{different_logpath}'", timestamp=True),
+        Line("second trace", timestamp=True),
     ]
     expected_log = [
         Line(different_greeting),
+        Line("initial trace"),
+        Line("second trace"),
         Line("final message"),
     ]
     assert_outputs(

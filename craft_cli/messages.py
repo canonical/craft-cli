@@ -243,6 +243,16 @@ class Emitter:
         self.printer.show(sys.stdout, text, use_timestamp=use_timestamp)  # type: ignore
 
     @_init_guard
+    def trace(self, text: str) -> None:
+        """Trace/debug information.
+
+        This is to record everything that the user may not want to normally see, but it's
+        useful for postmortem analysis.
+        """
+        stream = sys.stderr if self.mode == EmitterMode.TRACE else None
+        self.printer.show(stream, text, use_timestamp=True)  # type: ignore
+
+    @_init_guard
     def ended_ok(self) -> None:
         """Finish the messaging system gracefully."""
         self.printer.stop()  # type: ignore
