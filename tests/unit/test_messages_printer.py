@@ -61,6 +61,25 @@ def test_writeline_simple_complete(capsys, monkeypatch, log_filepath):
     assert out == test_text + " " * (39 - len(test_text))
 
 
+def test_writeline_simple_too_long(capsys, monkeypatch, log_filepath):
+    """A permanent message that exceeds the line length."""
+    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 20)
+    printer = _Printer(log_filepath)
+
+    test_text = "012345678901234567890123456789"
+    msg = _MessageInfo(sys.stdout, test_text)
+    printer._write_line(msg)
+    assert printer.unfinished_stream == sys.stdout
+
+    out, err = capsys.readouterr()
+    assert not err
+
+    # output is NOT truncated, and it's completed so the cursor at the second line is still
+    # to the right
+    assert len(out) == 39  # two lines, minus the cursor in the second line
+    assert out == test_text + " " * 9
+
+
 def test_writeline_different_stream(capsys, monkeypatch, log_filepath):
     """Use a different stream."""
     monkeypatch.setattr(messages, "_get_terminal_width", lambda: 40)
@@ -161,6 +180,58 @@ def test_writeline_indicated_to_complete(capsys, monkeypatch, log_filepath):
     assert out == test_text + " " * (39 - len(test_text)) + "\n"
 
 
+def test_writeline_ephemeral_message_short(capsys, monkeypatch, log_filepath):
+    """Complete verification of _write_line for a simple case."""
+    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 40)
+    printer = _Printer(log_filepath)
+
+    test_text = "test text"
+    msg = _MessageInfo(sys.stdout, test_text)
+    printer._write_line(msg)
+    assert printer.unfinished_stream == sys.stdout
+
+    out, err = capsys.readouterr()
+    assert not err
+
+    # output completes the terminal width (leaving space for the cursor), and
+    # without a finishing newline
+    assert out == test_text + " " * (39 - len(test_text))
+
+
+def test_writeline_ephemeral_message_too_long(capsys, monkeypatch, log_filepath):
+    """Complete verification of _write_line for a simple case."""
+    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 20)
+    printer = _Printer(log_filepath)
+
+    test_text = "0123456789012345678901234567890"
+    msg = _MessageInfo(sys.stdout, test_text, ephemeral=True)
+    printer._write_line(msg)
+    assert printer.unfinished_stream == sys.stdout
+
+    out, err = capsys.readouterr()
+    assert not err
+
+    # output is truncated (with an extra ellipsis), still leaving space for the cursor
+    assert len(out) == 19
+    assert out == "012345678901234567…"
+
+
+def test_writeline_having_previous_message_ephemeral(capsys, monkeypatch, log_filepath):
+    """There is a previous message to be overwritten."""
+    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 40)
+    printer = _Printer(log_filepath)
+    printer.prv_msg = _MessageInfo(sys.stdout, "previous text", ephemeral=True)
+
+    test_text = "test text"
+    msg = _MessageInfo(sys.stdout, test_text)
+    printer._write_line(msg)
+
+    # stdout has the expected text but with a carriage return before
+    out, err = capsys.readouterr()
+    assert out == "\r" + test_text + " " * (39 - len(test_text))
+    assert not err
+
+
 # -- tests for the logging handling
 
 
@@ -252,6 +323,7 @@ def test_show_defaults(stream, recording_printer):
     assert msg.text == "test text"
     assert msg.use_timestamp is False
     assert msg.end_line is False
+    assert msg.ephemeral is False
     assert before <= msg.created_at <= datetime.now()
 
     # check it was properly stored for the future
@@ -280,6 +352,13 @@ def test_show_avoid_logging(recording_printer):
     """Control if some message should avoid being logged."""
     recording_printer.show(sys.stdout, "test text", avoid_logging=True)
     assert not recording_printer.logged
+
+
+def test_show_ephemeral(recording_printer):
+    """Control if some message is ephemeral."""
+    recording_printer.show(sys.stdout, "test text", ephemeral=True)
+    (msg,) = recording_printer.written_lines  # pylint: disable=unbalanced-tuple-unpacking
+    assert msg.ephemeral is True
 
 
 # -- tests for stopping the printer
