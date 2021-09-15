@@ -269,7 +269,7 @@ class Emitter:
     def progress(self, text: str) -> None:
         """Progress information for a multi-step command.
 
-        This is normally to present several separated text messages.
+        This is normally used to present several separated text messages.
 
         These messages will be truncated to the terminal's width, and overwritten by the next
         line (unless verbose/trace mode).
