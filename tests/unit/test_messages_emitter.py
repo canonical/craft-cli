@@ -228,12 +228,49 @@ def test_trace_in_non_trace_modes(get_initiated_emitter, mode):
 
 
 def test_trace_in_trace_mode(get_initiated_emitter):
-    """Lof the message and show it in stderr."""
+    """Log the message and show it in stderr."""
     emitter = get_initiated_emitter(EmitterMode.TRACE)
     emitter.trace("some text")
 
     assert emitter.printer_calls == [
         call().show(sys.stderr, "some text", use_timestamp=True),
+    ]
+
+
+def test_progress_in_quiet_mode(get_initiated_emitter):
+    """Only log the message."""
+    emitter = get_initiated_emitter(EmitterMode.QUIET)
+    emitter.progress("some text")
+
+    assert emitter.printer_calls == [
+        call().show(None, "some text", use_timestamp=False, ephemeral=True),
+    ]
+
+
+def test_progress_in_normal_mode(get_initiated_emitter):
+    """Send to stderr (ephermeral) and log it."""
+    emitter = get_initiated_emitter(EmitterMode.NORMAL)
+    emitter.progress("some text")
+
+    assert emitter.printer_calls == [
+        call().show(sys.stderr, "some text", use_timestamp=False, ephemeral=True),
+    ]
+
+
+@pytest.mark.parametrize(
+    "mode",
+    [
+        EmitterMode.VERBOSE,
+        EmitterMode.TRACE,
+    ],
+)
+def test_progress_in_verboseish_modes(get_initiated_emitter, mode):
+    """Send to stderr (permanent, with timestamp) and log it."""
+    emitter = get_initiated_emitter(mode)
+    emitter.progress("some text")
+
+    assert emitter.printer_calls == [
+        call().show(sys.stderr, "some text", use_timestamp=True, ephemeral=False),
     ]
 
 

@@ -183,6 +183,57 @@ def test_01_intermediate_message_verbose(capsys, mode):
     assert_outputs(capsys, emit, expected_out=expected, expected_log=expected)
 
 
+def test_02_progress_message_quiet(capsys):
+    """Show a progress message being in quiet mode."""
+    emit = Emitter()
+    emit.init(EmitterMode.QUIET, "testapp", GREETING)
+    emit.progress("The meaning of life is 42.")
+    emit.ended_ok()
+
+    expected = [
+        Line("The meaning of life is 42.", permanent=False),
+    ]
+    assert_outputs(capsys, emit, expected_log=expected)
+
+
+def test_02_progress_message_normal(capsys):
+    """Show a progress message in normal mode."""
+    emit = Emitter()
+    emit.init(EmitterMode.NORMAL, "testapp", GREETING)
+    emit.progress("The meaning of life is 42.")
+    emit.progress("Another message.")
+    emit.ended_ok()
+
+    expected = [
+        Line("The meaning of life is 42.", permanent=False),
+        Line("Another message.", permanent=True),  # stays as it's the last message
+    ]
+    assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)
+
+
+@pytest.mark.parametrize(
+    "mode",
+    [
+        EmitterMode.VERBOSE,
+        EmitterMode.TRACE,
+    ],
+)
+def test_02_progress_message_more_verbose(capsys, mode):
+    """Show a progress message in verbore and debug modes."""
+    emit = Emitter()
+    emit.init(mode, "testapp", GREETING)
+    emit.progress("The meaning of life is 42.")
+    emit.progress("Another message.")
+    emit.ended_ok()
+
+    # ephemeral ends up being ignored, as in verbose and debug no lines are overridden
+    expected = [
+        Line("The meaning of life is 42.", permanent=True, timestamp=True),
+        Line("Another message.", permanent=True, timestamp=True),
+    ]
+    assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)
+
+
 @pytest.mark.parametrize(
     "mode",
     [

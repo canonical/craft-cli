@@ -33,6 +33,7 @@ class _MessageInfo:
 
     stream: Union[TextIO, None]
     text: str
+    ephemeral: bool = False
     use_timestamp: bool = False
     end_line: bool = False
     created_at: datetime = field(default_factory=datetime.now)
@@ -104,17 +105,27 @@ class _Printer:
         else:
             text = message.text
 
-        if self.prv_msg is not None and not self.prv_msg.end_line:
+        if self.prv_msg is None or self.prv_msg.end_line:
+            # first message, or previous message completed the line: start clean
+            maybe_cr = ""
+        elif self.prv_msg.ephemeral:
+            # the last one was ephemeral, overwrite it
+            maybe_cr = "\r"
+        else:
             # complete the previous line, leaving that message ok
+            maybe_cr = ""
             print(flush=True, file=self.prv_msg.stream)
 
         # fill with spaces until the very end, on one hand to clear a possible previous message,
         # but also to always have the cursor at the very end
         width = _get_terminal_width()
         usable = width - 1  # the 1 is the cursor itself
+        if len(text) > usable:
+            if message.ephemeral:
+                text = text[: usable - 1] + "…"
         cleaner = " " * (usable - len(text) % width)
 
-        line = text + cleaner
+        line = maybe_cr + text + cleaner
         print(line, end="", flush=True, file=message.stream)
         if message.end_line:
             # finish the just shown line, as we need a clean terminal for some external thing
@@ -144,6 +155,7 @@ class _Printer:
         stream: Optional[TextIO],
         text: str,
         *,
+        ephemeral: bool = False,
         use_timestamp: bool = False,
         end_line: bool = False,
         avoid_logging: bool = False,
@@ -152,6 +164,7 @@ class _Printer:
         msg = _MessageInfo(
             stream=stream,
             text=text.rstrip(),
+            ephemeral=ephemeral,
             use_timestamp=use_timestamp,
             end_line=end_line,
         )
@@ -251,6 +264,33 @@ class Emitter:
         """
         stream = sys.stderr if self.mode == EmitterMode.TRACE else None
         self.printer.show(stream, text, use_timestamp=True)  # type: ignore
+
+    @_init_guard
+    def progress(self, text: str) -> None:
+        """Progress information for a multi-step command.
+
+        This is normally used to present several separated text messages.
+
+        These messages will be truncated to the terminal's width, and overwritten by the next
+        line (unless verbose/trace mode).
+        """
+        if self.mode == EmitterMode.QUIET:
+            # will not be shown in the screen (always logged to the file)
+            stream = None
+            use_timestamp = False
+            ephemeral = True
+        elif self.mode == EmitterMode.NORMAL:
+            # show the indicated message to stderr (ephemeral) and log it
+            stream = sys.stderr
+            use_timestamp = False
+            ephemeral = True
+        else:
+            # show to stderr with timestamp (permanent), and log it
+            stream = sys.stderr
+            use_timestamp = True
+            ephemeral = False
+
+        self.printer.show(stream, text, ephemeral=ephemeral, use_timestamp=use_timestamp)  # type: ignore
 
     @_init_guard
     def ended_ok(self) -> None:
