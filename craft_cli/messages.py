@@ -17,23 +17,26 @@
 """Support for all messages, ok or after errors, to screen and log file."""
 
 import enum
+import math
 import pathlib
 import shutil
 import sys
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Optional, TextIO, Union
+from typing import Literal, Optional, TextIO, Union
 
 import appdirs
 
 
 @dataclass
-class _MessageInfo:
+class _MessageInfo:  # pylint: disable=too-many-instance-attributes
     """Comprehensive information for a message that may go to screen and log."""
 
     stream: Union[TextIO, None]
     text: str
     ephemeral: bool = False
+    bar_progress: Union[int, float, None] = None
+    bar_total: Union[int, float, None] = None
     use_timestamp: bool = False
     end_line: bool = False
     created_at: datetime = field(default_factory=datetime.now)
@@ -134,14 +137,53 @@ class _Printer:
         else:
             self.unfinished_stream = message.stream
 
+    def _write_bar(self, message: _MessageInfo) -> None:
+        """Write a progress bar to the screen."""
+        if self.prv_msg is None or self.prv_msg.end_line:
+            # first message, or previous message completed the line: start clean
+            maybe_cr = ""
+        elif self.prv_msg.ephemeral:
+            # the last one was ephemeral, overwrite it
+            maybe_cr = "\r"
+        else:
+            # complete the previous line, leaving that message ok
+            maybe_cr = ""
+            print(flush=True, file=self.prv_msg.stream)
+
+        numerical_progress = f"{message.bar_progress}/{message.bar_total}"
+        bar_percentage = min(message.bar_progress / message.bar_total, 1)  # type: ignore
+
+        # terminal size minus the text and numerical progress, and 5 (the cursor at the end,
+        # two spaces before and after the bar, and two surrounding brackets)
+        terminal_width = _get_terminal_width()
+        bar_width = terminal_width - len(message.text) - len(numerical_progress) - 5
+
+        # only show the bar with progress if there is enough space, otherwise just the
+        # message (truncated, if needed)
+        if bar_width > 0:
+            completed_width = math.floor(bar_width * min(bar_percentage, 100))
+            completed_bar = "#" * completed_width
+            empty_bar = " " * (bar_width - completed_width)
+            line = f"{maybe_cr}{message.text} [{completed_bar}{empty_bar}] {numerical_progress}"
+        else:
+            text = message.text[: terminal_width - 1]  # space for cursor
+            line = f"{maybe_cr}{text}"
+
+        print(line, end="", flush=True, file=message.stream)
+        self.unfinished_stream = message.stream
+
     def _show(self, msg: _MessageInfo) -> None:
         """Show the composed message."""
         # show the message in one way or the other only if there is a stream
         if msg.stream is None:
             return
 
-        # regular message, write it
-        self._write_line(msg)
+        if msg.bar_progress is None:
+            # regular message, write it
+            self._write_line(msg)
+        else:
+            # progress bar, write it
+            self._write_bar(msg)
         self.prv_msg = msg
 
     def _log(self, message: _MessageInfo) -> None:
@@ -172,6 +214,23 @@ class _Printer:
         if not avoid_logging:
             self._log(msg)
 
+    def progress_bar(
+        self,
+        stream: Optional[TextIO],
+        text: str,
+        progress: Union[int, float],
+        total: Union[int, float],
+    ) -> None:
+        """Show a progress bar to the given stream."""
+        msg = _MessageInfo(
+            stream=stream,
+            text=text.rstrip(),
+            bar_progress=progress,
+            bar_total=total,
+            ephemeral=True,  # so it gets eventually overwritten by other message
+        )
+        self._show(msg)
+
     def stop(self) -> None:
         """Stop the printing infrastructure.
 
@@ -182,6 +241,37 @@ class _Printer:
         if self.unfinished_stream is not None:
             print(flush=True, file=self.unfinished_stream)
         self.log.close()
+
+
+class _Progresser:
+    def __init__(  # pylint: disable=too-many-arguments
+        self,
+        printer: _Printer,
+        total: Union[int, float],
+        text: str,
+        stream: Optional[TextIO],
+        delta: bool,
+    ):
+        self.printer = printer
+        self.total = total
+        self.text = text
+        self.accumulated: Union[int, float] = 0
+        self.stream = stream
+        self.delta = delta
+
+    def __enter__(self) -> "_Progresser":
+        return self
+
+    def __exit__(self, *exc_info) -> Literal[False]:
+        return False  # do not consume any exception
+
+    def advance(self, amount: Union[int, float]) -> None:
+        """Show a progress bar according to the informed advance."""
+        if self.delta:
+            self.accumulated += amount
+        else:
+            self.accumulated = amount
+        self.printer.progress_bar(self.stream, self.text, self.accumulated, self.total)
 
 
 def _init_guard(wrapped_func):
@@ -291,6 +381,23 @@ class Emitter:
             ephemeral = False
 
         self.printer.show(stream, text, ephemeral=ephemeral, use_timestamp=use_timestamp)  # type: ignore
+
+    def progress_bar(self, text: str, total: Union[int, float], delta: bool = True) -> _Progresser:
+        """Progress information for a potentially long-running single step of a command.
+
+        E.g. a download or provisioning step.
+
+        Returns a context manager with a `.advance` method to call on each progress (passing the
+        delta progress, unless delta=False here, which implies that the calls to `.advance` should
+        pass the total so far).
+        """
+        # don't show progress if quiet
+        if self.mode == EmitterMode.QUIET:
+            stream = None
+        else:
+            stream = sys.stderr
+        self.printer.show(stream, text, ephemeral=True)  # type: ignore
+        return _Progresser(self.printer, total, text, stream, delta)  # type: ignore
 
     @_init_guard
     def ended_ok(self) -> None:

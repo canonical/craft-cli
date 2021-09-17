@@ -234,6 +234,60 @@ def test_02_progress_message_more_verbose(capsys, mode):
     assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)
 
 
+def test_03_progress_bar_quiet(capsys):
+    """Show a progress bar when quiet mode."""
+    emit = Emitter()
+    emit.init(EmitterMode.QUIET, "testapp", GREETING)
+    with emit.progress_bar("Uploading stuff", 1788) as progress:
+        for uploaded in [700, 700, 388]:
+            progress.advance(uploaded)
+    emit.ended_ok()
+
+    # nothing to the screen, first line to the log
+    expected_log = [
+        Line("Uploading stuff"),
+    ]
+    assert_outputs(capsys, emit, expected_log=expected_log)
+
+
+@pytest.mark.parametrize(
+    "mode",
+    [
+        EmitterMode.NORMAL,
+        EmitterMode.VERBOSE,
+        EmitterMode.TRACE,
+    ],
+)
+def test_03_progress_bar_other_modes(capsys, mode, monkeypatch):
+    """Show a progress bar in regular modes."""
+    # fake size so lines to compare are static
+    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 60)
+
+    emit = Emitter()
+
+    # patch `set_mode` so it's not really run and set the mode manually, as we do NOT want
+    # the "Logging execution..." message to be sent to screen because it's too long and will
+    # break the tests. Note we want the fake terminal width to be small so we can "draw" here
+    # in the test the progress bar we want to see.
+    emit.set_mode = lambda mode: None
+    emit.init(mode, "testapp", GREETING)
+    emit.mode = mode
+
+    with emit.progress_bar("Uploading stuff", 1788) as progress:
+        for uploaded in [700, 700, 388]:
+            progress.advance(uploaded)
+    emit.ended_ok()
+
+    expected_screen = [
+        Line("Uploading stuff", permanent=False),
+        Line("Uploading stuff [############                    ] 700/1788", permanent=False),
+        Line("Uploading stuff [########################       ] 1400/1788", permanent=False),
+        Line("Uploading stuff [###############################] 1788/1788", permanent=True),
+    ]
+    expected_log = expected_screen[:1]  # just the first line, no progress in the logs!
+    assert_outputs(capsys, emit, expected_err=expected_screen, expected_log=expected_log)
+
+
 @pytest.mark.parametrize(
     "mode",
     [

@@ -232,6 +232,170 @@ def test_writeline_having_previous_message_ephemeral(capsys, monkeypatch, log_fi
     assert not err
 
 
+# -- tests for the writing bar function
+
+
+def test_writebar_simple(capsys, monkeypatch, log_filepath):
+    """Complete verification of _write_line for a simple case."""
+    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 40)
+    printer = _Printer(log_filepath)
+
+    msg = _MessageInfo(sys.stdout, "test text", bar_progress=50, bar_total=100)
+    printer._write_bar(msg)
+    assert printer.unfinished_stream == sys.stdout
+
+    out, err = capsys.readouterr()
+    assert not err
+
+    # output completes the terminal width (leaving space for the cursor), and
+    # without a finishing newline
+    assert len(out) == 39
+    assert out == "test text [##########          ] 50/100"
+
+
+def test_writebar_simple_empty(capsys, monkeypatch, log_filepath):
+    """The indicated progress is zero."""
+    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 40)
+    printer = _Printer(log_filepath)
+
+    msg = _MessageInfo(sys.stdout, "test text", bar_progress=0, bar_total=100)
+    printer._write_bar(msg)
+
+    out, _ = capsys.readouterr()
+    assert len(out) == 39
+    assert out == "test text [                     ] 0/100"
+
+
+def test_writebar_simple_total(capsys, monkeypatch, log_filepath):
+    """The indicated progress is the total."""
+    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 40)
+    printer = _Printer(log_filepath)
+
+    msg = _MessageInfo(sys.stdout, "test text", bar_progress=100, bar_total=100)
+    printer._write_bar(msg)
+
+    out, _ = capsys.readouterr()
+    assert len(out) == 39
+    assert out == "test text [###################] 100/100"
+
+
+def test_writebar_simple_exceeding(capsys, monkeypatch, log_filepath):
+    """The indicated progress exceeds the total."""
+    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 40)
+    printer = _Printer(log_filepath)
+
+    msg = _MessageInfo(sys.stdout, "test text", bar_progress=120, bar_total=100)
+    printer._write_bar(msg)
+
+    out, _ = capsys.readouterr()
+    assert len(out) == 39
+    assert out == "test text [###################] 120/100"
+
+
+def test_writebar_too_long_text(capsys, monkeypatch, log_filepath):
+    """No space for the bar because the text is too long."""
+    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 20)
+    printer = _Printer(log_filepath)
+
+    test_text = "012345678901234567890123456789"
+    msg = _MessageInfo(sys.stdout, test_text, bar_progress=20, bar_total=100)
+    printer._write_bar(msg)
+
+    out, _ = capsys.readouterr()
+    assert len(out) == 19
+    assert out == "0123456789012345678"
+
+
+def test_writebar_too_long_artifacts(capsys, monkeypatch, log_filepath):
+    """No space for the bar with all proper artifacts."""
+    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 20)
+    printer = _Printer(log_filepath)
+
+    test_text = "01234567890123456"  # this would really fit
+    msg = _MessageInfo(sys.stdout, test_text, bar_progress=2000, bar_total=100000)  # big numbers!
+    printer._write_bar(msg)
+
+    out, _ = capsys.readouterr()
+    assert out == "01234567890123456"  # just the message, no space for "a whole progress bar"
+
+
+def test_writebar_different_stream(capsys, monkeypatch, log_filepath):
+    """Use a different stream."""
+    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 40)
+    printer = _Printer(log_filepath)
+
+    msg = _MessageInfo(sys.stderr, "test text", bar_progress=50, bar_total=100)
+    printer._write_bar(msg)
+    assert printer.unfinished_stream == sys.stderr
+
+    out, err = capsys.readouterr()
+    assert not out
+
+    # output completes the terminal width (leaving space for the cursor), and
+    # without a finishing newline
+    assert err == "test text [##########          ] 50/100"
+
+
+def test_writebar_having_previous_message_out(capsys, monkeypatch, log_filepath):
+    """There is a previous message to be completed (in stdout)."""
+    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 40)
+    printer = _Printer(log_filepath)
+    printer.prv_msg = _MessageInfo(sys.stdout, "previous text")
+
+    msg = _MessageInfo(sys.stdout, "test text", bar_progress=50, bar_total=100)
+    printer._write_bar(msg)
+
+    # stdout has the expected text but with an extra newline before
+    out, err = capsys.readouterr()
+    assert out == "\ntest text [##########          ] 50/100"
+    assert not err
+
+
+def test_writebar_having_previous_message_err(capsys, monkeypatch, log_filepath):
+    """There is a previous message to be completed (in stderr)."""
+    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 40)
+    printer = _Printer(log_filepath)
+    printer.prv_msg = _MessageInfo(sys.stderr, "previous text")
+
+    msg = _MessageInfo(sys.stdout, "test text", bar_progress=50, bar_total=100)
+    printer._write_bar(msg)
+
+    # stdout just has the expected text, and an extra newline was sent to stderr
+    out, err = capsys.readouterr()
+    assert out == "test text [##########          ] 50/100"
+    assert err == "\n"
+
+
+def test_writebar_having_previous_message_complete(capsys, monkeypatch, log_filepath):
+    """There is a previous message which is already complete."""
+    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 40)
+    printer = _Printer(log_filepath)
+    printer.prv_msg = _MessageInfo(sys.stdout, "previous text", end_line=True)
+
+    msg = _MessageInfo(sys.stdout, "test text", bar_progress=50, bar_total=100)
+    printer._write_bar(msg)
+
+    # stdout has the expected text without anything extra
+    out, err = capsys.readouterr()
+    assert out == "test text [##########          ] 50/100"
+    assert not err
+
+
+def test_writebar_having_previous_message_ephemeral(capsys, monkeypatch, log_filepath):
+    """There is a previous message to be overwritten."""
+    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 40)
+    printer = _Printer(log_filepath)
+    printer.prv_msg = _MessageInfo(sys.stdout, "previous text", ephemeral=True)
+
+    msg = _MessageInfo(sys.stdout, "test text", bar_progress=50, bar_total=100)
+    printer._write_bar(msg)
+
+    # stdout has the expected text but with a carriage return before
+    out, err = capsys.readouterr()
+    assert out == "\rtest text [##########          ] 50/100"
+    assert not err
+
+
 # -- tests for the logging handling
 
 
@@ -274,11 +438,16 @@ class RecordingPrinter(_Printer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.written_lines = []
+        self.written_bars = []
         self.logged = []
 
     def _write_line(self, message):
         """Overwrite the real one to avoid it and record the message."""
         self.written_lines.append(message)
+
+    def _write_bar(self, message):
+        """Overwrite the real one to avoid it and record the message."""
+        self.written_bars.append(message)
 
     def _log(self, message):
         """Overwrite the real one to avoid it and record the message."""
@@ -303,9 +472,12 @@ def test_show_defaults_no_stream(recording_printer):
     assert msg.use_timestamp is False
     assert msg.end_line is False
     assert before <= msg.created_at <= datetime.now()
+    assert msg.bar_progress is None
+    assert msg.bar_total is None
 
     # no stream, the message si not sent to screen
     assert not recording_printer.written_lines
+    assert not recording_printer.written_bars
 
     # check nothing was stored (as was not sent to the screen)
     assert recording_printer.prv_msg is None
@@ -318,6 +490,7 @@ def test_show_defaults(stream, recording_printer):
     recording_printer.show(stream, "test text")
 
     # check message written
+    assert not recording_printer.written_bars
     (msg,) = recording_printer.written_lines  # pylint: disable=unbalanced-tuple-unpacking
     assert msg.stream == stream
     assert msg.text == "test text"
@@ -325,6 +498,8 @@ def test_show_defaults(stream, recording_printer):
     assert msg.end_line is False
     assert msg.ephemeral is False
     assert before <= msg.created_at <= datetime.now()
+    assert msg.bar_progress is None
+    assert msg.bar_total is None
 
     # check it was properly stored for the future
     assert recording_printer.prv_msg is msg  # verify it's the same (not rebuilt) for timestamp
@@ -359,6 +534,40 @@ def test_show_ephemeral(recording_printer):
     recording_printer.show(sys.stdout, "test text", ephemeral=True)
     (msg,) = recording_printer.written_lines  # pylint: disable=unbalanced-tuple-unpacking
     assert msg.ephemeral is True
+
+
+@pytest.mark.parametrize("stream", [sys.stdout, sys.stderr])
+def test_progress_bar_valid_streams(stream, recording_printer):
+    """Write a progress bar for the different valid streams."""
+    before = datetime.now()
+    recording_printer.progress_bar(stream, "test text", 20, 100)
+
+    # check message written
+    (msg,) = recording_printer.written_bars  # pylint: disable=unbalanced-tuple-unpacking
+    assert msg.stream == stream
+    assert msg.text == "test text"
+    assert msg.bar_progress == 20
+    assert msg.bar_total == 100
+    assert msg.use_timestamp is False
+    assert msg.end_line is False
+    assert msg.ephemeral is True
+    assert before <= msg.created_at <= datetime.now()
+
+    # only write_bar was used
+    assert not recording_printer.written_lines
+    assert not recording_printer.logged
+
+    # check it was properly stored for the future
+    assert recording_printer.prv_msg is msg  # verify it's the same (not rebuilt) for timestamp
+
+
+def test_progress_bar_no_stream(recording_printer):
+    """No stream no message."""
+    recording_printer.progress_bar(None, "test text", 20, 100)
+    assert not recording_printer.written_lines
+    assert not recording_printer.written_bars
+    assert not recording_printer.logged
+    assert recording_printer.prv_msg is None
 
 
 # -- tests for stopping the printer
