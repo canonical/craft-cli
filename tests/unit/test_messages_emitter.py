@@ -297,7 +297,7 @@ def test_progressbar_in_useful_modes(get_initiated_emitter, mode):
 
 
 def test_progressbar_with_delta_false(get_initiated_emitter):
-    """Init _Progresser with delta=Falsee."""
+    """Init _Progresser with delta=False."""
     emitter = get_initiated_emitter(EmitterMode.QUIET)
     progresser = emitter.progress_bar("some text", 5000, delta=False)
     assert progresser.delta is False

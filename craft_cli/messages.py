@@ -267,6 +267,8 @@ class _Progresser:
 
     def advance(self, amount: Union[int, float]) -> None:
         """Show a progress bar according to the informed advance."""
+        if amount < 0:
+            raise ValueError("The advance amount cannot be negative")
         if self.delta:
             self.accumulated += amount
         else:

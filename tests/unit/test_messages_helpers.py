@@ -142,11 +142,11 @@ def test_progresser_absolute_mode():
     fake_printer = MagicMock()
     with _Progresser(fake_printer, total, text, stream, delta=False) as progresser:
         progresser.advance(20)
-        progresser.advance(30)
+        progresser.advance(30.0)
 
     assert fake_printer.mock_calls == [
         call.progress_bar(stream, text, 20, total),
-        call.progress_bar(stream, text, 30, total),
+        call.progress_bar(stream, text, 30.0, total),
     ]
 
 
@@ -157,13 +157,22 @@ def test_progresser_delta_mode():
     total = 123
     fake_printer = MagicMock()
     with _Progresser(fake_printer, total, text, stream, delta=True) as progresser:
-        progresser.advance(20)
+        progresser.advance(20.5)
         progresser.advance(30)
 
     assert fake_printer.mock_calls == [
-        call.progress_bar(stream, text, 20, total),
-        call.progress_bar(stream, text, 50, total),
+        call.progress_bar(stream, text, 20.5, total),
+        call.progress_bar(stream, text, 50.5, total),
     ]
+
+
+@pytest.mark.parametrize("delta", [False, True])
+def test_progresser_negative_values(delta):
+    """The progress cannot be negative."""
+    fake_printer = MagicMock()
+    with _Progresser(fake_printer, 123, "test text", sys.stdout, delta=delta) as progresser:
+        with pytest.raises(ValueError, match="The advance amount cannot be negative"):
+            progresser.advance(-1)
 
 
 def test_progresser_dont_consume_exceptions():
