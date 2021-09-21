@@ -280,9 +280,9 @@ def test_03_progress_bar_other_modes(capsys, mode, monkeypatch):
 
     expected_screen = [
         Line("Uploading stuff", permanent=False),
-        Line("Uploading stuff [############                    ] 700/1788", permanent=False),
-        Line("Uploading stuff [########################       ] 1400/1788", permanent=False),
-        Line("Uploading stuff [###############################] 1788/1788", permanent=True),
+        Line("Uploading stuff [████████████                    ] 700/1788", permanent=False),
+        Line("Uploading stuff [████████████████████████       ] 1400/1788", permanent=False),
+        Line("Uploading stuff [███████████████████████████████] 1788/1788", permanent=True),
     ]
     expected_log = expected_screen[:1]  # just the first line, no progress in the logs!
     assert_outputs(capsys, emit, expected_err=expected_screen, expected_log=expected_log)

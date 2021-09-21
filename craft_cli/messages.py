@@ -48,6 +48,9 @@ EmitterMode = enum.Enum("EmitterMode", "QUIET NORMAL VERBOSE TRACE")
 # the limit to how many log files to have
 _MAX_LOG_FILES = 5
 
+# the char used to draw the progress bar ('FULL BLOCK')
+PROGRESS_BAR_SYMBOL = "█"
+
 
 def _get_terminal_width() -> int:
     """Return the number of columns of the terminal."""
@@ -162,7 +165,7 @@ class _Printer:
         # message (truncated, if needed)
         if bar_width > 0:
             completed_width = math.floor(bar_width * min(bar_percentage, 100))
-            completed_bar = "#" * completed_width
+            completed_bar = PROGRESS_BAR_SYMBOL * completed_width
             empty_bar = " " * (bar_width - completed_width)
             line = f"{maybe_cr}{message.text} [{completed_bar}{empty_bar}] {numerical_progress}"
         else:

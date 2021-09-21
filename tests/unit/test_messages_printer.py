@@ -250,7 +250,7 @@ def test_writebar_simple(capsys, monkeypatch, log_filepath):
     # output completes the terminal width (leaving space for the cursor), and
     # without a finishing newline
     assert len(out) == 39
-    assert out == "test text [##########          ] 50/100"
+    assert out == "test text [██████████          ] 50/100"
 
 
 def test_writebar_simple_empty(capsys, monkeypatch, log_filepath):
@@ -276,7 +276,7 @@ def test_writebar_simple_total(capsys, monkeypatch, log_filepath):
 
     out, _ = capsys.readouterr()
     assert len(out) == 39
-    assert out == "test text [###################] 100/100"
+    assert out == "test text [███████████████████] 100/100"
 
 
 def test_writebar_simple_exceeding(capsys, monkeypatch, log_filepath):
@@ -289,7 +289,7 @@ def test_writebar_simple_exceeding(capsys, monkeypatch, log_filepath):
 
     out, _ = capsys.readouterr()
     assert len(out) == 39
-    assert out == "test text [###################] 120/100"
+    assert out == "test text [███████████████████] 120/100"
 
 
 def test_writebar_too_long_text(capsys, monkeypatch, log_filepath):
@@ -333,7 +333,7 @@ def test_writebar_different_stream(capsys, monkeypatch, log_filepath):
 
     # output completes the terminal width (leaving space for the cursor), and
     # without a finishing newline
-    assert err == "test text [##########          ] 50/100"
+    assert err == "test text [██████████          ] 50/100"
 
 
 def test_writebar_having_previous_message_out(capsys, monkeypatch, log_filepath):
@@ -347,7 +347,7 @@ def test_writebar_having_previous_message_out(capsys, monkeypatch, log_filepath)
 
     # stdout has the expected text but with an extra newline before
     out, err = capsys.readouterr()
-    assert out == "\ntest text [##########          ] 50/100"
+    assert out == "\ntest text [██████████          ] 50/100"
     assert not err
 
 
@@ -362,7 +362,7 @@ def test_writebar_having_previous_message_err(capsys, monkeypatch, log_filepath)
 
     # stdout just has the expected text, and an extra newline was sent to stderr
     out, err = capsys.readouterr()
-    assert out == "test text [##########          ] 50/100"
+    assert out == "test text [██████████          ] 50/100"
     assert err == "\n"
 
 
@@ -377,7 +377,7 @@ def test_writebar_having_previous_message_complete(capsys, monkeypatch, log_file
 
     # stdout has the expected text without anything extra
     out, err = capsys.readouterr()
-    assert out == "test text [##########          ] 50/100"
+    assert out == "test text [██████████          ] 50/100"
     assert not err
 
 
@@ -392,7 +392,7 @@ def test_writebar_having_previous_message_ephemeral(capsys, monkeypatch, log_fil
 
     # stdout has the expected text but with a carriage return before
     out, err = capsys.readouterr()
-    assert out == "\rtest text [##########          ] 50/100"
+    assert out == "\rtest text [██████████          ] 50/100"
     assert not err
 
 
