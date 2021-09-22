@@ -274,6 +274,46 @@ def test_progress_in_verboseish_modes(get_initiated_emitter, mode):
     ]
 
 
+@pytest.mark.parametrize(
+    "mode",
+    [
+        EmitterMode.NORMAL,
+        EmitterMode.VERBOSE,
+        EmitterMode.TRACE,
+    ],
+)
+def test_progressbar_in_useful_modes(get_initiated_emitter, mode):
+    """Show the initial message to stderr and init _Progresser correctly."""
+    emitter = get_initiated_emitter(mode)
+    progresser = emitter.progress_bar("some text", 5000)
+
+    assert emitter.printer_calls == [
+        call().show(sys.stderr, "some text", ephemeral=True),
+    ]
+    assert progresser.total == 5000
+    assert progresser.text == "some text"
+    assert progresser.stream == sys.stderr
+    assert progresser.delta is True
+
+
+def test_progressbar_with_delta_false(get_initiated_emitter):
+    """Init _Progresser with delta=False."""
+    emitter = get_initiated_emitter(EmitterMode.QUIET)
+    progresser = emitter.progress_bar("some text", 5000, delta=False)
+    assert progresser.delta is False
+
+
+def test_progressbar_in_quiet_mode(get_initiated_emitter):
+    """Do not show the initial message (but log it) and init _Progresser with stream in None."""
+    emitter = get_initiated_emitter(EmitterMode.QUIET)
+    progresser = emitter.progress_bar("some text", 5000)
+
+    assert emitter.printer_calls == [
+        call().show(None, "some text", ephemeral=True),
+    ]
+    assert progresser.stream is None
+
+
 # -- tests for stopping the machinery
 
 

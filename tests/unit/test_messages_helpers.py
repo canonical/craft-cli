@@ -18,12 +18,14 @@
 
 import datetime
 import re
+import sys
+from unittest.mock import MagicMock, call
 
 import appdirs
 import pytest
 
 from craft_cli import messages
-from craft_cli.messages import _get_log_filepath
+from craft_cli.messages import _get_log_filepath, _Progresser
 
 # -- tests for the log filepath provider
 
@@ -127,3 +129,55 @@ def test_getlogpath_ignore_other_files(test_log_dir, monkeypatch):
     new_fpath.touch()
     present_logs = sorted((test_log_dir / "testapp").iterdir())
     assert present_logs == [f_aaa] + previous_fpaths[1:] + [new_fpath, f_zzz]
+
+
+# -- tests for the _Progresser class
+
+
+def test_progresser_absolute_mode():
+    """Just use _Progresser as a context manager in absolute mode."""
+    stream = sys.stdout
+    text = "test text"
+    total = 123
+    fake_printer = MagicMock()
+    with _Progresser(fake_printer, total, text, stream, delta=False) as progresser:
+        progresser.advance(20)
+        progresser.advance(30.0)
+
+    assert fake_printer.mock_calls == [
+        call.progress_bar(stream, text, 20, total),
+        call.progress_bar(stream, text, 30.0, total),
+    ]
+
+
+def test_progresser_delta_mode():
+    """Just use _Progresser as a context manager in delta mode."""
+    stream = sys.stdout
+    text = "test text"
+    total = 123
+    fake_printer = MagicMock()
+    with _Progresser(fake_printer, total, text, stream, delta=True) as progresser:
+        progresser.advance(20.5)
+        progresser.advance(30)
+
+    assert fake_printer.mock_calls == [
+        call.progress_bar(stream, text, 20.5, total),
+        call.progress_bar(stream, text, 50.5, total),
+    ]
+
+
+@pytest.mark.parametrize("delta", [False, True])
+def test_progresser_negative_values(delta):
+    """The progress cannot be negative."""
+    fake_printer = MagicMock()
+    with _Progresser(fake_printer, 123, "test text", sys.stdout, delta=delta) as progresser:
+        with pytest.raises(ValueError, match="The advance amount cannot be negative"):
+            progresser.advance(-1)
+
+
+def test_progresser_dont_consume_exceptions():
+    """It lets the exceptions go through."""
+    fake_printer = MagicMock()
+    with pytest.raises(ValueError):
+        with _Progresser(fake_printer, 123, "test text", sys.stdout, delta=True):
+            raise ValueError()
