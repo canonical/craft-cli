@@ -100,11 +100,25 @@ def _get_log_filepath(appname: str) -> pathlib.Path:
 
 
 class _Spinner(threading.Thread):
-    """A supervisor thread that will repeat long-standing messages with a spinner besides it."""
+    """A supervisor thread that will repeat long-standing messages with a spinner besides it.
+
+    This will be a long-lived single thread that will supervise each message received
+    through the `supervise` method, and when it stays too long, the printer's `spin`
+    will be called with that message and a text to "draw" a spinner, including the elapsed
+    time.
+
+    The timing related part of the code uses two constants: _SPINNER_THRESHOLD is how
+    many seconds before activating the spinner for the message, and _SPINNER_DELAY is
+    the time between `spin` calls.
+
+    When a new message arrives (or None, to indicate that there is nothing to supervise) and
+    the previous message was "being spinned", a last `spin` call will be done to clean
+    the spinner.
+    """
 
     def __init__(self, printer: "_Printer"):
         super().__init__()
-        # special flag used to stop itself
+        # special flag used to stop the spinner thread
         self.stop_flag = object()
 
         # daemon mode, so if the app crashes this thread does not holds everything
