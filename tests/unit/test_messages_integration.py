@@ -26,6 +26,9 @@ Most of the different cases here mimic the specification table in:
 
 import logging
 import re
+import subprocess
+import sys
+import textwrap
 from dataclasses import dataclass
 
 import pytest
@@ -318,6 +321,74 @@ def test_04_5_trace_in_trace(capsys):
 
     expected = [
         Line("The meaning of life is 42.", timestamp=True),
+    ]
+    assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)
+
+
+@pytest.mark.parametrize(
+    "mode",
+    [
+        EmitterMode.QUIET,
+        EmitterMode.NORMAL,
+    ],
+)
+def test_04_third_party_output_other_modes(capsys, tmp_path, mode):
+    """Manage the streams produced for sub-executions, more quiet modes."""
+    # something to execute
+    script = tmp_path / "script.py"
+    script.write_text(
+        textwrap.dedent(
+            """
+        import sys
+        print("foobar out", flush=True)
+        print("foobar err", file=sys.stderr, flush=True)
+    """
+        )
+    )
+    emit = Emitter()
+    emit.init(mode, "testapp", GREETING)
+    with emit.open_stream("Testing stream") as stream:
+        subprocess.run([sys.executable, script], stdout=stream, stderr=stream, check=True)
+    emit.ended_ok()
+
+    expected = [
+        Line("Testing stream", timestamp=True),
+        Line(":: foobar out", timestamp=True),
+        Line(":: foobar err", timestamp=True),
+    ]
+    assert_outputs(capsys, emit, expected_log=expected)
+
+
+@pytest.mark.parametrize(
+    "mode",
+    [
+        EmitterMode.VERBOSE,
+        EmitterMode.TRACE,
+    ],
+)
+def test_04_third_party_output_verbose(capsys, tmp_path, mode):
+    """Manage the streams produced for sub-executions, debug and verbose mode."""
+    # something to execute
+    script = tmp_path / "script.py"
+    script.write_text(
+        textwrap.dedent(
+            """
+        import sys
+        print("foobar out", flush=True)
+        print("foobar err", file=sys.stderr, flush=True)
+    """
+        )
+    )
+    emit = Emitter()
+    emit.init(mode, "testapp", GREETING)
+    with emit.open_stream("Testing stream") as stream:
+        subprocess.run([sys.executable, script], stdout=stream, stderr=stream, check=True)
+    emit.ended_ok()
+
+    expected = [
+        Line("Testing stream", timestamp=True),
+        Line(":: foobar out", timestamp=True),
+        Line(":: foobar err", timestamp=True),
     ]
     assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)
 
