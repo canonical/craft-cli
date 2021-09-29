@@ -18,18 +18,31 @@
 
 import shutil
 import sys
+import threading
 from datetime import datetime
 
 import pytest
 
 from craft_cli import messages
-from craft_cli.messages import _MessageInfo, _Printer
+from craft_cli.messages import _MessageInfo, _Printer, _Spinner
 
 
 @pytest.fixture
 def log_filepath(tmp_path):
     """Provide a temporary log file path."""
     return tmp_path / "tempfilepath.log"
+
+
+@pytest.fixture(autouse=True)
+def thread_guard(tmp_path):
+    """Ensure that any started spinner is stopped after the test."""
+    # let's run the test first
+    yield
+
+    # stop all spinner threads
+    for thread in threading.enumerate():
+        if isinstance(thread, _Spinner):
+            thread.stop()
 
 
 # -- simple helpers
@@ -232,6 +245,62 @@ def test_writeline_having_previous_message_ephemeral(capsys, monkeypatch, log_fi
     assert not err
 
 
+@pytest.mark.parametrize(
+    "prv_msg",
+    [
+        None,
+        _MessageInfo(sys.stdout, "previous text", end_line=True),
+        _MessageInfo(sys.stdout, "previous text", ephemeral=True),
+    ],
+)
+def test_writeline_spintext_simple(capsys, monkeypatch, log_filepath, prv_msg):
+    """A message with spintext."""
+    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 40)
+    printer = _Printer(log_filepath)
+    printer.prv_msg = prv_msg  # will overwrite previous message not matter what
+
+    msg = _MessageInfo(sys.stdout, "test text")
+    printer._write_line(msg, spintext=" * 3.15s")
+
+    # stdout has the expected text, overwriting previous message, with the spin text at the end
+    out, err = capsys.readouterr()
+    assert len(out) == 40  # the CR + the regular 39 chars
+    assert out == "\rtest text * 3.15s                      "
+    assert not err
+
+
+def test_writeline_spintext_message_too_long(capsys, monkeypatch, log_filepath):
+    """A message with spintext that is too long only overwrites the last "real line"."""
+    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 20)
+    printer = _Printer(log_filepath)
+
+    msg = _MessageInfo(sys.stdout, "0.1.2.3.4.5.6.7.8.9.a.b.c.d.e.")
+    printer._write_line(msg, spintext=" * 3.15s")
+
+    out, err = capsys.readouterr()
+    assert not err
+
+    # output the last line only (with the spin text, of course)
+    assert len(out) == 20  # the CR + the regular 19 chars
+    assert out == "\ra.b.c.d.e. * 3.15s "
+
+
+def test_writeline_spintext_length_just_exceeded(capsys, monkeypatch, log_filepath):
+    """A message that would fit, but it just exceeds the line length because of the spin text."""
+    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 20)
+    printer = _Printer(log_filepath)
+
+    msg = _MessageInfo(sys.stdout, "0x1x2x3x4x5x6x7x8x")  # len 16, it would fit!
+    printer._write_line(msg, spintext=" * 3.15s")  # adding this would exceed the length
+
+    out, err = capsys.readouterr()
+    assert not err
+
+    # the message is slightly truncated so the spin text does not trigger a multiline situation
+    assert len(out) == 20  # the CR + the regular 19 chars
+    assert out == "\r0x1x2x3x4x… * 3.15s"
+
+
 # -- tests for the writing bar function
 
 
@@ -429,6 +498,17 @@ def test_logfile_used(log_filepath):
 # -- tests for message showing external API
 
 
+class RecordingSpinner(_Spinner):
+    """A Spinner that records what is sent to supervision."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.supervised = []
+
+    def supervise(self, message):
+        self.supervised.append(message)
+
+
 class RecordingPrinter(_Printer):
     """A Printer isolated from outputs.
 
@@ -440,10 +520,14 @@ class RecordingPrinter(_Printer):
         self.written_lines = []
         self.written_bars = []
         self.logged = []
+        self.spinner = RecordingSpinner(self)
 
-    def _write_line(self, message):
-        """Overwrite the real one to avoid it and record the message."""
-        self.written_lines.append(message)
+    def _write_line(self, message, *, spintext=None):
+        """Overwrite the real one to avoid it and record the message and maybe the spintext."""
+        if spintext is not None:
+            self.written_lines.append((message, spintext))
+        else:
+            self.written_lines.append(message)
 
     def _write_bar(self, message):
         """Overwrite the real one to avoid it and record the message."""
@@ -482,6 +566,9 @@ def test_show_defaults_no_stream(recording_printer):
     # check nothing was stored (as was not sent to the screen)
     assert recording_printer.prv_msg is None
 
+    # the spinner didn't receive anything
+    assert not recording_printer.spinner.supervised
+
 
 @pytest.mark.parametrize("stream", [sys.stdout, sys.stderr])
 def test_show_defaults(stream, recording_printer):
@@ -507,6 +594,9 @@ def test_show_defaults(stream, recording_printer):
     # check it was also logged
     (logged,) = recording_printer.logged
     assert msg is logged
+
+    # the spinner now has the shown message to supervise
+    assert recording_printer.spinner.supervised == [msg]
 
 
 def test_show_use_timestamp(recording_printer):
@@ -539,6 +629,9 @@ def test_show_ephemeral(recording_printer):
 @pytest.mark.parametrize("stream", [sys.stdout, sys.stderr])
 def test_progress_bar_valid_streams(stream, recording_printer):
     """Write a progress bar for the different valid streams."""
+    # set a message in the spinner, to check that writing a progress bar will remove it
+    recording_printer.spinner.prv_msg = _MessageInfo(sys.stdout, "test text")
+
     before = datetime.now()
     recording_printer.progress_bar(stream, "test text", 20, 100)
 
@@ -559,6 +652,23 @@ def test_progress_bar_valid_streams(stream, recording_printer):
 
     # check it was properly stored for the future
     assert recording_printer.prv_msg is msg  # verify it's the same (not rebuilt) for timestamp
+
+    # the spinner message was removed
+    assert recording_printer.spinner.supervised == [None]
+
+
+def test_spin(recording_printer):
+    """Write a message using a spin text."""
+    msg = _MessageInfo(sys.stdout, "test text")
+    spin_text = "test spint text"
+    recording_printer.spin(msg, spin_text)
+
+    # check message written
+    assert not recording_printer.written_bars
+    assert len(recording_printer.written_lines) == 1
+    written_msg, written_spintext = recording_printer.written_lines[0]
+    assert written_msg is msg
+    assert written_spintext is spin_text
 
 
 def test_progress_bar_no_stream(recording_printer):
@@ -604,3 +714,11 @@ def test_stop_streams_unfinished_err(capsys, log_filepath):
     out, err = capsys.readouterr()
     assert not out
     assert err == "\n"
+
+
+def test_stop_spinner(log_filepath):
+    """Stop the spinner."""
+    printer = _Printer(log_filepath)
+    assert printer.spinner.is_alive()
+    printer.stop()
+    assert not printer.spinner.is_alive()
