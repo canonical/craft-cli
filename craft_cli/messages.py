@@ -496,6 +496,7 @@ class Emitter:
 
         self.printer.show(stream, text, ephemeral=ephemeral, use_timestamp=use_timestamp)  # type: ignore
 
+    @_init_guard
     def progress_bar(self, text: str, total: Union[int, float], delta: bool = True) -> _Progresser:
         """Progress information for a potentially long-running single step of a command.
 
