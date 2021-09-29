@@ -91,7 +91,7 @@ def _get_log_filepath(appname: str) -> pathlib.Path:
     filename = f"{appname}-{datetime.now():%Y%m%d-%H%M%S.%f}.log"
 
     # ensure the basedir is there
-    basedir.mkdir(exist_ok=True)
+    basedir.mkdir(exist_ok=True, parents=True)
 
     # check if we have too many logs in the dir, and remove the exceeding ones (note
     # that the defined limit includes the about-to-be-created file, that's why the "-1")

@@ -132,6 +132,17 @@ def test_getlogpath_ignore_other_files(test_log_dir, monkeypatch):
     assert present_logs == [f_aaa] + previous_fpaths[1:] + [new_fpath, f_zzz]
 
 
+def test_getlogpath_deep_dirs(tmp_path, monkeypatch):
+    """The log directory is inside a path that does not exist yet."""
+    dirpath = tmp_path / "foo" / "bar" / "testlogdir"
+    monkeypatch.setattr(appdirs, "user_log_dir", lambda: dirpath)
+    fpath = _get_log_filepath("testapp")
+
+    # check the file is inside the proper dir and that it exists
+    assert fpath.parent == dirpath / "testapp"
+    assert fpath.parent.exists
+
+
 # -- tests for the _Progresser class
 
 
