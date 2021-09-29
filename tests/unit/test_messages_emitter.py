@@ -114,7 +114,7 @@ def test_init_verboseish(mode, tmp_path, monkeypatch):
     ]
 
 
-@pytest.mark.parametrize("method_name", ["set_mode", "message", "ended_ok"])
+@pytest.mark.parametrize("method_name", [x for x in dir(Emitter) if x[0] != "_" and x != "init"])
 def test_needs_init(method_name):
     """Check that calling other methods needs emitter first to be initiated."""
     emitter = Emitter()
