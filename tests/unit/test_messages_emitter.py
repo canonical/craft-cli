@@ -314,6 +314,52 @@ def test_progressbar_in_quiet_mode(get_initiated_emitter):
     assert progresser.stream is None
 
 
+@pytest.mark.parametrize(
+    "mode",
+    [
+        EmitterMode.QUIET,
+        EmitterMode.NORMAL,
+    ],
+)
+def test_openstream_in_quietish_modes(get_initiated_emitter, mode):
+    """Return a stream context manager with the output stream in None."""
+    emitter = get_initiated_emitter(mode)
+
+    with patch("craft_cli.messages._StreamContextManager") as stream_context_manager_mock:
+        instantiated_cm = object()
+        stream_context_manager_mock.return_value = instantiated_cm
+        context_manager = emitter.open_stream("some text")
+
+    assert emitter.printer_calls == []
+    assert context_manager is instantiated_cm
+    assert stream_context_manager_mock.mock_calls == [
+        call(emitter.printer, "some text", None),
+    ]
+
+
+@pytest.mark.parametrize(
+    "mode",
+    [
+        EmitterMode.VERBOSE,
+        EmitterMode.TRACE,
+    ],
+)
+def test_openstream_in_verboseish_modes(get_initiated_emitter, mode):
+    """Return a stream context manager with stderr as the output stream."""
+    emitter = get_initiated_emitter(mode)
+
+    with patch("craft_cli.messages._StreamContextManager") as stream_context_manager_mock:
+        instantiated_cm = object()
+        stream_context_manager_mock.return_value = instantiated_cm
+        context_manager = emitter.open_stream("some text")
+
+    assert emitter.printer_calls == []
+    assert context_manager is instantiated_cm
+    assert stream_context_manager_mock.mock_calls == [
+        call(emitter.printer, "some text", sys.stderr),
+    ]
+
+
 # -- tests for stopping the machinery
 
 

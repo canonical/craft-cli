@@ -19,8 +19,10 @@
 import enum
 import itertools
 import math
+import os
 import pathlib
 import queue
+import select
 import shutil
 import sys
 import threading
@@ -60,6 +62,9 @@ _SPINNER_THRESHOLD = 2
 
 # seconds between each spinner char
 _SPINNER_DELAY = 0.1
+
+# the size of bytes chunk that the pipe reader will read at once
+_PIPE_READER_CHUNK_SIZE = 4096
 
 
 def _get_terminal_width() -> int:
@@ -388,6 +393,92 @@ class _Progresser:
         self.printer.progress_bar(self.stream, self.text, self.accumulated, self.total)
 
 
+class _PipeReaderThread(threading.Thread):
+    """A thread that reads bytes from a pipe and write lines to the Printer."""
+
+    def __init__(self, pipe: int, printer: _Printer, stream: Optional[TextIO]):
+        super().__init__()
+
+        # the pipe to read from
+        self.read_pipe = pipe
+
+        # special flag used to stop the pipe reader thread
+        self.stop_flag = False
+
+        # where to collect the content that is being read but yeat not written (waiting for
+        # a newline)
+        self.remaining_content = b""
+
+        # printer and stream to write the assembled lines
+        self.printer = printer
+        self.stream = stream
+
+    def _write(self, data: bytes) -> None:
+        """Convert the byte stream into unicode lines and send it to the printer."""
+        pointer = 0
+        data = self.remaining_content + data
+        while True:
+            # get the position of next newline (find starts in pointer position)
+            newline_position = data.find(b"\n", pointer)
+
+            # no more newlines, store the rest of data for the next time and break
+            if newline_position == -1:
+                self.remaining_content = data[pointer:]
+                break
+
+            # get the useful line and update pointer for next cycle (plus one, to
+            # skip the new line itself)
+            useful_line = data[pointer:newline_position]
+            pointer = newline_position + 1
+
+            # write the useful line to intended outputs
+            unicode_line = useful_line.decode("utf8")
+            text = f":: {unicode_line}"
+            self.printer.show(self.stream, text, end_line=True, use_timestamp=True)
+
+    def run(self) -> None:
+        while True:
+            rlist, _, _ = select.select([self.read_pipe], [], [], 0.1)
+            if rlist:
+                data = os.read(self.read_pipe, _PIPE_READER_CHUNK_SIZE)
+                self._write(data)
+            elif self.stop_flag:
+                # only quit when nothing left to read
+                break
+
+    def stop(self) -> None:
+        """Stop the thread.
+
+        This flag ourselves to quit, but then makes the main thread (which is the one calling
+        this method) to wait ourselves to finish.
+        """
+        self.stop_flag = True
+        self.join()
+
+
+class _StreamContextManager:
+    """A context manager that provides a pipe for subprocess to write its output."""
+
+    def __init__(self, printer: _Printer, text: str, stream: Optional[TextIO]):
+        # open a pipe; subprocess will write in it, we will read from the other end
+        pipe_r, self.pipe_w = os.pipe()
+
+        # show the intended text (explicitly asking for a complete line) before passing the
+        # output command to the pip-reading thread
+        printer.show(stream, text, end_line=True, use_timestamp=True)
+
+        # enable the thread to read and show what comes through the pipe
+        self.pipe_reader = _PipeReaderThread(pipe_r, printer, stream)
+
+    def __enter__(self):
+        self.pipe_reader.start()
+        return self.pipe_w
+
+    def __exit__(self, *exc_info):
+        self.pipe_reader.stop()
+        return False  # do not consume any exception
+
+
 def _init_guard(wrapped_func):
     """Decorate Emitter methods to be called *after* init."""
 
@@ -513,6 +604,16 @@ class Emitter:
             stream = sys.stderr
         self.printer.show(stream, text, ephemeral=True)  # type: ignore
         return _Progresser(self.printer, total, text, stream, delta)  # type: ignore
+
+    @_init_guard
+    def open_stream(self, text: str):
+        """Open a stream context manager to get messages from subprocesses."""
+        # don't show third party streams if quiet or normal
+        if self.mode == EmitterMode.QUIET or self.mode == EmitterMode.NORMAL:
+            stream = None
+        else:
+            stream = sys.stderr
+        return _StreamContextManager(self.printer, text, stream)  # type: ignore
 
     @_init_guard
     def ended_ok(self) -> None:
