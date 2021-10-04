@@ -481,7 +481,7 @@ class _StreamContextManager:
 
 
 class _Handler(logging.Handler):
-    """A logging handler that emit the messages through the core Printer."""
+    """A logging handler that emits messages through the core Printer."""
 
     # a table to map which logging messages show to the screen according to the selected mode
     mode_to_log_map = {
@@ -501,7 +501,7 @@ class _Handler(logging.Handler):
         self.mode = EmitterMode.QUIET
 
     def emit(self, record: logging.LogRecord) -> None:
-        """Send the message to the printer."""
+        """Send the message in the LogRecord to the printer."""
         use_timestamp = self.mode == EmitterMode.VERBOSE or self.mode == EmitterMode.TRACE
         threshold = self.mode_to_log_map[self.mode]
         stream = sys.stderr if record.levelno >= threshold else None
