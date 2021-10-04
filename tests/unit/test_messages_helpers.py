@@ -17,6 +17,7 @@
 """Tests that check the different helpers in the messages module."""
 
 import datetime
+import logging
 import re
 import sys
 import time
@@ -26,7 +27,15 @@ import appdirs
 import pytest
 
 from craft_cli import messages
-from craft_cli.messages import _get_log_filepath, _MessageInfo, _Printer, _Progresser, _Spinner
+from craft_cli.messages import (
+    EmitterMode,
+    _get_log_filepath,
+    _Handler,
+    _MessageInfo,
+    _Printer,
+    _Progresser,
+    _Spinner,
+)
 
 # -- tests for the log filepath provider
 
@@ -321,3 +330,88 @@ def test_spinner_in_the_vacuum(spinner, monkeypatch):
 
     # nothing spinned, as no message to spin
     assert spinner.printer.spinned == []
+
+
+# -- tests for the _Handler class
+
+
+@pytest.fixture
+def handler(monkeypatch):
+    """Provide a handler hooked to the logging system and with a patched printer."""
+    handler = _Handler(MagicMock())
+    logger = logging.getLogger()
+    logger.setLevel(0)
+    logger.addHandler(handler)
+    return handler
+
+
+def test_handler_init(handler):
+    """Default _Handler values."""
+    assert isinstance(handler, logging.Handler)
+    assert handler.level == 0
+    assert handler.mode == EmitterMode.QUIET  # type: ignore
+
+
+def test_handler_emit_full_message(handler):
+    """Check how the text is retrieved from the logging system."""
+    handler.mode = EmitterMode.QUIET
+    logging.getLogger().error("test message %s", 23)
+
+    assert handler.printer.mock_calls == [
+        call.show(sys.stderr, "test message 23", use_timestamp=False),
+    ]
+
+
+def test_handler_emit_quiet(handler):
+    """Check emit behaviour in QUIET mode."""
+    handler.mode = EmitterMode.QUIET
+
+    logger = logging.getLogger()
+    logger.error("test error")
+    logger.warning("test warning")
+    logger.info("test info")
+    logger.debug("test debug")
+
+    assert handler.printer.mock_calls == [
+        call.show(sys.stderr, "test error", use_timestamp=False),
+        call.show(sys.stderr, "test warning", use_timestamp=False),
+        call.show(None, "test info", use_timestamp=False),
+        call.show(None, "test debug", use_timestamp=False),
+    ]
+
+
+def test_handler_emit_normal(handler):
+    """Check emit behaviour in NORMAL mode."""
+    handler.mode = EmitterMode.NORMAL
+
+    logger = logging.getLogger()
+    logger.error("test error")
+    logger.warning("test warning")
+    logger.info("test info")
+    logger.debug("test debug")
+
+    assert handler.printer.mock_calls == [
+        call.show(sys.stderr, "test error", use_timestamp=False),
+        call.show(sys.stderr, "test warning", use_timestamp=False),
+        call.show(sys.stderr, "test info", use_timestamp=False),
+        call.show(None, "test debug", use_timestamp=False),
+    ]
+
+
+@pytest.mark.parametrize("mode", [EmitterMode.VERBOSE, EmitterMode.TRACE])
+def test_handler_emit_verboseish(handler, mode):
+    """Check emit behaviour in more verbose modes."""
+    handler.mode = mode
+
+    logger = logging.getLogger()
+    logger.error("test error")
+    logger.warning("test warning")
+    logger.info("test info")
+    logger.debug("test debug")
+
+    assert handler.printer.mock_calls == [
+        call.show(sys.stderr, "test error", use_timestamp=True),
+        call.show(sys.stderr, "test warning", use_timestamp=True),
+        call.show(sys.stderr, "test info", use_timestamp=True),
+        call.show(sys.stderr, "test debug", use_timestamp=True),
+    ]
