@@ -115,7 +115,7 @@ def assert_outputs(capsys, emit, expected_out=None, expected_err=None, expected_
 
     # get the logged text, always validating a valid timestamp format at the beginning
     # of each line
-    with open(emit.log_filepath, "rt", encoding="utf8") as filehandler:
+    with open(emit._log_filepath, "rt", encoding="utf8") as filehandler:
         log_lines = filehandler.readlines()
     logged_texts = []
     for line in log_lines:
@@ -274,7 +274,7 @@ def test_03_progress_bar_other_modes(capsys, mode, monkeypatch):
     # in the test the progress bar we want to see.
     emit.set_mode = lambda mode: None
     emit.init(mode, "testapp", GREETING)
-    emit.mode = mode
+    emit._mode = mode
 
     with emit.progress_bar("Uploading stuff", 1788) as progress:
         for uploaded in [700, 700, 388]:
