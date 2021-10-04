@@ -483,7 +483,7 @@ def _init_guard(wrapped_func):
     """Decorate Emitter methods to be called *after* init."""
 
     def func(self, *args, **kwargs):
-        if not self.initiated:
+        if not self._initiated:  # pylint: disable=protected-access
             raise RuntimeError("Emitter needs to be initiated first")
         return wrapped_func(self, *args, **kwargs)
 
@@ -502,38 +502,38 @@ class Emitter:
 
     def __init__(self):
         # these attributes will be set at "real init time", with the `init` method below
-        self.greeting = None
-        self.printer = None
-        self.mode = None
-        self.initiated = False
-        self.log_filepath = None
+        self._greeting = None
+        self._printer = None
+        self._mode = None
+        self._initiated = False
+        self._log_filepath = None
 
     def init(self, mode: EmitterMode, appname: str, greeting: str):
         """Initialize the emitter; this must be called once and before emitting any messages."""
-        self.greeting = greeting
+        self._greeting = greeting
 
         # create a log file, bootstrap the printer, and before anything else send the greeting
         # to the file
-        self.log_filepath = _get_log_filepath(appname)
-        self.printer = _Printer(self.log_filepath)
-        self.printer.show(None, greeting)
+        self._log_filepath = _get_log_filepath(appname)
+        self._printer = _Printer(self._log_filepath)
+        self._printer.show(None, greeting)
 
-        self.initiated = True
+        self._initiated = True
         self.set_mode(mode)
 
     @_init_guard
     def set_mode(self, mode: EmitterMode) -> None:
         """Set the mode of the emitter."""
-        self.mode = mode
+        self._mode = mode
 
-        if self.mode == EmitterMode.VERBOSE or self.mode == EmitterMode.TRACE:
+        if self._mode == EmitterMode.VERBOSE or self._mode == EmitterMode.TRACE:
             # send the greeting to the screen before any further messages
             msgs = [
-                self.greeting,
-                f"Logging execution to {str(self.log_filepath)!r}",
+                self._greeting,
+                f"Logging execution to {str(self._log_filepath)!r}",
             ]
             for msg in msgs:
-                self.printer.show(  # type: ignore
+                self._printer.show(  # type: ignore
                     sys.stderr, msg, use_timestamp=True, avoid_logging=True, end_line=True
                 )
 
@@ -546,9 +546,9 @@ class Emitter:
         with intermediate=True (which will include timestamp in verbose/trace mode).
         """
         use_timestamp = bool(
-            intermediate and (self.mode == EmitterMode.VERBOSE or self.mode == EmitterMode.TRACE)
+            intermediate and (self._mode == EmitterMode.VERBOSE or self._mode == EmitterMode.TRACE)
         )
-        self.printer.show(sys.stdout, text, use_timestamp=use_timestamp)  # type: ignore
+        self._printer.show(sys.stdout, text, use_timestamp=use_timestamp)  # type: ignore
 
     @_init_guard
     def trace(self, text: str) -> None:
@@ -557,8 +557,8 @@ class Emitter:
         This is to record everything that the user may not want to normally see, but it's
         useful for postmortem analysis.
         """
-        stream = sys.stderr if self.mode == EmitterMode.TRACE else None
-        self.printer.show(stream, text, use_timestamp=True)  # type: ignore
+        stream = sys.stderr if self._mode == EmitterMode.TRACE else None
+        self._printer.show(stream, text, use_timestamp=True)  # type: ignore
 
     @_init_guard
     def progress(self, text: str) -> None:
@@ -569,12 +569,12 @@ class Emitter:
         These messages will be truncated to the terminal's width, and overwritten by the next
         line (unless verbose/trace mode).
         """
-        if self.mode == EmitterMode.QUIET:
+        if self._mode == EmitterMode.QUIET:
             # will not be shown in the screen (always logged to the file)
             stream = None
             use_timestamp = False
             ephemeral = True
-        elif self.mode == EmitterMode.NORMAL:
+        elif self._mode == EmitterMode.NORMAL:
             # show the indicated message to stderr (ephemeral) and log it
             stream = sys.stderr
             use_timestamp = False
@@ -585,7 +585,7 @@ class Emitter:
             use_timestamp = True
             ephemeral = False
 
-        self.printer.show(stream, text, ephemeral=ephemeral, use_timestamp=use_timestamp)  # type: ignore
+        self._printer.show(stream, text, ephemeral=ephemeral, use_timestamp=use_timestamp)  # type: ignore
 
     @_init_guard
     def progress_bar(self, text: str, total: Union[int, float], delta: bool = True) -> _Progresser:
@@ -598,24 +598,24 @@ class Emitter:
         pass the total so far).
         """
         # don't show progress if quiet
-        if self.mode == EmitterMode.QUIET:
+        if self._mode == EmitterMode.QUIET:
             stream = None
         else:
             stream = sys.stderr
-        self.printer.show(stream, text, ephemeral=True)  # type: ignore
-        return _Progresser(self.printer, total, text, stream, delta)  # type: ignore
+        self._printer.show(stream, text, ephemeral=True)  # type: ignore
+        return _Progresser(self._printer, total, text, stream, delta)  # type: ignore
 
     @_init_guard
     def open_stream(self, text: str):
         """Open a stream context manager to get messages from subprocesses."""
         # don't show third party streams if quiet or normal
-        if self.mode == EmitterMode.QUIET or self.mode == EmitterMode.NORMAL:
+        if self._mode == EmitterMode.QUIET or self._mode == EmitterMode.NORMAL:
             stream = None
         else:
             stream = sys.stderr
-        return _StreamContextManager(self.printer, text, stream)  # type: ignore
+        return _StreamContextManager(self._printer, text, stream)  # type: ignore
 
     @_init_guard
     def ended_ok(self) -> None:
         """Finish the messaging system gracefully."""
-        self.printer.stop()  # type: ignore
+        self._printer.stop()  # type: ignore

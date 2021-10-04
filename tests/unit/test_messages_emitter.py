@@ -79,7 +79,7 @@ def test_init_quietish(mode, tmp_path, monkeypatch):
     with patch("craft_cli.messages._Printer") as mock_printer:
         emitter.init(mode, "testappname", greeting)
 
-    assert emitter.mode == mode
+    assert emitter._mode == mode
     assert mock_printer.mock_calls == [
         call(fake_logpath),  # the _Printer instantiation, passing the log filepath
         call().show(None, "greeting"),  # the greeting, only sent to the log
@@ -104,7 +104,7 @@ def test_init_verboseish(mode, tmp_path, monkeypatch):
     with patch("craft_cli.messages._Printer") as mock_printer:
         emitter.init(mode, "testappname", greeting)
 
-    assert emitter.mode == mode
+    assert emitter._mode == mode
     log_locat = f"Logging execution to '{fake_logpath}'"
     assert mock_printer.mock_calls == [
         call(fake_logpath),  # the _Printer instantiation, passing the log filepath
@@ -136,7 +136,7 @@ def test_set_mode_quietish(get_initiated_emitter, mode):
     emitter = get_initiated_emitter(EmitterMode.QUIET, greeting=greeting)
     emitter.set_mode(mode)
 
-    assert emitter.mode == mode
+    assert emitter._mode == mode
     assert emitter.printer_calls == []
 
 
@@ -153,8 +153,8 @@ def test_set_mode_verboseish(get_initiated_emitter, mode):
     emitter = get_initiated_emitter(EmitterMode.QUIET, greeting=greeting)
     emitter.set_mode(mode)
 
-    assert emitter.mode == mode
-    log_locat = f"Logging execution to '{emitter.log_filepath}'"
+    assert emitter._mode == mode
+    log_locat = f"Logging execution to '{emitter._log_filepath}'"
     assert emitter.printer_calls == [
         call().show(sys.stderr, greeting, use_timestamp=True, avoid_logging=True, end_line=True),
         call().show(sys.stderr, log_locat, use_timestamp=True, avoid_logging=True, end_line=True),
@@ -333,7 +333,7 @@ def test_openstream_in_quietish_modes(get_initiated_emitter, mode):
     assert emitter.printer_calls == []
     assert context_manager is instantiated_cm
     assert stream_context_manager_mock.mock_calls == [
-        call(emitter.printer, "some text", None),
+        call(emitter._printer, "some text", None),
     ]
 
 
@@ -356,7 +356,7 @@ def test_openstream_in_verboseish_modes(get_initiated_emitter, mode):
     assert emitter.printer_calls == []
     assert context_manager is instantiated_cm
     assert stream_context_manager_mock.mock_calls == [
-        call(emitter.printer, "some text", sys.stderr),
+        call(emitter._printer, "some text", sys.stderr),
     ]
 
 
