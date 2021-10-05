@@ -393,6 +393,74 @@ def test_04_third_party_output_verbose(capsys, tmp_path, mode):
     assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)
 
 
+def test_logging_when_quiet(capsys, logger):
+    """Handle the different logging levels when in quiet mode."""
+    emit = Emitter()
+    emit.init(EmitterMode.QUIET, "testapp", GREETING)
+    logger.error("--error-- %s", "with args")
+    logger.warning("--warning--")
+    logger.info("--info--")
+    logger.debug("--debug--")
+    emit.ended_ok()
+
+    expected_err = [
+        Line("--error-- with args"),
+        Line("--warning--"),
+    ]
+    expected_log = expected_err + [
+        Line("--info--"),
+        Line("--debug--"),
+    ]
+    assert_outputs(capsys, emit, expected_err=expected_err, expected_log=expected_log)
+
+
+def test_logging_when_normal(capsys, logger):
+    """Handle the different logging levels when in normal mode."""
+    emit = Emitter()
+    emit.init(EmitterMode.NORMAL, "testapp", GREETING)
+    logger.error("--error-- %s", "with args")
+    logger.warning("--warning--")
+    logger.info("--info--")
+    logger.debug("--debug--")
+    emit.ended_ok()
+
+    expected_err = [
+        Line("--error-- with args"),
+        Line("--warning--"),
+        Line("--info--"),
+    ]
+    expected_log = expected_err + [
+        Line("--debug--"),
+    ]
+    assert_outputs(capsys, emit, expected_err=expected_err, expected_log=expected_log)
+
+
+@pytest.mark.parametrize(
+    "mode",
+    [
+        EmitterMode.VERBOSE,
+        EmitterMode.TRACE,
+    ],
+)
+def test_logging_when_verboseish(capsys, logger, mode):
+    """Handle the different logging levels when in normal mode."""
+    emit = Emitter()
+    emit.init(mode, "testapp", GREETING)
+    logger.error("--error-- %s", "with args")
+    logger.warning("--warning--")
+    logger.info("--info--")
+    logger.debug("--debug--")
+    emit.ended_ok()
+
+    expected = [
+        Line("--error-- with args", timestamp=True),
+        Line("--warning--", timestamp=True),
+        Line("--info--", timestamp=True),
+        Line("--debug--", timestamp=True),
+    ]
+    assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)
+
+
 @pytest.mark.parametrize(
     "mode",
     [

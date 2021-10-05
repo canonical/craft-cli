@@ -18,6 +18,7 @@
 
 import enum
 import itertools
+import logging
 import math
 import os
 import pathlib
@@ -479,6 +480,34 @@ class _StreamContextManager:
         return False  # do not consume any exception
 
 
+class _Handler(logging.Handler):
+    """A logging handler that emits messages through the core Printer."""
+
+    # a table to map which logging messages show to the screen according to the selected mode
+    mode_to_log_map = {
+        EmitterMode.QUIET: logging.WARNING,
+        EmitterMode.NORMAL: logging.INFO,
+        EmitterMode.VERBOSE: logging.DEBUG,
+        EmitterMode.TRACE: logging.DEBUG,
+    }
+
+    def __init__(self, printer: _Printer):
+        super().__init__()
+        self.printer = printer
+
+        # level is 0 so we get EVERYTHING (as we need to send it all to the log file), and
+        # will decide on "emit" if also goes to screen using the custom mode
+        self.level = 0
+        self.mode = EmitterMode.QUIET
+
+    def emit(self, record: logging.LogRecord) -> None:
+        """Send the message in the LogRecord to the printer."""
+        use_timestamp = self.mode == EmitterMode.VERBOSE or self.mode == EmitterMode.TRACE
+        threshold = self.mode_to_log_map[self.mode]
+        stream = sys.stderr if record.levelno >= threshold else None
+        self.printer.show(stream, record.getMessage(), use_timestamp=use_timestamp)
+
+
 def _init_guard(wrapped_func):
     """Decorate Emitter methods to be called *after* init."""
 
@@ -507,6 +536,7 @@ class Emitter:
         self._mode = None
         self._initiated = False
         self._log_filepath = None
+        self._log_handler = None
 
     def init(self, mode: EmitterMode, appname: str, greeting: str):
         """Initialize the emitter; this must be called once and before emitting any messages."""
@@ -518,6 +548,11 @@ class Emitter:
         self._printer = _Printer(self._log_filepath)
         self._printer.show(None, greeting)
 
+        # hook into the logging system
+        logger = logging.getLogger()
+        self._log_handler = _Handler(self._printer)
+        logger.addHandler(self._log_handler)
+
         self._initiated = True
         self.set_mode(mode)
 
@@ -525,6 +560,7 @@ class Emitter:
     def set_mode(self, mode: EmitterMode) -> None:
         """Set the mode of the emitter."""
         self._mode = mode
+        self._log_handler.mode = mode  # type: ignore
 
         if self._mode == EmitterMode.VERBOSE or self._mode == EmitterMode.TRACE:
             # send the greeting to the screen before any further messages

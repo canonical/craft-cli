@@ -16,13 +16,23 @@
 
 """Tests that check the whole Emitter machinery."""
 
+import logging
 import sys
 from unittest.mock import call, patch
 
 import pytest
 
 from craft_cli import messages
-from craft_cli.messages import Emitter, EmitterMode
+from craft_cli.messages import Emitter, EmitterMode, _Handler
+
+
+@pytest.fixture(autouse=True)
+def clean_logging_handler():
+    """Remove the used handler to properly isolate tests."""
+    logger = logging.getLogger("")
+    to_remove = [x for x in logger.handlers if isinstance(x, _Handler)]
+    for handler in to_remove:
+        logger.removeHandler(handler)
 
 
 class RecordingEmitter(Emitter):
@@ -85,6 +95,11 @@ def test_init_quietish(mode, tmp_path, monkeypatch):
         call().show(None, "greeting"),  # the greeting, only sent to the log
     ]
 
+    # log handler is properly setup
+    logger = logging.getLogger("")
+    (handler,) = [x for x in logger.handlers if isinstance(x, _Handler)]
+    assert handler.mode == mode
+
 
 @pytest.mark.parametrize(
     "mode",
@@ -113,6 +128,11 @@ def test_init_verboseish(mode, tmp_path, monkeypatch):
         call().show(sys.stderr, log_locat, use_timestamp=True, end_line=True, avoid_logging=True),
     ]
 
+    # log handler is properly setup
+    logger = logging.getLogger("")
+    (handler,) = [x for x in logger.handlers if isinstance(x, _Handler)]
+    assert handler.mode == mode
+
 
 @pytest.mark.parametrize("method_name", [x for x in dir(Emitter) if x[0] != "_" and x != "init"])
 def test_needs_init(method_name):
@@ -139,6 +159,11 @@ def test_set_mode_quietish(get_initiated_emitter, mode):
     assert emitter._mode == mode
     assert emitter.printer_calls == []
 
+    # log handler is affected
+    logger = logging.getLogger("")
+    (handler,) = [x for x in logger.handlers if isinstance(x, _Handler)]
+    assert handler.mode == mode
+
 
 @pytest.mark.parametrize(
     "mode",
@@ -159,6 +184,11 @@ def test_set_mode_verboseish(get_initiated_emitter, mode):
         call().show(sys.stderr, greeting, use_timestamp=True, avoid_logging=True, end_line=True),
         call().show(sys.stderr, log_locat, use_timestamp=True, avoid_logging=True, end_line=True),
     ]
+
+    # log handler is affected
+    logger = logging.getLogger("")
+    (handler,) = [x for x in logger.handlers if isinstance(x, _Handler)]
+    assert handler.mode == mode
 
 
 # -- tests for emitting messages of all kind
