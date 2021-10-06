@@ -30,6 +30,7 @@ from craft_cli import messages
 from craft_cli.messages import (
     EmitterMode,
     _get_log_filepath,
+    _get_traceback_lines,
     _Handler,
     _MessageInfo,
     _Printer,
@@ -415,3 +416,20 @@ def test_handler_emit_verboseish(handler, mode):
         call.show(sys.stderr, "test info", use_timestamp=True),
         call.show(sys.stderr, "test debug", use_timestamp=True),
     ]
+
+
+# -- tests for the traceback lines extractor
+
+
+def test_traceback_lines_simple():
+    """Extract traceback lines from an exception."""
+    try:
+        raise ValueError("pumba")
+    except ValueError as err:
+        tbacklines = list(_get_traceback_lines(err))
+
+    assert tbacklines[0] == "Traceback (most recent call last):"
+    assert tbacklines[1].startswith('  File "/')
+    assert tbacklines[1].endswith(", in test_traceback_lines_simple")
+    assert tbacklines[2] == '    raise ValueError("pumba")'
+    assert tbacklines[3] == "ValueError: pumba"

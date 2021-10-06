@@ -23,6 +23,7 @@ from unittest.mock import call, patch
 import pytest
 
 from craft_cli import messages
+from craft_cli.errors import CraftError
 from craft_cli.messages import Emitter, EmitterMode, _Handler
 
 
@@ -390,12 +391,237 @@ def test_openstream_in_verboseish_modes(get_initiated_emitter, mode):
     ]
 
 
-# -- tests for stopping the machinery
+# -- tests for stopping the machinery ok
 
 
 def test_ended_ok(get_initiated_emitter):
-    """Finish everything."""
+    """Finish everything ok."""
     emitter = get_initiated_emitter(EmitterMode.QUIET)
     emitter.ended_ok()
 
     assert emitter.printer_calls == [call().stop()]
+
+
+# -- tests for error reporting
+
+
+@pytest.mark.parametrize("mode", [EmitterMode.QUIET, EmitterMode.NORMAL])
+def test_reporterror_simple_message_only_quietish(mode, get_initiated_emitter):
+    """Report just a simple message, in silent modes."""
+    emitter = get_initiated_emitter(mode)
+    error = CraftError("test message")
+    emitter.error(error)
+
+    full_log_message = f"Full execution log: {repr(emitter._log_filepath)}"
+    assert emitter.printer_calls == [
+        call().show(sys.stderr, "test message", use_timestamp=False, end_line=True),
+        call().show(sys.stderr, full_log_message, use_timestamp=False, end_line=True),
+        call().stop(),
+    ]
+
+
+@pytest.mark.parametrize("mode", [EmitterMode.VERBOSE, EmitterMode.TRACE])
+def test_reporterror_simple_message_only_verboseish(mode, get_initiated_emitter):
+    """Report just a simple message, in more verbose modes."""
+    emitter = get_initiated_emitter(mode)
+    error = CraftError("test message")
+    emitter.error(error)
+
+    full_log_message = f"Full execution log: {repr(emitter._log_filepath)}"
+    assert emitter.printer_calls == [
+        call().show(sys.stderr, "test message", use_timestamp=True, end_line=True),
+        call().show(sys.stderr, full_log_message, use_timestamp=True, end_line=True),
+        call().stop(),
+    ]
+
+
+@pytest.mark.parametrize("mode", [EmitterMode.QUIET, EmitterMode.NORMAL])
+def test_reporterror_detailed_info_quietish(mode, get_initiated_emitter):
+    """Report an error having detailed information, in silent modes."""
+    emitter = get_initiated_emitter(mode)
+    error = CraftError("test message", details="boom")
+    emitter.error(error)
+
+    full_log_message = f"Full execution log: {repr(emitter._log_filepath)}"
+    assert emitter.printer_calls == [
+        call().show(sys.stderr, "test message", use_timestamp=False, end_line=True),
+        call().show(None, "Detailed information: boom", use_timestamp=False, end_line=True),
+        call().show(sys.stderr, full_log_message, use_timestamp=False, end_line=True),
+        call().stop(),
+    ]
+
+
+@pytest.mark.parametrize("mode", [EmitterMode.VERBOSE, EmitterMode.TRACE])
+def test_reporterror_detailed_info_verboseish(mode, get_initiated_emitter):
+    """Report an error having detailed information, in more verbose modes."""
+    emitter = get_initiated_emitter(mode)
+    error = CraftError("test message", details="boom")
+    emitter.error(error)
+
+    full_log_message = f"Full execution log: {repr(emitter._log_filepath)}"
+    assert emitter.printer_calls == [
+        call().show(sys.stderr, "test message", use_timestamp=True, end_line=True),
+        call().show(sys.stderr, "Detailed information: boom", use_timestamp=True, end_line=True),
+        call().show(sys.stderr, full_log_message, use_timestamp=True, end_line=True),
+        call().stop(),
+    ]
+
+
+@pytest.mark.parametrize("mode", [EmitterMode.QUIET, EmitterMode.NORMAL])
+def test_reporterror_chained_exception_quietish(mode, get_initiated_emitter):
+    """Report an error that was originated after other exception, in silent modes."""
+    emitter = get_initiated_emitter(mode)
+    try:
+        try:
+            raise ValueError("original")
+        except ValueError as err:
+            orig_exception = err
+            raise CraftError("test message") from err
+    except CraftError as err:
+        error = err
+
+    with patch("craft_cli.messages._get_traceback_lines") as tblines_mock:
+        tblines_mock.return_value = ["traceback line 1", "traceback line 2"]
+        emitter.error(error)
+
+    full_log_message = f"Full execution log: {repr(emitter._log_filepath)}"
+    assert emitter.printer_calls == [
+        call().show(sys.stderr, "test message", use_timestamp=False, end_line=True),
+        call().show(None, "traceback line 1", use_timestamp=False, end_line=True),
+        call().show(None, "traceback line 2", use_timestamp=False, end_line=True),
+        call().show(sys.stderr, full_log_message, use_timestamp=False, end_line=True),
+        call().stop(),
+    ]
+
+    # check the traceback lines are generated using the original exception
+    tblines_mock.assert_called_with(orig_exception)  # type: ignore
+
+
+@pytest.mark.parametrize("mode", [EmitterMode.VERBOSE, EmitterMode.TRACE])
+def test_reporterror_chained_exception_verboseish(mode, get_initiated_emitter):
+    """Report an error that was originated after other exception, in more verbose modes."""
+    emitter = get_initiated_emitter(mode)
+    try:
+        try:
+            raise ValueError("original")
+        except ValueError as err:
+            orig_exception = err
+            raise CraftError("test message") from err
+    except CraftError as err:
+        error = err
+
+    with patch("craft_cli.messages._get_traceback_lines") as tblines_mock:
+        tblines_mock.return_value = ["traceback line 1", "traceback line 2"]
+        emitter.error(error)
+
+    full_log_message = f"Full execution log: {repr(emitter._log_filepath)}"
+    assert emitter.printer_calls == [
+        call().show(sys.stderr, "test message", use_timestamp=True, end_line=True),
+        call().show(sys.stderr, "traceback line 1", use_timestamp=True, end_line=True),
+        call().show(sys.stderr, "traceback line 2", use_timestamp=True, end_line=True),
+        call().show(sys.stderr, full_log_message, use_timestamp=True, end_line=True),
+        call().stop(),
+    ]
+
+    # check the traceback lines are generated using the original exception
+    tblines_mock.assert_called_with(orig_exception)  # type: ignore
+
+
+@pytest.mark.parametrize("mode", [EmitterMode.QUIET, EmitterMode.NORMAL])
+def test_reporterror_with_resolution_quietish(mode, get_initiated_emitter):
+    """Report an error with a recommended resolution, in silent modes."""
+    emitter = get_initiated_emitter(mode)
+    error = CraftError("test message", resolution="run")
+    emitter.error(error)
+
+    full_log_message = f"Full execution log: {repr(emitter._log_filepath)}"
+    assert emitter.printer_calls == [
+        call().show(sys.stderr, "test message", use_timestamp=False, end_line=True),
+        call().show(sys.stderr, "Recommended resolution: run", use_timestamp=False, end_line=True),
+        call().show(sys.stderr, full_log_message, use_timestamp=False, end_line=True),
+        call().stop(),
+    ]
+
+
+@pytest.mark.parametrize("mode", [EmitterMode.VERBOSE, EmitterMode.TRACE])
+def test_reporterror_with_resolution_verboseish(mode, get_initiated_emitter):
+    """Report an error with a recommended resolution, in more verbose modes."""
+    emitter = get_initiated_emitter(mode)
+    error = CraftError("test message", resolution="run")
+    emitter.error(error)
+
+    full_log_message = f"Full execution log: {repr(emitter._log_filepath)}"
+    assert emitter.printer_calls == [
+        call().show(sys.stderr, "test message", use_timestamp=True, end_line=True),
+        call().show(sys.stderr, "Recommended resolution: run", use_timestamp=True, end_line=True),
+        call().show(sys.stderr, full_log_message, use_timestamp=True, end_line=True),
+        call().stop(),
+    ]
+
+
+@pytest.mark.parametrize("mode", [EmitterMode.QUIET, EmitterMode.NORMAL])
+def test_reporterror_with_docs_quietish(mode, get_initiated_emitter):
+    """Report including a docs url, in silent modes."""
+    emitter = get_initiated_emitter(mode)
+    error = CraftError("test message", docs_url="https://charmhub.io/docs/whatever")
+    emitter.error(error)
+
+    full_log_message = f"Full execution log: {repr(emitter._log_filepath)}"
+    full_docs_message = "For more information, check out: https://charmhub.io/docs/whatever"
+    assert emitter.printer_calls == [
+        call().show(sys.stderr, "test message", use_timestamp=False, end_line=True),
+        call().show(sys.stderr, full_docs_message, use_timestamp=False, end_line=True),
+        call().show(sys.stderr, full_log_message, use_timestamp=False, end_line=True),
+        call().stop(),
+    ]
+
+
+@pytest.mark.parametrize("mode", [EmitterMode.VERBOSE, EmitterMode.TRACE])
+def test_reporterror_with_docs_verboseish(mode, get_initiated_emitter):
+    """Report including a docs url, in more verbose modes."""
+    emitter = get_initiated_emitter(mode)
+    error = CraftError("test message", docs_url="https://charmhub.io/docs/whatever")
+    emitter.error(error)
+
+    full_log_message = f"Full execution log: {repr(emitter._log_filepath)}"
+    full_docs_message = "For more information, check out: https://charmhub.io/docs/whatever"
+    assert emitter.printer_calls == [
+        call().show(sys.stderr, "test message", use_timestamp=True, end_line=True),
+        call().show(sys.stderr, full_docs_message, use_timestamp=True, end_line=True),
+        call().show(sys.stderr, full_log_message, use_timestamp=True, end_line=True),
+        call().stop(),
+    ]
+
+
+def test_reporterror_full_complete(get_initiated_emitter):
+    """Sanity case to check order between the different parts."""
+    emitter = get_initiated_emitter(EmitterMode.TRACE)
+    try:
+        try:
+            raise ValueError("original")
+        except ValueError as err:
+            raise CraftError(
+                "test message",
+                details="boom",
+                resolution="run",
+                docs_url="https://charmhub.io/docs/whatever",
+            ) from err
+    except CraftError as err:
+        error = err
+
+    with patch("craft_cli.messages._get_traceback_lines") as tblines_mock:
+        tblines_mock.return_value = ["traceback line 1", "traceback line 2"]
+        emitter.error(error)
+
+    full_log_message = f"Full execution log: {repr(emitter._log_filepath)}"
+    full_docs_message = "For more information, check out: https://charmhub.io/docs/whatever"
+    assert emitter.printer_calls == [
+        call().show(sys.stderr, "test message", use_timestamp=True, end_line=True),
+        call().show(sys.stderr, "Detailed information: boom", use_timestamp=True, end_line=True),
+        call().show(sys.stderr, "traceback line 1", use_timestamp=True, end_line=True),
+        call().show(sys.stderr, "traceback line 2", use_timestamp=True, end_line=True),
+        call().show(sys.stderr, "Recommended resolution: run", use_timestamp=True, end_line=True),
+        call().show(sys.stderr, full_docs_message, use_timestamp=True, end_line=True),
+        call().show(sys.stderr, full_log_message, use_timestamp=True, end_line=True),
+        call().stop(),
+    ]

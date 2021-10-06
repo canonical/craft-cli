@@ -30,10 +30,12 @@ import subprocess
 import sys
 import textwrap
 from dataclasses import dataclass
+from unittest.mock import patch
 
 import pytest
 
 from craft_cli import messages
+from craft_cli.errors import CraftError
 from craft_cli.messages import Emitter, EmitterMode
 
 # the timestamp format (including final separator space)
@@ -389,6 +391,156 @@ def test_04_third_party_output_verbose(capsys, tmp_path, mode):
         Line("Testing stream", timestamp=True),
         Line(":: foobar out", timestamp=True),
         Line(":: foobar err", timestamp=True),
+    ]
+    assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)
+
+
+@pytest.mark.parametrize(
+    "mode",
+    [
+        EmitterMode.QUIET,
+        EmitterMode.NORMAL,
+    ],
+)
+def test_05_06_simple_errors_quietly(capsys, mode):
+    """Error because of application or external rules, quiet and normal mode."""
+    emit = Emitter()
+    emit.init(mode, "testapp", GREETING)
+    error = CraftError(
+        "Cannot find config file 'somepath'.",
+    )
+    emit.error(error)
+
+    expected = [
+        Line("Cannot find config file 'somepath'."),
+        Line(f"Full execution log: {emit._log_filepath!r}"),
+    ]
+    assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)
+
+
+@pytest.mark.parametrize(
+    "mode",
+    [
+        EmitterMode.VERBOSE,
+        EmitterMode.TRACE,
+    ],
+)
+def test_05_06_simple_errors_verbosely(capsys, mode):
+    """Error because of application or external rules, more verbose modes."""
+    emit = Emitter()
+    emit.init(mode, "testapp", GREETING)
+    error = CraftError(
+        "Cannot find config file 'somepath'.",
+    )
+    emit.error(error)
+
+    expected = [
+        Line("Cannot find config file 'somepath'.", timestamp=True),
+        Line(f"Full execution log: {emit._log_filepath!r}", timestamp=True),
+    ]
+    assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)
+
+
+@pytest.mark.parametrize(
+    "mode",
+    [
+        EmitterMode.QUIET,
+        EmitterMode.NORMAL,
+    ],
+)
+def test_07_error_api_quietly(capsys, mode):
+    """Somewhat expected API error, quiet and normal mode."""
+    emit = Emitter()
+    emit.init(mode, "testapp", GREETING)
+    full_error = {"message": "Invalid channel.", "code": "BAD-CHANNEL"}
+    error = CraftError("Invalid channel.", details=str(full_error))
+    emit.error(error)
+
+    expected_err = [Line("Invalid channel."), Line(f"Full execution log: {emit._log_filepath!r}")]
+    expected_log = [
+        Line("Invalid channel."),
+        Line(f"Detailed information: {full_error}"),
+        Line(f"Full execution log: {emit._log_filepath!r}"),
+    ]
+    assert_outputs(capsys, emit, expected_err=expected_err, expected_log=expected_log)
+
+
+@pytest.mark.parametrize(
+    "mode",
+    [
+        EmitterMode.VERBOSE,
+        EmitterMode.TRACE,
+    ],
+)
+def test_07_error_api_verbosely(capsys, mode):
+    """Somewhat expected API error, more verbose modes."""
+    emit = Emitter()
+    emit.init(mode, "testapp", GREETING)
+    full_error = {"message": "Invalid channel.", "code": "BAD-CHANNEL"}
+    error = CraftError("Invalid channel.", details=str(full_error))
+    emit.error(error)
+
+    expected = [
+        Line("Invalid channel.", timestamp=True),
+        Line(f"Detailed information: {full_error}", timestamp=True),
+        Line(f"Full execution log: {emit._log_filepath!r}", timestamp=True),
+    ]
+    assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)
+
+
+@pytest.mark.parametrize(
+    "mode",
+    [
+        EmitterMode.QUIET,
+        EmitterMode.NORMAL,
+    ],
+)
+def test_08_09_error_unexpected_quietly(capsys, mode):
+    """Unexpected error from a 3rd party or application crash, quiet and normal mode."""
+    emit = Emitter()
+    emit.init(mode, "testapp", GREETING)
+    try:
+        raise ValueError("pumba")
+    except ValueError as exc:
+        error = CraftError("First message.")
+        error.__cause__ = exc
+        with patch("craft_cli.messages._get_traceback_lines", return_value=["foo", "bar"]):
+            emit.error(error)
+
+    expected_err = [Line("First message."), Line(f"Full execution log: {emit._log_filepath!r}")]
+    expected_log = [
+        Line("First message."),
+        Line("foo"),
+        Line("bar"),
+        Line(f"Full execution log: {emit._log_filepath!r}"),
+    ]
+    assert_outputs(capsys, emit, expected_err=expected_err, expected_log=expected_log)
+
+
+@pytest.mark.parametrize(
+    "mode",
+    [
+        EmitterMode.VERBOSE,
+        EmitterMode.TRACE,
+    ],
+)
+def test_08_09_error_unexpected_verbosely(capsys, mode):
+    """Unexpected error from a 3rd party or application crash, more verbose modes."""
+    emit = Emitter()
+    emit.init(mode, "testapp", GREETING)
+    try:
+        raise ValueError("pumba")
+    except ValueError as exc:
+        error = CraftError("First message.")
+        error.__cause__ = exc
+        with patch("craft_cli.messages._get_traceback_lines", return_value=["foo", "bar"]):
+            emit.error(error)
+
+    expected = [
+        Line("First message.", timestamp=True),
+        Line("foo", timestamp=True),
+        Line("bar", timestamp=True),
+        Line(f"Full execution log: {emit._log_filepath!r}", timestamp=True),
     ]
     assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)
 
