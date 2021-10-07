@@ -22,23 +22,23 @@ from typing import Optional
 class CraftError(Exception):
     """Signal a program error with a lot of information to report.
 
-    - message: the main message to the user, to be shown as first line (and probably
-      only that, according to the different modes); note that in some cases the log
-      location will be attached to this message.
+    :ivar message: the main message to the user, to be shown as first line (and
+      probably only that, according to the different modes); note that in some
+      cases the log location will be attached to this message.
 
-    - details: the full error details received from a third party which originated
-      the error situation
+    :ivar details: the full error details received from a third party which
+      originated the error situation
 
-    - resolution: an extra line indicating to the user how the error may be fixed or
-      avoided (to be shown together with 'message')
+    :ivar resolution: an extra line indicating to the user how the error may be
+      fixed or avoided (to be shown together with 'message')
 
-    - docs_url: an URL to point the user to documentation (to be shown together
-      with 'message')
+    :ivar docs_url: an URL to point the user to documentation (to be shown
+      together with 'message')
 
-    - reportable: if an error report should be sent to some error-handling backend (like
-      Sentry)
+    :ivar reportable: if an error report should be sent to some error-handling
+      backend (like Sentry)
 
-    - retcode: the code to return when the application finishes
+    :ivar retcode: the code to return when the application finishes
     """
 
     def __init__(
