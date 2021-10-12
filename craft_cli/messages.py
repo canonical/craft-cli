@@ -28,11 +28,14 @@ import shutil
 import sys
 import threading
 import time
+import traceback
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Literal, Optional, TextIO, Union
 
 import appdirs
+
+from craft_cli import errors
 
 
 @dataclass
@@ -103,6 +106,14 @@ def _get_log_filepath(appname: str) -> pathlib.Path:
             fpath.unlink()
 
     return basedir / filename
+
+
+def _get_traceback_lines(exc: BaseException):
+    """Get the traceback lines (if any) from an exception."""
+    tback_lines = traceback.format_exception(type(exc), exc, exc.__traceback__)
+    for tback_line in tback_lines:
+        for real_line in tback_line.rstrip().split("\n"):
+            yield real_line
 
 
 class _Spinner(threading.Thread):
@@ -654,4 +665,41 @@ class Emitter:
     @_init_guard
     def ended_ok(self) -> None:
         """Finish the messaging system gracefully."""
+        self._printer.stop()  # type: ignore
+
+    def _report_error(self, error: errors.CraftError) -> None:
+        """Report the different message lines from a CraftError."""
+        if self._mode == EmitterMode.QUIET or self._mode == EmitterMode.NORMAL:
+            use_timestamp = False
+            full_stream = None
+        else:
+            use_timestamp = True
+            full_stream = sys.stderr
+
+        # the initial message
+        self._printer.show(sys.stderr, str(error), use_timestamp=use_timestamp, end_line=True)  # type: ignore
+
+        # detailed information and/or original exception
+        if error.details:
+            text = f"Detailed information: {error.details}"
+            self._printer.show(full_stream, text, use_timestamp=use_timestamp, end_line=True)  # type: ignore
+        if error.__cause__:
+            for line in _get_traceback_lines(error.__cause__):
+                self._printer.show(full_stream, line, use_timestamp=use_timestamp, end_line=True)  # type: ignore
+
+        # hints for the user to know more
+        if error.resolution:
+            text = f"Recommended resolution: {error.resolution}"
+            self._printer.show(sys.stderr, text, use_timestamp=use_timestamp, end_line=True)  # type: ignore
+        if error.docs_url:
+            text = f"For more information, check out: {error.docs_url}"
+            self._printer.show(sys.stderr, text, use_timestamp=use_timestamp, end_line=True)  # type: ignore
+
+        text = f"Full execution log: {str(self._log_filepath)!r}"
+        self._printer.show(sys.stderr, text, use_timestamp=use_timestamp, end_line=True)  # type: ignore
+
+    @_init_guard
+    def error(self, error: errors.CraftError) -> None:
+        """Handle the system's indicated error and stop machinery."""
+        self._report_error(error)
         self._printer.stop()  # type: ignore
