@@ -91,7 +91,7 @@ def _get_log_filepath(appname: str) -> pathlib.Path:
     Existing files are not renamed (no need, as each name is unique) nor gzipped (they may
     be currently in use by another process).
     """
-    basedir = pathlib.Path(appdirs.user_log_dir()) / appname
+    basedir = pathlib.Path(appdirs.user_log_dir(appname))
     filename = f"{appname}-{datetime.now():%Y%m%d-%H%M%S.%f}.log"
 
     # ensure the basedir is there

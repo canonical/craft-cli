@@ -46,7 +46,7 @@ def test_log_dir(tmp_path, monkeypatch):
     """Provide a test log filepath, also fixing appdirs to use a temp dir."""
     dirpath = tmp_path / "testlogdir"
     dirpath.mkdir()
-    monkeypatch.setattr(appdirs, "user_log_dir", lambda: dirpath)
+    monkeypatch.setattr(appdirs, "user_log_dir", lambda appname: dirpath / appname)
     return dirpath
 
 
@@ -145,7 +145,7 @@ def test_getlogpath_ignore_other_files(test_log_dir, monkeypatch):
 def test_getlogpath_deep_dirs(tmp_path, monkeypatch):
     """The log directory is inside a path that does not exist yet."""
     dirpath = tmp_path / "foo" / "bar" / "testlogdir"
-    monkeypatch.setattr(appdirs, "user_log_dir", lambda: dirpath)
+    monkeypatch.setattr(appdirs, "user_log_dir", lambda appname: dirpath / appname)
     fpath = _get_log_filepath("testapp")
 
     # check the file is inside the proper dir and that it exists
