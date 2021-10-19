@@ -19,5 +19,5 @@
 __version__ = "0.0.1.dev1"
 
 # names included here only to be exposed as external API
-from .errors import CraftError  # noqa
-from .messages import EmitterMode, emit  # noqa
+from .errors import CraftError  # noqa: F401
+from .messages import EmitterMode, emit  # noqa: F401
