@@ -69,7 +69,7 @@ def get_initiated_emitter(tmp_path, monkeypatch):
         yield func
 
 
-# -- tests for init and setting mode
+# -- tests for init and setting/getting mode
 
 
 @pytest.mark.parametrize(
@@ -158,6 +158,7 @@ def test_set_mode_quietish(get_initiated_emitter, mode):
     emitter.set_mode(mode)
 
     assert emitter._mode == mode
+    assert emitter.get_mode() == mode
     assert emitter.printer_calls == []
 
     # log handler is affected
@@ -180,6 +181,7 @@ def test_set_mode_verboseish(get_initiated_emitter, mode):
     emitter.set_mode(mode)
 
     assert emitter._mode == mode
+    assert emitter.get_mode() == mode
     log_locat = f"Logging execution to '{emitter._log_filepath}'"
     assert emitter.printer_calls == [
         call().show(sys.stderr, greeting, use_timestamp=True, avoid_logging=True, end_line=True),

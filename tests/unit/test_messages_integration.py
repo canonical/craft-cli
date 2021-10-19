@@ -134,6 +134,22 @@ def assert_outputs(capsys, emit, expected_out=None, expected_err=None, expected_
         assert expected_logged_texts == logged_texts
 
 
+def test_00_exposed_api():
+    """Verify names are properly exposed."""
+    # pylint: disable=import-outside-toplevel
+    from craft_cli import emit
+
+    assert isinstance(emit, messages.Emitter)
+
+    from craft_cli import EmitterMode as test_em
+
+    assert test_em is EmitterMode
+
+    from craft_cli import CraftError as test_cs
+
+    assert test_cs is CraftError
+
+
 @pytest.mark.parametrize("mode", EmitterMode)  # all modes!
 def test_01_expected_cmd_result(capsys, mode):
     """Show a simple message, the expected command result."""
