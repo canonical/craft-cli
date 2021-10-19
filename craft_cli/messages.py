@@ -568,6 +568,11 @@ class Emitter:
         self.set_mode(mode)
 
     @_init_guard
+    def get_mode(self) -> EmitterMode:
+        """Return the mode of the emitter."""
+        return self._mode  # type: ignore
+
+    @_init_guard
     def set_mode(self, mode: EmitterMode) -> None:
         """Set the mode of the emitter."""
         self._mode = mode
@@ -703,3 +708,8 @@ class Emitter:
         """Handle the system's indicated error and stop machinery."""
         self._report_error(error)
         self._printer.stop()  # type: ignore
+
+
+# module-level instantiated Emitter; this is the instance all code shall use and Emitter
+# shall not be instantiated again for the process' run
+emit = Emitter()
