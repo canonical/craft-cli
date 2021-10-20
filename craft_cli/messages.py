@@ -70,6 +70,9 @@ _SPINNER_DELAY = 0.1
 # the size of bytes chunk that the pipe reader will read at once
 _PIPE_READER_CHUNK_SIZE = 4096
 
+# set to true when running *application* tests so some behaviours change
+TESTMODE = False
+
 
 def _get_terminal_width() -> int:
     """Return the number of columns of the terminal."""
@@ -193,13 +196,17 @@ class _Spinner(threading.Thread):
 
 
 class _Printer:
-    """Handle writing the different messages to the different outputs (out, err and log)."""
+    """Handle writing the different messages to the different outputs (out, err and log).
+
+    If TESTMODE is True, this class changes its behaviour: the spinner is never started,
+    so there is no thread polluting messages when running tests if they take too long to run.
+    """
 
     def __init__(self, log_filepath: pathlib.Path) -> None:
         # holder of the previous message
         self.prv_msg: Optional[_MessageInfo] = None
 
-        # the open log file (will be closed explicitly when the thread ends)
+        # open the log file (will be closed explicitly later)
         self.log = open(log_filepath, "wt", encoding="utf8")  # pylint: disable=consider-using-with
 
         # keep account of output streams with unfinished lines
@@ -207,7 +214,8 @@ class _Printer:
 
         # run the spinner supervisor
         self.spinner = _Spinner(self)
-        self.spinner.start()
+        if not TESTMODE:
+            self.spinner.start()
 
     def _write_line(self, message: _MessageInfo, *, spintext: str = "") -> None:
         """Write a simple line message to the screen."""
@@ -366,7 +374,8 @@ class _Printer:
         - add a new line to the screen (if needed)
         - close the log file
         """
-        self.spinner.stop()
+        if not TESTMODE:
+            self.spinner.stop()
         if self.unfinished_stream is not None:
             print(flush=True, file=self.unfinished_stream)
         self.log.close()
