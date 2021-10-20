@@ -333,6 +333,17 @@ def test_spinner_in_the_vacuum(spinner, monkeypatch):
     assert spinner.printer.spinned == []
 
 
+def test_spinner_silent_on_complete_messages(spinner, monkeypatch):
+    """Nothing happens before the threshold time."""
+    monkeypatch.setattr(messages, "_SPINNER_THRESHOLD", 0.001)
+    spinner.supervise(_MessageInfo(sys.stdout, "test msg 1", end_line=True))
+
+    # enough time for activation
+    time.sleep(0.05)
+
+    assert spinner.printer.spinned == []
+
+
 # -- tests for the _Handler class
 
 
