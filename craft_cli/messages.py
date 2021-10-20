@@ -159,7 +159,7 @@ class _Spinner(threading.Thread):
             except queue.Empty:
                 # waited too much, start to show a spinner (if have a previous message) until
                 # we have further info
-                if prv_msg is None:
+                if prv_msg is None or prv_msg.end_line:
                     continue
                 spinchars = itertools.cycle("-\\|/")
                 with self.lock:
