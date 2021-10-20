@@ -634,7 +634,20 @@ def test_progress_bar_no_stream(recording_printer):
     assert recording_printer.prv_msg is None
 
 
-# -- tests for stopping the printer
+# -- tests for starting/stopping the printer
+
+
+def test_init_printer_ok(log_filepath):
+    """Printer is initiated as usual."""
+    printer = _Printer(log_filepath)
+    assert printer.spinner.is_alive()
+
+
+def test_init_printer_testmode(log_filepath, monkeypatch):
+    """Printer is initiated as usual."""
+    monkeypatch.setattr(messages, "TESTMODE", True)
+    printer = _Printer(log_filepath)
+    assert not printer.spinner.is_alive()
 
 
 def test_stop_streams_ok(capsys, log_filepath):
@@ -670,9 +683,17 @@ def test_stop_streams_unfinished_err(capsys, log_filepath):
     assert err == "\n"
 
 
-def test_stop_spinner(log_filepath):
+def test_stop_spinner_ok(log_filepath):
     """Stop the spinner."""
     printer = _Printer(log_filepath)
     assert printer.spinner.is_alive()
+    printer.stop()
+    assert not printer.spinner.is_alive()
+
+
+def test_stop_spinner_testmode(log_filepath, monkeypatch):
+    """Stop the spinner."""
+    monkeypatch.setattr(messages, "TESTMODE", True)
+    printer = _Printer(log_filepath)
     printer.stop()
     assert not printer.spinner.is_alive()
