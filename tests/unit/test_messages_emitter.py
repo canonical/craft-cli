@@ -404,6 +404,26 @@ def test_ended_ok(get_initiated_emitter):
     assert emitter.printer_calls == [call().stop()]
 
 
+def test_ended_double_after_ok(get_initiated_emitter):
+    """Support double ending."""
+    emitter = get_initiated_emitter(EmitterMode.QUIET)
+    emitter.ended_ok()
+    emitter.printer_calls.clear()
+
+    emitter.ended_ok()
+    assert emitter.printer_calls == []
+
+
+def test_ended_double_after_error(get_initiated_emitter):
+    """Support double ending."""
+    emitter = get_initiated_emitter(EmitterMode.QUIET)
+    emitter.error(CraftError("test message"))
+    emitter.printer_calls.clear()
+
+    emitter.ended_ok()
+    assert emitter.printer_calls == []
+
+
 # -- tests for error reporting
 
 
@@ -627,3 +647,23 @@ def test_reporterror_full_complete(get_initiated_emitter):
         call().show(sys.stderr, full_log_message, use_timestamp=True, end_line=True),
         call().stop(),
     ]
+
+
+def test_reporterror_double_after_ok(get_initiated_emitter):
+    """Support error reporting after ending."""
+    emitter = get_initiated_emitter(EmitterMode.TRACE)
+    emitter.ended_ok()
+    emitter.printer_calls.clear()
+
+    emitter.error(CraftError("test message"))
+    assert emitter.printer_calls == []
+
+
+def test_reporterror_double_after_error(get_initiated_emitter):
+    """Support error reporting after ending."""
+    emitter = get_initiated_emitter(EmitterMode.TRACE)
+    emitter.error(CraftError("test message"))
+    emitter.printer_calls.clear()
+
+    emitter.error(CraftError("test message"))
+    assert emitter.printer_calls == []
