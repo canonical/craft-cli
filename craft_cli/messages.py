@@ -546,6 +546,7 @@ class Emitter:
         self._printer = None
         self._mode = None
         self._initiated = False
+        self._stopped = False
         self._log_filepath = None
         self._log_handler = None
 
@@ -670,6 +671,9 @@ class Emitter:
     @_init_guard
     def ended_ok(self) -> None:
         """Finish the messaging system gracefully."""
+        if self._stopped:
+            return
+        self._stopped = True
         self._printer.stop()  # type: ignore
 
     def _report_error(self, error: errors.CraftError) -> None:
@@ -706,6 +710,9 @@ class Emitter:
     @_init_guard
     def error(self, error: errors.CraftError) -> None:
         """Handle the system's indicated error and stop machinery."""
+        if self._stopped:
+            return
+        self._stopped = True
         self._report_error(error)
         self._printer.stop()  # type: ignore
 
