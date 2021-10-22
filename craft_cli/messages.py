@@ -203,6 +203,8 @@ class _Printer:
     """
 
     def __init__(self, log_filepath: pathlib.Path) -> None:
+        self.stopped = False
+
         # holder of the previous message
         self.prv_msg: Optional[_MessageInfo] = None
 
@@ -337,7 +339,10 @@ class _Printer:
         end_line: bool = False,
         avoid_logging: bool = False,
     ) -> None:
-        """Show a text to the given stream."""
+        """Show a text to the given stream if not stopped."""
+        if self.stopped:
+            return
+
         msg = _MessageInfo(
             stream=stream,
             text=text.rstrip(),
@@ -379,6 +384,7 @@ class _Printer:
         if self.unfinished_stream is not None:
             print(flush=True, file=self.unfinished_stream)
         self.log.close()
+        self.stopped = True
 
 
 class _Progresser:

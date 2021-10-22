@@ -736,3 +736,17 @@ def test_initial_messages_when_trace(capsys, tmp_path, monkeypatch):
         expected_err=expected_err,
         expected_log=expected_log,
     )
+
+
+def test_logging_after_closing(capsys, logger):
+    """We don't control when log messages are generated, be safe with after-stop ones."""
+    emit = Emitter()
+    emit.init(EmitterMode.VERBOSE, "testapp", GREETING)
+    logger.info("info 1")
+    emit.ended_ok()
+    logger.info("info 2")
+
+    expected = [
+        Line("info 1", timestamp=True),
+    ]
+    assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)
