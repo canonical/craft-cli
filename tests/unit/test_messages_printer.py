@@ -634,6 +634,19 @@ def test_progress_bar_no_stream(recording_printer):
     assert recording_printer.prv_msg is None
 
 
+def test_show_when_stopped(recording_printer):
+    """Noop after stopping."""
+    recording_printer.stop()
+    recording_printer.show(None, "test text")
+
+    # nothing is done
+    assert not recording_printer.logged
+    assert not recording_printer.written_lines
+    assert not recording_printer.written_bars
+    assert recording_printer.prv_msg is None
+    assert not recording_printer.spinner.supervised
+
+
 # -- tests for starting/stopping the printer
 
 

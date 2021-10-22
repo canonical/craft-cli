@@ -44,6 +44,7 @@ class RecordingPrinter(_Printer):
         self.written_bars = []
         self.logged = []
         self.spinner = RecordingSpinner(self)
+        self.spinner.start()
 
     def _write_line(self, message, *, spintext=None):
         """Overwrite the real one to avoid it and record the message and maybe the spintext."""
@@ -64,4 +65,7 @@ class RecordingPrinter(_Printer):
 @pytest.fixture
 def recording_printer(tmp_path):
     """Provide a recording printer."""
-    return RecordingPrinter(tmp_path / "test.log")
+    recording_printer = RecordingPrinter(tmp_path / "test.log")
+    yield recording_printer
+    if not recording_printer.stopped:
+        recording_printer.stop()
