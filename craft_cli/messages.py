@@ -35,6 +35,13 @@ from typing import Literal, Optional, TextIO, Union
 
 import appdirs
 
+try:
+    import win32pipe  # type: ignore
+
+    _WINDOWS_MODE = True
+except ImportError:
+    _WINDOWS_MODE = False
+
 from craft_cli import errors
 
 
@@ -421,13 +428,33 @@ class _Progresser:
 
 
 class _PipeReaderThread(threading.Thread):
-    """A thread that reads bytes from a pipe and write lines to the Printer."""
+    """A thread that reads bytes from a pipe and write lines to the Printer.
 
-    def __init__(self, pipe: int, printer: _Printer, stream: Optional[TextIO]):
+    The core part of reading the pipe and stopping work differently according to the platform:
+
+    - posix: use `select` with a timeout: if has data write it to Printer, if the stop flag
+        is set just quit
+
+    - windows: read in a blocking way, so the `stop` method will write a byte to unblock it
+        after setting the stop flag (this extra byte is handled by the reading code)
+    """
+
+    # byte used to unblock the reading (under Windows)
+    UNBLOCK_BYTE = b"\x00"
+
+    def __init__(self, printer: _Printer, stream: Optional[TextIO]):
         super().__init__()
 
-        # the pipe to read from
-        self.read_pipe = pipe
+        # prepare the pipe pair: the one to read (used in the thread core loop) and the
+        # one which is to be written externally (and also used internally under windows
+        # to unblock the reading); also note that the pipe pair themselves depend
+        # on the platform
+        if _WINDOWS_MODE:
+            # parameterss: default security, default buffer size, binary mode
+            binary_mode = os.O_BINARY  # pylint: disable=no-member  # (it does exist in Windows!)
+            self.read_pipe, self.write_pipe = win32pipe.FdCreatePipe(None, 0, binary_mode)
+        else:
+            self.read_pipe, self.write_pipe = os.pipe()
 
         # special flag used to stop the pipe reader thread
         self.stop_flag = False
@@ -463,7 +490,8 @@ class _PipeReaderThread(threading.Thread):
             text = f":: {unicode_line}"
             self.printer.show(self.stream, text, end_line=True, use_timestamp=True)
 
-    def run(self) -> None:
+    def _run_posix(self) -> None:
+        """Run the thread, handling pipes in the POSIX way."""
         while True:
             rlist, _, _ = select.select([self.read_pipe], [], [], 0.1)
             if rlist:
@@ -473,13 +501,42 @@ class _PipeReaderThread(threading.Thread):
                 # only quit when nothing left to read
                 break
 
+    def _run_windows(self) -> None:
+        """Run the thread, handling pipes in the Windows way."""
+        while True:
+            data = os.read(self.read_pipe, _PIPE_READER_CHUNK_SIZE)  # blocking!
+
+            # data is sliced to get bytes (if checked the last position we get a number)
+            if self.stop_flag and data[-1:] == self.UNBLOCK_BYTE:
+                # we are flagged to stop and did read until the unblock byte: write any
+                # remaining data and quit
+                data = data[:-1]
+                if data:
+                    self._write(data)
+                break
+
+            if data:
+                self._write(data)
+            time.sleep(0.1)
+
+    def run(self) -> None:
+        """Run the thread."""
+        if _WINDOWS_MODE:
+            self._run_windows()
+        else:
+            self._run_posix()
+
     def stop(self) -> None:
         """Stop the thread.
 
         This flag ourselves to quit, but then makes the main thread (which is the one calling
         this method) to wait ourselves to finish.
+
+        Under Windows it inserts an extra byte in the pipe to unblock the reading.
         """
         self.stop_flag = True
+        if _WINDOWS_MODE:
+            os.write(self.write_pipe, self.UNBLOCK_BYTE)
         self.join()
 
 
@@ -487,19 +544,16 @@ class _StreamContextManager:
     """A context manager that provides a pipe for subprocess to write its output."""
 
     def __init__(self, printer: _Printer, text: str, stream: Optional[TextIO]):
-        # open a pipe; subprocess will write in it, we will read from the other end
-        pipe_r, self.pipe_w = os.pipe()
-
         # show the intended text (explicitly asking for a complete line) before passing the
         # output command to the pip-reading thread
         printer.show(stream, text, end_line=True, use_timestamp=True)
 
-        # enable the thread to read and show what comes through the pipe
-        self.pipe_reader = _PipeReaderThread(pipe_r, printer, stream)
+        # enable the thread to read and show what comes through the provided pipe
+        self.pipe_reader = _PipeReaderThread(printer, stream)
 
     def __enter__(self):
         self.pipe_reader.start()
-        return self.pipe_w
+        return self.pipe_reader.write_pipe
 
     def __exit__(self, *exc_info):
         self.pipe_reader.stop()

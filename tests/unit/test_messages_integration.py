@@ -683,7 +683,7 @@ def test_initial_messages_when_verbose(capsys, tmp_path, monkeypatch):
     ]
     expected_err = [
         Line(different_greeting, timestamp=True),
-        Line(f"Logging execution to '{different_logpath}'", timestamp=True),
+        Line(f"Logging execution to {different_logpath!r}", timestamp=True),
     ]
     expected_log = [
         Line(different_greeting),
@@ -720,7 +720,7 @@ def test_initial_messages_when_trace(capsys, tmp_path, monkeypatch):
     ]
     expected_err = [
         Line(different_greeting, timestamp=True),
-        Line(f"Logging execution to '{different_logpath}'", timestamp=True),
+        Line(f"Logging execution to {str(different_logpath)!r}", timestamp=True),
         Line("second trace", timestamp=True),
     ]
     expected_log = [

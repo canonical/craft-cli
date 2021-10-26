@@ -85,7 +85,7 @@ def test_streamcm_usage_lifecycle(recording_printer):
     with scm as context_manager:
         # the pipe reader is working
         assert scm.pipe_reader.is_alive()
-        assert context_manager is scm.pipe_w
+        assert context_manager is scm.pipe_reader.write_pipe
 
     # the pipe reader is stopped
     assert not scm.pipe_reader.is_alive()
@@ -104,10 +104,9 @@ def test_streamcm_dont_consume_exceptions(recording_printer):
 @pytest.mark.parametrize("stream", [sys.stdout, sys.stderr])
 def test_pipereader_simple(recording_printer, stream):
     """Basic pipe reader usage."""
-    pipe_r, pipe_w = os.pipe()
-    prt = _PipeReaderThread(pipe_r, recording_printer, stream)
+    prt = _PipeReaderThread(recording_printer, stream)
     prt.start()
-    os.write(pipe_w, b"123\n")
+    os.write(prt.write_pipe, b"123\n")
     prt.stop()
 
     (msg,) = recording_printer.written_lines  # pylint: disable=unbalanced-tuple-unpacking
@@ -120,12 +119,10 @@ def test_pipereader_simple(recording_printer, stream):
     assert msg.bar_total is None
 
 
-# escribir de a partecitas con un enter en el medio
 def test_pipereader_chunk_assembler(recording_printer, monkeypatch):
     """Converts ok arbitrary chunks to lines."""
     monkeypatch.setattr(messages, "_PIPE_READER_CHUNK_SIZE", 5)
-    pipe_r, pipe_w = os.pipe()
-    prt = _PipeReaderThread(pipe_r, recording_printer, sys.stdout)
+    prt = _PipeReaderThread(recording_printer, sys.stdout)
     prt.start()
 
     # write different chunks, sleeping in the middle not for timing, but to let the
@@ -140,7 +137,7 @@ def test_pipereader_chunk_assembler(recording_printer, monkeypatch):
         b"---\n",  # closing
     ]
     for chunk in chunks:
-        os.write(pipe_w, chunk)
+        os.write(prt.write_pipe, chunk)
         time.sleep(0.001)
 
     prt.stop()
