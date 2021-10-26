@@ -66,6 +66,7 @@ jobs:
         run: |
           pip install -U -r requirements-windows.txt
       - name: Install craft-cli
+        run: |
           pip install -e .
 
       - name: Run unit tests
