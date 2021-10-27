@@ -144,6 +144,27 @@ def test_needs_init(method_name):
         method()
 
 
+def test_init_receiving_logfile(tmp_path, monkeypatch):
+    """Init the class in some verbose-ish mode."""
+    # ensure it's not using the standard log filepath provider (that pollutes user dirs)
+    monkeypatch.setattr(messages, "_get_log_filepath", None)
+
+    greeting = "greeting"
+    emitter = Emitter()
+    fake_logpath = tmp_path / "fakelog.log"
+    with patch("craft_cli.messages._Printer") as mock_printer:
+        emitter.init(EmitterMode.VERBOSE, "testappname", greeting, log_filepath=fake_logpath)
+
+    # filepath is properly informed and passed to the printer
+    log_locat = f"Logging execution to {str(fake_logpath)!r}"
+    assert mock_printer.mock_calls == [
+        call(fake_logpath),  # the _Printer instantiation, passing the log filepath
+        call().show(None, "greeting"),  # the greeting, only sent to the log
+        call().show(sys.stderr, greeting, use_timestamp=True, end_line=True, avoid_logging=True),
+        call().show(sys.stderr, log_locat, use_timestamp=True, end_line=True, avoid_logging=True),
+    ]
+
+
 @pytest.mark.parametrize(
     "mode",
     [

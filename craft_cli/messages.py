@@ -619,13 +619,19 @@ class Emitter:
         self._log_filepath = None
         self._log_handler = None
 
-    def init(self, mode: EmitterMode, appname: str, greeting: str):
+    def init(
+        self,
+        mode: EmitterMode,
+        appname: str,
+        greeting: str,
+        log_filepath: Optional[pathlib.Path] = None,
+    ):
         """Initialize the emitter; this must be called once and before emitting any messages."""
         self._greeting = greeting
 
         # create a log file, bootstrap the printer, and before anything else send the greeting
         # to the file
-        self._log_filepath = _get_log_filepath(appname)
+        self._log_filepath = _get_log_filepath(appname) if log_filepath is None else log_filepath
         self._printer = _Printer(self._log_filepath)
         self._printer.show(None, greeting)
 
