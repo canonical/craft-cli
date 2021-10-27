@@ -64,7 +64,9 @@ def test_getlogpath_firstcall(test_log_dir):
     match = re.match(r"testapp-(\d+-\d+\.\d+).log", fpath.name)
     assert match
     timestamp = datetime.datetime.strptime(match.groups()[0], "%Y%m%d-%H%M%S.%f")
-    assert before < timestamp < after
+
+    # compare using less or equal because in Windows time passes differently
+    assert before <= timestamp <= after
 
 
 def test_getlogpath_directory_empty(test_log_dir):
@@ -79,6 +81,7 @@ def test_getlogpath_one_file_already_present(test_log_dir):
     """There's already one file in the destination dir."""
     previous_fpath = _get_log_filepath("testapp")
     previous_fpath.touch()
+    time.sleep(0.01)  # sleep a little so new log file has a different timestamp
     new_fpath = _get_log_filepath("testapp")
     new_fpath.touch()
     present_logs = sorted((test_log_dir / "testapp").iterdir())
@@ -90,6 +93,7 @@ def test_getlogpath_several_files_already_present(test_log_dir, monkeypatch):
     monkeypatch.setattr(messages, "_MAX_LOG_FILES", 100)
     previous_fpath = _get_log_filepath("testapp")
     previous_fpath.touch()
+    time.sleep(0.01)  # sleep a little so new log file has a different timestamp
     new_fpath = _get_log_filepath("testapp")
     new_fpath.touch()
     present_logs = sorted((test_log_dir / "testapp").iterdir())
@@ -99,9 +103,12 @@ def test_getlogpath_several_files_already_present(test_log_dir, monkeypatch):
 def test_getlogpath_hit_rotation_limit(test_log_dir, monkeypatch):
     """The rotation limit is hit."""
     monkeypatch.setattr(messages, "_MAX_LOG_FILES", 3)
-    previous_fpaths = [_get_log_filepath("testapp") for _ in range(2)]
-    for fpath in previous_fpaths:
+    previous_fpaths = []
+    for _ in range(2):
+        fpath = _get_log_filepath("testapp")
         fpath.touch()
+        previous_fpaths.append(fpath)
+        time.sleep(0.01)  # sleep a little so different log files have different timestamps
     new_fpath = _get_log_filepath("testapp")
     new_fpath.touch()
     present_logs = sorted((test_log_dir / "testapp").iterdir())
@@ -111,9 +118,12 @@ def test_getlogpath_hit_rotation_limit(test_log_dir, monkeypatch):
 def test_getlogpath_exceeds_rotation_limit(test_log_dir, monkeypatch):
     """The rotation limit is exceeded."""
     monkeypatch.setattr(messages, "_MAX_LOG_FILES", 3)
-    previous_fpaths = [_get_log_filepath("testapp") for _ in range(3)]
-    for fpath in previous_fpaths:
+    previous_fpaths = []
+    for _ in range(3):
+        fpath = _get_log_filepath("testapp")
         fpath.touch()
+        previous_fpaths.append(fpath)
+        time.sleep(0.01)  # sleep a little so different log files have different timestamps
     new_fpath = _get_log_filepath("testapp")
     new_fpath.touch()
     present_logs = sorted((test_log_dir / "testapp").iterdir())
@@ -125,9 +135,12 @@ def test_getlogpath_ignore_other_files(test_log_dir, monkeypatch):
     monkeypatch.setattr(messages, "_MAX_LOG_FILES", 3)
 
     # old files to trigger some removal
-    previous_fpaths = [_get_log_filepath("testapp") for _ in range(3)]
-    for fpath in previous_fpaths:
+    previous_fpaths = []
+    for _ in range(3):
+        fpath = _get_log_filepath("testapp")
         fpath.touch()
+        previous_fpaths.append(fpath)
+        time.sleep(0.01)  # sleep a little so different log files have different timestamps
 
     # other stuff that should not be removed
     parent = test_log_dir / "testapp"
@@ -262,13 +275,15 @@ def test_spinner_working_simple(spinner, monkeypatch):
     # check the initial messages complete the "spinner drawing" also showing elapsed time
     spinned_messages, spinned_texts = list(zip(*to_check))
     assert all(spinned_msg is msg for spinned_msg in spinned_messages)
-    assert spinned_texts == (
-        " - (0.0s)",
-        " \\ (0.0s)",
-        " | (0.0s)",
-        " / (0.0s)",
-        " - (0.0s)",
+    expected_texts = (
+        r" - \(\d\.\ds\)",
+        r" \\ \(\d\.\ds\)",
+        r" | \(\d\.\ds\)",
+        r" / \(\d\.\ds\)",
+        r" - \(\d\.\ds\)",
     )
+    for expected, real in zip(expected_texts, spinned_texts):
+        assert re.match(expected, real)
 
     # the last message should clean the spinner
     assert spinner.printer.spinned[-1] == (msg, " ")
@@ -440,7 +455,7 @@ def test_traceback_lines_simple():
         tbacklines = list(_get_traceback_lines(err))
 
     assert tbacklines[0] == "Traceback (most recent call last):"
-    assert tbacklines[1].startswith('  File "/')
+    assert tbacklines[1].startswith("  File ")
     assert tbacklines[1].endswith(", in test_traceback_lines_simple")
     assert tbacklines[2] == '    raise ValueError("pumba")'
     assert tbacklines[3] == "ValueError: pumba"

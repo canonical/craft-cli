@@ -204,6 +204,15 @@ def example_19():
     logger.debug("Some logging in DEBUG")
 
 
+def example_20():
+    """Show information that comes from a subprocess execution as a stream, Windows version."""
+    emit.set_mode(EmitterMode.TRACE)
+
+    with emit.open_stream("Running a simple Windows command") as stream:
+        subprocess.run(["python.exe", "-V"], stdout=stream, stderr=subprocess.STDOUT)
+    emit.message("Great!")
+
+
 # -- end of test cases
 
 if len(sys.argv) != 2:
