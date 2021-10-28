@@ -627,6 +627,12 @@ class Emitter:
         log_filepath: Optional[pathlib.Path] = None,
     ):
         """Initialize the emitter; this must be called once and before emitting any messages."""
+        if self._initiated:
+            if TESTMODE:
+                self._stop()
+            else:
+                raise RuntimeError("Double Emitter init detected!")
+
         self._greeting = greeting
 
         # create a log file, bootstrap the printer, and before anything else send the greeting
@@ -641,6 +647,7 @@ class Emitter:
         logger.addHandler(self._log_handler)
 
         self._initiated = True
+        self._stopped = False
         self.set_mode(mode)
 
     @_init_guard
@@ -743,13 +750,17 @@ class Emitter:
             stream = sys.stderr
         return _StreamContextManager(self._printer, text, stream)  # type: ignore
 
+    def _stop(self) -> None:
+        """Do all the stopping."""
+        self._printer.stop()  # type: ignore
+        self._stopped = True
+
     @_init_guard
     def ended_ok(self) -> None:
         """Finish the messaging system gracefully."""
         if self._stopped:
             return
-        self._stopped = True
-        self._printer.stop()  # type: ignore
+        self._stop()
 
     def _report_error(self, error: errors.CraftError) -> None:
         """Report the different message lines from a CraftError."""
@@ -787,9 +798,8 @@ class Emitter:
         """Handle the system's indicated error and stop machinery."""
         if self._stopped:
             return
-        self._stopped = True
         self._report_error(error)
-        self._printer.stop()  # type: ignore
+        self._stop()
 
 
 # module-level instantiated Emitter; this is the instance all code shall use and Emitter
