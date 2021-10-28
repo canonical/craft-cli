@@ -165,6 +165,36 @@ def test_init_receiving_logfile(tmp_path, monkeypatch):
     ]
 
 
+def test_init_double_regular_mode(tmp_path, monkeypatch):
+    """Double init in regular usage mode."""
+    # ensure it's not using the standard log filepath provider (that pollutes user dirs)
+    monkeypatch.setattr(messages, "_get_log_filepath", lambda appname: tmp_path / "fakelog.log")
+
+    emitter = Emitter()
+
+    with patch("craft_cli.messages._Printer"):
+        emitter.init(EmitterMode.VERBOSE, "testappname", "greeting")
+
+        with pytest.raises(RuntimeError, match="Double Emitter init detected!"):
+            emitter.init(EmitterMode.VERBOSE, "testappname", "greeting")
+
+
+def test_init_double_tests_mode(tmp_path, monkeypatch):
+    """Double init in tests usage mode."""
+    # ensure it's not using the standard log filepath provider (that pollutes user dirs)
+    monkeypatch.setattr(messages, "_get_log_filepath", lambda appname: tmp_path / "fakelog.log")
+
+    monkeypatch.setattr(messages, "TESTMODE", True)
+    emitter = Emitter()
+
+    with patch("craft_cli.messages._Printer"):
+        with patch.object(emitter, "_stop") as mock_stop:
+            emitter.init(EmitterMode.VERBOSE, "testappname", "greeting")
+            assert mock_stop.called is False
+            emitter.init(EmitterMode.VERBOSE, "testappname", "greeting")
+            assert mock_stop.called is True
+
+
 @pytest.mark.parametrize(
     "mode",
     [
