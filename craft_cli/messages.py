@@ -618,7 +618,7 @@ class Emitter:
     - `progress`: for all the progress messages intended to provide information that the
     machinery is running and doing what.
 
-    - `trace`: for all the messages that may used by the *developers* to do any debuguin on
+    - `trace`: for all the messages that may used by the *developers* to do any debugging on
     the application behaviour and/or logs forensics.
     """
 
