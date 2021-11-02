@@ -607,6 +607,19 @@ class Emitter:
 
     This class is not meant to be instantiated by the application, just use `emit` from
     this module.
+
+    The user of this object will select any of the following methods according to what
+    to show:
+
+    - `message`: for the final output of the running command; if there is important information
+    that needs to be shown to the user in the middle of the execution (and not overwritten
+    by other messages) this method can be also used but passing intermediate=True.
+
+    - `progress`: for all the progress messages intended to provide information that the
+    machinery is running and doing what.
+
+    - `trace`: for all the messages that may used by the *developers* to do any debugging on
+    the application behaviour and/or logs forensics.
     """
 
     def __init__(self):
