@@ -33,7 +33,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Literal, Optional, TextIO, Union
 
-import appdirs
+import platformdirs
 
 try:
     import win32pipe  # type: ignore
@@ -92,7 +92,7 @@ def _get_log_filepath(appname: str) -> pathlib.Path:
     The app name is used for both the directory where the logs are located and each log name.
 
     Rules:
-    - use an appdirs provided directory
+    - use an platformdirs provided directory
     - base filename is <appname>.<timestamp with microseconds>.log
     - it rotates until it gets to reaches :data:`._MAX_LOG_FILES`
     - after limit is achieved, remove the exceeding files
@@ -101,7 +101,7 @@ def _get_log_filepath(appname: str) -> pathlib.Path:
     Existing files are not renamed (no need, as each name is unique) nor gzipped (they may
     be currently in use by another process).
     """
-    basedir = pathlib.Path(appdirs.user_log_dir(appname))
+    basedir = pathlib.Path(platformdirs.user_log_dir(appname))
     filename = f"{appname}-{datetime.now():%Y%m%d-%H%M%S.%f}.log"
 
     # ensure the basedir is there
