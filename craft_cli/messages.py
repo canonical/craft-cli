@@ -450,7 +450,7 @@ class _PipeReaderThread(threading.Thread):
         # to unblock the reading); also note that the pipe pair themselves depend
         # on the platform
         if _WINDOWS_MODE:
-            # parameterss: default security, default buffer size, binary mode
+            # parameters: default security, default buffer size, binary mode
             binary_mode = os.O_BINARY  # pylint: disable=no-member  # (it does exist in Windows!)
             self.read_pipe, self.write_pipe = win32pipe.FdCreatePipe(None, 0, binary_mode)
         else:
@@ -459,7 +459,7 @@ class _PipeReaderThread(threading.Thread):
         # special flag used to stop the pipe reader thread
         self.stop_flag = False
 
-        # where to collect the content that is being read but yeat not written (waiting for
+        # where to collect the content that is being read but yet not written (waiting for
         # a newline)
         self.remaining_content = b""
 
