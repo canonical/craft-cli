@@ -30,10 +30,10 @@
 import os
 import sys
 
-import craft_cli
-
 
 sys.path.insert(0, os.path.abspath(".."))
+
+import craft_cli  # noqa: E402
 
 
 # -- Project information -----------------------------------------------------
@@ -91,3 +91,18 @@ typehints_document_rtype = True
 
 # Enable support for google-style instance attributes.
 napoleon_use_ivar = True
+
+
+def run_apidoc(_):
+    from sphinx.ext.apidoc import main
+    import os
+    import sys
+
+    sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+    cur_dir = os.path.abspath(os.path.dirname(__file__))
+    module = os.path.join(cur_dir, "..", "craft_cli")
+    main(["-e", "-o", cur_dir, module, "--no-toc", "--force"])
+
+
+def setup(app):
+    app.connect("builder-inited", run_apidoc)

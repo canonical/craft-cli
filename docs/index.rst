@@ -1,8 +1,9 @@
-Welcome to Craft Store's documentation!
+Welcome to Craft CLI's documentation!
 ===========================================
 
 .. toctree::
    :caption: Reference:
+   :maxdepth: 2
 
    craft_cli
 
