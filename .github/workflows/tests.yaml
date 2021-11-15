@@ -16,7 +16,7 @@ jobs:
           fetch-depth: 0
       - name: Install python packages and dependencies
         run: |
-          pip install -U -r requirements.txt -r requirements-dev.txt
+          pip install -U -e .[dev]
       - name: Run black
         run: |
           make test-black
@@ -58,16 +58,9 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install generic dependencies
+      - name: Install generic dependencies and craft-cli
         run: |
-          pip install -U -r requirements.txt -r requirements-dev.txt
-      - name: Install Windows specific dependencies
-        if: ${{ matrix.os == 'windows-2019' }}
-        run: |
-          pip install -U -r requirements-windows.txt
-      - name: Install craft-cli
-        run: |
-          pip install -e .
+          pip install -U -e .[dev]
 
       - name: Run unit tests
         run: |

@@ -51,13 +51,9 @@ dist: clean ## Build python package.
 	python setup.py bdist_wheel
 	ls -l dist
 
-.PHONY: freeze-requirements
-freeze-requirements:  ## Re-freeze requirements.
-	tools/freeze-requirements.sh
-
 .PHONY: install
 install: clean ## Install python package.
-	python setup.py install
+	pip install
 
 .PHONY: lint
 lint: test-black test-codespell test-flake8 test-isort test-mypy test-pydocstyle test-pylint test-pyright ## Run all linting tests.
