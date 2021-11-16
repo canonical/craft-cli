@@ -16,6 +16,12 @@
 
 """Support for all messages, ok or after errors, to screen and log file."""
 
+__all__ = [
+    "EmitterMode",
+    "TESTMODE",
+    "emit",
+]
+
 import enum
 import itertools
 import logging
