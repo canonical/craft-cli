@@ -16,6 +16,10 @@
 
 """Error classes."""
 
+__all__ = [
+    "CraftError",
+]
+
 from typing import Optional
 
 
