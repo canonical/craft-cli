@@ -62,13 +62,12 @@ class CraftError(Exception):
         if isinstance(other, CraftError):
             return all(
                 [
-                    self.args == getattr(other, "args"),
-                    self.details == getattr(other, "details"),
-                    self.resolution == getattr(other, "resolution"),
-                    self.docs_url == getattr(other, "docs_url"),
-                    self.reportable == getattr(other, "reportable"),
-                    self.retcode == getattr(other, "retcode"),
+                    self.args == other.args,
+                    self.details == other.details,
+                    self.resolution == other.resolution,
+                    self.docs_url == other.docs_url,
+                    self.reportable == other.reportable,
+                    self.retcode == other.retcode,
                 ]
             )
-        else:
-            return NotImplemented
+        return NotImplemented
