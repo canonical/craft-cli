@@ -61,3 +61,17 @@ class CraftError(Exception):
         self.docs_url = docs_url
         self.reportable = reportable
         self.retcode = retcode
+
+    def __eq__(self, other):
+        if isinstance(other, CraftError):
+            return all(
+                [
+                    self.args == other.args,
+                    self.details == other.details,
+                    self.resolution == other.resolution,
+                    self.docs_url == other.docs_url,
+                    self.reportable == other.reportable,
+                    self.retcode == other.retcode,
+                ]
+            )
+        return NotImplemented
