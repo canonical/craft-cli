@@ -75,3 +75,11 @@ class CraftError(Exception):
                 ]
             )
         return NotImplemented
+
+
+class ArgumentParsingError(Exception):
+    """Exception used when an argument parsing error is found."""
+
+
+class ProvideHelpException(Exception):
+    """Exception used to provide help to the user."""

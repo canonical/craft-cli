@@ -1,27 +1,45 @@
+#
+# Copyright 2021 Canonical Ltd.
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License version 3 as published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with this program; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+"""Tests for errors."""
+
 import pytest
 
 from craft_cli.errors import CraftError
 
 
 def test_crafterror_is_comparable():
-    a = CraftError("foo")
-    b = CraftError("foo")
+    error1 = CraftError("foo")
+    error2 = CraftError("foo")
 
-    assert a == b
+    assert error1 == error2
 
 
 def test_crafterror_is_different():
-    a = CraftError("foo")
-    b = CraftError("bar")
+    error1 = CraftError("foo")
+    error2 = CraftError("bar")
 
-    assert a != b
+    assert error1 != error2
 
 
 def test_crafterror_does_not_compare_to_other_exception():
-    a = CraftError("foo")
-    b = ValueError("foo")
+    error1 = CraftError("foo")
+    error2 = ValueError("foo")
 
-    assert a != b
+    assert error1 != error2
 
 
 @pytest.mark.parametrize(
@@ -35,12 +53,12 @@ def test_crafterror_does_not_compare_to_other_exception():
     ],
 )
 def test_compare_crafterror_with_different_attribute_values(argument_name):
-    a = CraftError("message")
-    b = CraftError("message")
-    setattr(a, argument_name, "foo")
-    setattr(b, argument_name, "bar")
+    error1 = CraftError("message")
+    error2 = CraftError("message")
+    setattr(error1, argument_name, "foo")
+    setattr(error2, argument_name, "bar")
 
-    assert a != b
+    assert error1 != error2
 
 
 @pytest.mark.parametrize(
@@ -54,9 +72,9 @@ def test_compare_crafterror_with_different_attribute_values(argument_name):
     ],
 )
 def test_compare_crafterror_with_identical_attribute_values(argument_name):
-    a = CraftError("message")
-    b = CraftError("message")
-    setattr(a, argument_name, "foo")
-    setattr(b, argument_name, "foo")
+    error1 = CraftError("message")
+    error2 = CraftError("message")
+    setattr(error1, argument_name, "foo")
+    setattr(error2, argument_name, "foo")
 
-    assert a == b
+    assert error1 == error2
