@@ -20,7 +20,7 @@ from operator import attrgetter
 from typing import TYPE_CHECKING, List, Tuple
 
 if TYPE_CHECKING:
-    from craft_cli.dispatcher import CommandGroup, _CommandInstance
+    from craft_cli.dispatcher import CommandGroup, _CommandType
 
 
 # max columns used in the terminal
@@ -212,7 +212,7 @@ class HelpBuilder:
         return text
 
     def get_command_help(  # pylint: disable=too-many-locals
-        self, command: "_CommandInstance", arguments: List[Tuple[str, str]]
+        self, command: "_CommandType", arguments: List[Tuple[str, str]]
     ) -> str:
         """Produce the text for each command's help.
 

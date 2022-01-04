@@ -218,7 +218,7 @@ def test_command_help_text_no_parameters():
     ]
 
     help_builder = HelpBuilder("testapp", "general summary", command_groups)
-    text = help_builder.get_command_help(cmd1(None), options)
+    text = help_builder.get_command_help(cmd1(None), options)  # type: ignore
 
     expected = textwrap.dedent(
         """\
@@ -268,7 +268,7 @@ def test_command_help_text_with_parameters():
     ]
 
     help_builder = HelpBuilder("testapp", "general summary", command_groups)
-    text = help_builder.get_command_help(cmd1(None), options)
+    text = help_builder.get_command_help(cmd1(None), options)  # type: ignore
 
     expected = textwrap.dedent(
         """\
@@ -312,7 +312,7 @@ def test_command_help_text_loneranger():
     ]
 
     help_builder = HelpBuilder("testapp", "general summary", command_groups)
-    text = help_builder.get_command_help(cmd1(None), options)
+    text = help_builder.get_command_help(cmd1(None), options)  # type: ignore
 
     expected = textwrap.dedent(
         """\

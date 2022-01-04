@@ -86,9 +86,10 @@ class BaseCommand(ABC):
     common = False
     needs_config = False
 
-    def __init__(self, config):
+    def __init__(self, config: Optional[Dict[str, Any]]):
         self.config = config
 
+    # FIXME: stuck here!! https://issueexplorer.com/issue/microsoft/pyright/2243
     @property
     @abstractmethod
     def name(self) -> str:
@@ -126,7 +127,7 @@ class BaseCommand(ABC):
 
 
 # only for typing purposes
-_CommandInstance = NewType("_CommandInstance", BaseCommand)
+_CommandType = NewType("_CommandType", BaseCommand)
 
 
 class _CustomArgumentParser(argparse.ArgumentParser):
@@ -142,9 +143,9 @@ class _CustomArgumentParser(argparse.ArgumentParser):
         raise ArgumentParsingError(full_msg)
 
 
-def _get_commands_info(commands_groups: List[CommandGroup]) -> Dict[str, Type[_CommandInstance]]:
+def _get_commands_info(commands_groups: List[CommandGroup]) -> Dict[str, Type[_CommandType]]:
     """Process the commands groups structure for easier programmatic access."""
-    commands: Dict[str, Type[_CommandInstance]] = {}
+    commands: Dict[str, Type[_CommandType]] = {}
     for command_group in commands_groups:
         for _cmd_class in command_group.commands:
             if _cmd_class.name in commands:
@@ -178,12 +179,12 @@ class Dispatcher:
             self.global_arguments.extend(extra_global_args)
 
         self.commands = _get_commands_info(commands_groups)
-        self._command_class: Optional[Type[_CommandInstance]] = None
+        self._command_class: Optional[Type[_CommandType]] = None
         self._command_args: Optional[List[str]] = None
-        self._loaded_command: Optional[_CommandInstance] = None
+        self._loaded_command: Optional[_CommandType] = None
         self._parsed_command_args: Optional[argparse.Namespace] = None
 
-    def load_command(self, app_config: Any) -> _CommandInstance:
+    def load_command(self, app_config: Any) -> _CommandType:
         """Load a command."""
         if self._command_class is None:
             raise RuntimeError(

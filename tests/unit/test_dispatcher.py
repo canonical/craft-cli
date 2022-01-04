@@ -116,7 +116,7 @@ def test_dispatcher_command_execution_ok():
     groups = [CommandGroup("title", [MyCommand1, MyCommand2])]
     dispatcher = Dispatcher("appname", groups)
     dispatcher.pre_parse_args(["name2"])
-    dispatcher.load_command("config")
+    dispatcher.load_command(None)
     dispatcher.run()
     assert MyCommand1._executed == []
     assert isinstance(MyCommand2._executed[0], argparse.Namespace)
@@ -138,7 +138,7 @@ def test_dispatcher_command_return_code():
     groups = [CommandGroup("title", [MyCommand])]
     dispatcher = Dispatcher("appname", groups)
     dispatcher.pre_parse_args(["cmdname"])
-    dispatcher.load_command("config")
+    dispatcher.load_command(None)
     retcode = dispatcher.run()
     assert retcode == 17
 
@@ -159,7 +159,7 @@ def test_dispatcher_command_execution_crash():
     groups = [CommandGroup("title", [MyCommand])]
     dispatcher = Dispatcher("appname", groups)
     dispatcher.pre_parse_args(["cmdname"])
-    dispatcher.load_command("config")
+    dispatcher.load_command(None)
     with pytest.raises(ValueError):
         dispatcher.run()
 
@@ -405,7 +405,7 @@ def test_dispatcher_commands_are_not_loaded_if_not_needed():
     groups = [CommandGroup("title", [MyCommand1, MyCommand2])]
     dispatcher = Dispatcher("appname", groups)
     dispatcher.pre_parse_args(["command1"])
-    dispatcher.load_command("config")
+    dispatcher.load_command(None)
     dispatcher.run()
     assert isinstance(MyCommand1._executed[0], argparse.Namespace)
 
@@ -464,7 +464,7 @@ def test_basecommand_fill_parser_optional():
         def run(self, parsed_args):
             self.done = True
 
-    command = TestCommand("config")
+    command = TestCommand(None)
     command.run([])
     assert command.done
 
@@ -479,7 +479,7 @@ def test_basecommand_run_mandatory():
         name = "test"
         overview = "fake overview"
 
-    command = TestCommand("config")
+    command = TestCommand(None)
     with pytest.raises(NotImplementedError):
         command.run([])
 
@@ -494,7 +494,7 @@ def test_basecommand_mandatory_attribute_name():
         overview = "fake overview"
 
     with pytest.raises(TypeError):
-        TestCommand("config")  # pylint: disable=abstract-class-instantiated
+        TestCommand(None)  # type: ignore  # pylint: disable=abstract-class-instantiated
 
 
 def test_basecommand_mandatory_attribute_help_message():
@@ -507,7 +507,7 @@ def test_basecommand_mandatory_attribute_help_message():
         name = "test"
 
     with pytest.raises(TypeError):
-        TestCommand("config")  # pylint: disable=abstract-class-instantiated
+        TestCommand(None)  # type: ignore  # pylint: disable=abstract-class-instantiated
 
 
 def test_basecommand_mandatory_attribute_overview():
@@ -520,4 +520,4 @@ def test_basecommand_mandatory_attribute_overview():
         name = "test"
 
     with pytest.raises(TypeError):
-        TestCommand("config")  # pylint: disable=abstract-class-instantiated
+        TestCommand(None)  # type: ignore  # pylint: disable=abstract-class-instantiated

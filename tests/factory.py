@@ -13,9 +13,12 @@
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from typing import Type
+from typing import Type, TYPE_CHECKING
 
 from craft_cli import BaseCommand
+
+if TYPE_CHECKING:
+    from craft_cli.dispatcher import _CommandType
 
 
 class TypingHelper(BaseCommand):
@@ -28,14 +31,14 @@ def create_command(
     common_: bool = False,
     overview_: str = "",
     needs_config_: bool = False,
-) -> Type[TypingHelper]:
+) -> Type["_CommandType"]:
     """Helper to create commands."""
     if help_msg_ is None:
         help_msg_ = "Automatic help generated in the factory for the tests."
     if overview_ is None:
         overview_ = "Automatic long description generated in the factory for the tests."
 
-    class MyCommand(TypingHelper):
+    class MyCommand(BaseCommand):
         """Specifically defined command."""
 
         name = name_
