@@ -67,12 +67,12 @@ def test_get_usage_message_no_command():
 
 def test_default_help_text():
     """All different parts for the default help."""
-    cmd1 = create_command("cmd1", "Cmd help which is very long but whatever.", common_=True)
-    cmd2 = create_command("command-2", "Cmd help.", common_=True)
-    cmd3 = create_command("cmd3", "Extremely " + "super crazy long " * 5 + " help.", common_=True)
+    cmd1 = create_command("cmd1", "Cmd help which is very long but whatever.", common=True)
+    cmd2 = create_command("command-2", "Cmd help.", common=True)
+    cmd3 = create_command("cmd3", "Extremely " + "super crazy long " * 5 + " help.", common=True)
     cmd4 = create_command("cmd4", "Some help.")
     cmd5 = create_command("cmd5", "More help.")
-    cmd6 = create_command("cmd6-really-long", "More help.", common_=True)
+    cmd6 = create_command("cmd6-really-long", "More help.", common=True)
     cmd7 = create_command("cmd7", "More help.")
 
     command_groups = [
@@ -129,12 +129,12 @@ def test_default_help_text():
 
 def test_detailed_help_text():
     """All different parts for the detailed help, showing all commands."""
-    cmd1 = create_command("cmd1", "Cmd help which is very long but whatever.", common_=True)
-    cmd2 = create_command("command-2", "Cmd help.", common_=True)
-    cmd3 = create_command("cmd3", "Extremely " + "super crazy long " * 5 + " help.", common_=True)
+    cmd1 = create_command("cmd1", "Cmd help which is very long but whatever.", common=True)
+    cmd2 = create_command("command-2", "Cmd help.", common=True)
+    cmd3 = create_command("cmd3", "Extremely " + "super crazy long " * 5 + " help.", common=True)
     cmd4 = create_command("cmd4", "Some help.")
     cmd5 = create_command("cmd5", "More help.")
-    cmd6 = create_command("cmd6-really-long", "More help.", common_=True)
+    cmd6 = create_command("cmd6-really-long", "More help.", common=True)
     cmd7 = create_command("cmd7", "More help.")
 
     command_groups = [
@@ -201,7 +201,7 @@ def test_command_help_text_no_parameters():
         Multiline!
     """
     )
-    cmd1 = create_command("somecommand", "Command one line help.", overview_=overview)
+    cmd1 = create_command("somecommand", "Command one line help.", overview=overview)
     cmd2 = create_command("other-cmd-2", "Some help.")
     cmd3 = create_command("other-cmd-3", "Some help.")
     cmd4 = create_command("other-cmd-4", "Some help.")
@@ -218,7 +218,7 @@ def test_command_help_text_no_parameters():
     ]
 
     help_builder = HelpBuilder("testapp", "general summary", command_groups)
-    text = help_builder.get_command_help(cmd1(None), options)  # type: ignore
+    text = help_builder.get_command_help(cmd1(None), options)
 
     expected = textwrap.dedent(
         """\
@@ -253,7 +253,7 @@ def test_command_help_text_with_parameters():
         Quite some long text.
     """
     )
-    cmd1 = create_command("somecommand", "Command one line help.", overview_=overview)
+    cmd1 = create_command("somecommand", "Command one line help.", overview=overview)
     cmd2 = create_command("other-cmd-2", "Some help.")
     command_groups = [
         CommandGroup("group1", [cmd1, cmd2]),
@@ -268,7 +268,7 @@ def test_command_help_text_with_parameters():
     ]
 
     help_builder = HelpBuilder("testapp", "general summary", command_groups)
-    text = help_builder.get_command_help(cmd1(None), options)  # type: ignore
+    text = help_builder.get_command_help(cmd1(None), options)
 
     expected = textwrap.dedent(
         """\
@@ -299,7 +299,7 @@ def test_command_help_text_loneranger():
         Quite some long text.
     """
     )
-    cmd1 = create_command("somecommand", "Command one line help.", overview_=overview)
+    cmd1 = create_command("somecommand", "Command one line help.", overview=overview)
     cmd2 = create_command("other-cmd-2", "Some help.")
     command_groups = [
         CommandGroup("group1", [cmd1]),
@@ -312,7 +312,7 @@ def test_command_help_text_loneranger():
     ]
 
     help_builder = HelpBuilder("testapp", "general summary", command_groups)
-    text = help_builder.get_command_help(cmd1(None), options)  # type: ignore
+    text = help_builder.get_command_help(cmd1(None), options)
 
     expected = textwrap.dedent(
         """\

@@ -99,7 +99,7 @@ def test_dispatcher_command_execution_ok():
         overview = "fake overview"
 
         def run(self, parsed_args):
-            self._executed.append(parsed_args)  # pylint: disable=no-member
+            self._executed.append(parsed_args)  # type: ignore  # pylint: disable=no-member
 
     class MyCommand1(MyCommandControl):
         """Specifically defined command."""
@@ -340,30 +340,16 @@ def test_dispatcher_build_commands_ok():
     dispatcher = Dispatcher("appname", groups)
     assert len(dispatcher.commands) == 3
     for cmd in [cmd0, cmd1, cmd2]:
+        assert cmd.name is not None  # for typing purposes
         expected_class = dispatcher.commands[cmd.name]
         assert expected_class == cmd
 
 
 def test_dispatcher_build_commands_repeated():
     """Error while loading commands with repeated name."""
-
-    class Foo(BaseCommand):
-        """Specifically defined command."""
-
-        help_msg = "some help"
-        name = "repeated"
-
-    class Bar(BaseCommand):
-        """Specifically defined command."""
-
-        help_msg = "some help"
-        name = "cool"
-
-    class Baz(BaseCommand):
-        """Specifically defined command."""
-
-        help_msg = "some help"
-        name = "repeated"
+    Foo = create_command(name="repeated", class_name="Foo")
+    Bar = create_command(name="cool", class_name="Bar")
+    Baz = create_command(name="repeated", class_name="Baz")
 
     groups = [
         CommandGroup("whatever title", [Foo, Bar]),
@@ -442,7 +428,10 @@ def test_basecommand_holds_the_indicated_info():
         name = "test"
         overview = "fake overview"
 
-    config = "test config"
+        def run(self, parsed_args):
+            pass
+
+    config = {"test": "config"}
     command = TestCommand(config)
     assert command.config == config
 
@@ -472,7 +461,7 @@ def test_basecommand_fill_parser_optional():
 def test_basecommand_run_mandatory():
     """BaseCommand subclasses must override run."""
 
-    class TestCommand(BaseCommand):
+    class TestCommand(BaseCommand):  # pylint: disable=abstract-method  # yes, 'run' is not there
         """Specifically defined command."""
 
         help_msg = "help message"
@@ -481,7 +470,7 @@ def test_basecommand_run_mandatory():
 
     command = TestCommand(None)
     with pytest.raises(NotImplementedError):
-        command.run([])
+        command.run([])  # type: ignore
 
 
 def test_basecommand_mandatory_attribute_name():
@@ -493,8 +482,12 @@ def test_basecommand_mandatory_attribute_name():
         help_msg = "help message"
         overview = "fake overview"
 
-    with pytest.raises(TypeError):
-        TestCommand(None)  # type: ignore  # pylint: disable=abstract-class-instantiated
+        def run(self, parsed_args):
+            pass
+
+    with pytest.raises(ValueError) as exc_cm:
+        TestCommand(None)
+    assert str(exc_cm.value) == "Bad command configuration: missing value in 'name'."
 
 
 def test_basecommand_mandatory_attribute_help_message():
@@ -506,8 +499,12 @@ def test_basecommand_mandatory_attribute_help_message():
         overview = "fake overview"
         name = "test"
 
-    with pytest.raises(TypeError):
-        TestCommand(None)  # type: ignore  # pylint: disable=abstract-class-instantiated
+        def run(self, parsed_args):
+            pass
+
+    with pytest.raises(ValueError) as exc_cm:
+        TestCommand(None)
+    assert str(exc_cm.value) == "Bad command configuration: missing value in 'help_msg'."
 
 
 def test_basecommand_mandatory_attribute_overview():
@@ -519,5 +516,9 @@ def test_basecommand_mandatory_attribute_overview():
         help_msg = "help message"
         name = "test"
 
-    with pytest.raises(TypeError):
-        TestCommand(None)  # type: ignore  # pylint: disable=abstract-class-instantiated
+        def run(self, parsed_args):
+            pass
+
+    with pytest.raises(ValueError) as exc_cm:
+        TestCommand(None)
+    assert str(exc_cm.value) == "Bad command configuration: missing value in 'overview'."

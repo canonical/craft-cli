@@ -16,9 +16,8 @@
 """Argument processing and command dispatching functionality."""
 
 import argparse
-from abc import ABC, abstractmethod
 from collections import namedtuple
-from typing import Any, Dict, List, NewType, Optional, Tuple, Type
+from typing import Any, Dict, List, Optional, Tuple, Type
 
 from craft_cli import EmitterMode, emit
 from craft_cli.errors import ArgumentParsingError, ProvideHelpException
@@ -61,18 +60,22 @@ _DEFAULT_GLOBAL_ARGS = [
 ]
 
 
-class BaseCommand(ABC):
+class BaseCommand:
     """Base class to build application commands.
 
     Subclass this to create a new command; the subclass must define the following attributes:
 
     - name: the identifier in the command line
+
     - help_msg: a one line help for user documentation
+
     - overview: a longer multi-line text with the whole command description
 
     Also it may override the following ones to change their default:
+
     - common: if it's a common/starter command, which are prioritized in the help (default to
       False)
+
     - needs_config: will ensure a config is provided when executing the command (default to False)
 
     It also must/can override some methods for the proper command behaviour (see each
@@ -85,25 +88,18 @@ class BaseCommand(ABC):
 
     common = False
     needs_config = False
+    name: Optional[str] = None
+    help_msg: Optional[str] = None
+    overview: Optional[str] = None
 
     def __init__(self, config: Optional[Dict[str, Any]]):
         self.config = config
 
-    # FIXME: stuck here!! https://issueexplorer.com/issue/microsoft/pyright/2243
-    @property
-    @abstractmethod
-    def name(self) -> str:
-        """Return the command name."""
-
-    @property
-    @abstractmethod
-    def help_msg(self) -> str:
-        """Return a one line help for user documentation."""
-
-    @property
-    @abstractmethod
-    def overview(self) -> str:
-        """Ah longer multi-line text with the whole command description."""
+        # validate attributes
+        mandatory = ("name", "help_msg", "overview")
+        for attr_name in mandatory:
+            if getattr(self, attr_name) is None:
+                raise ValueError(f"Bad command configuration: missing value in '{attr_name}'.")
 
     def fill_parser(self, parser: "_CustomArgumentParser") -> None:
         """Specify command's specific parameters.
@@ -126,10 +122,6 @@ class BaseCommand(ABC):
         raise NotImplementedError()
 
 
-# only for typing purposes
-_CommandType = NewType("_CommandType", BaseCommand)
-
-
 class _CustomArgumentParser(argparse.ArgumentParser):
     """ArgumentParser with custom error manager.."""
 
@@ -143,9 +135,9 @@ class _CustomArgumentParser(argparse.ArgumentParser):
         raise ArgumentParsingError(full_msg)
 
 
-def _get_commands_info(commands_groups: List[CommandGroup]) -> Dict[str, Type[_CommandType]]:
+def _get_commands_info(commands_groups: List[CommandGroup]) -> Dict[str, Type[BaseCommand]]:
     """Process the commands groups structure for easier programmatic access."""
-    commands: Dict[str, Type[_CommandType]] = {}
+    commands: Dict[str, Type[BaseCommand]] = {}
     for command_group in commands_groups:
         for _cmd_class in command_group.commands:
             if _cmd_class.name in commands:
@@ -179,12 +171,12 @@ class Dispatcher:
             self.global_arguments.extend(extra_global_args)
 
         self.commands = _get_commands_info(commands_groups)
-        self._command_class: Optional[Type[_CommandType]] = None
+        self._command_class: Optional[Type[BaseCommand]] = None
         self._command_args: Optional[List[str]] = None
-        self._loaded_command: Optional[_CommandType] = None
+        self._loaded_command: Optional[BaseCommand] = None
         self._parsed_command_args: Optional[argparse.Namespace] = None
 
-    def load_command(self, app_config: Any) -> _CommandType:
+    def load_command(self, app_config: Any) -> BaseCommand:
         """Load a command."""
         if self._command_class is None:
             raise RuntimeError(
@@ -244,7 +236,7 @@ class Dispatcher:
             raise ArgumentParsingError(text)  # pylint: disable=raise-missing-from
 
         # instantiate the command and fill its arguments
-        command = cmd_class(None)  # type: ignore
+        command = cmd_class(None)
         parser = _CustomArgumentParser(self._help_builder, prog=command.name, add_help=False)
         command.fill_parser(parser)
 
