@@ -524,9 +524,11 @@ def test_show_defaults_no_stream(recording_printer):
     assert not recording_printer.spinner.supervised
 
 
+@pytest.mark.parametrize("isatty", [True, False])
 @pytest.mark.parametrize("stream", [sys.stdout, sys.stderr])
-def test_show_defaults(stream, recording_printer):
+def test_show_defaults(stream, isatty, recording_printer):
     """Write a message with all defaults (for the different valid streams)."""
+    stream.isatty = lambda: isatty
     before = datetime.now()
     recording_printer.show(stream, "test text")
 
@@ -549,8 +551,12 @@ def test_show_defaults(stream, recording_printer):
     (logged,) = recording_printer.logged
     assert msg is logged
 
-    # the spinner now has the shown message to supervise
-    assert recording_printer.spinner.supervised == [msg]
+    if isatty:
+        # the spinner now has the shown message to supervise
+        assert recording_printer.spinner.supervised == [msg]
+    else:
+        # no spinner when the stream is not a terminal
+        assert recording_printer.spinner.supervised == [None]
 
 
 def test_show_use_timestamp(recording_printer):

@@ -322,11 +322,15 @@ class _Printer:
             return
 
         if msg.bar_progress is None:
-            # regular message, send it to the spinner and write it
-            self.spinner.supervise(msg)
+            # regular message, send it to the spinner (if the stream is a
+            # terminal) and write it
+            if getattr(msg.stream, "isatty", lambda: False)():
+                self.spinner.supervise(msg)
+            else:
+                self.spinner.supervise(None)
             self._write_line(msg)
         else:
-            # progress bar, send None to the spinner (as it's not a "spinneable" message)
+            # progress bar, send None to the spinner (as it's not a "spinnable" message)
             # and write it
             self.spinner.supervise(None)
             self._write_bar(msg)
