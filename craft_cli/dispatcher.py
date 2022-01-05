@@ -79,9 +79,8 @@ class BaseCommand:
     It also must/can override some methods for the proper command behaviour (see each
     method's docstring).
 
-    The subclass must be declared in the corresponding section of main.COMMAND_GROUPS,
-    and will receive and store this group on instantiation (if overriding `__init__`, the
-    subclass must pass it through upwards).
+    The subclass must be declared in the corresponding section of command groups indicated
+    to the Dispatcher.
     """
 
     common = False
