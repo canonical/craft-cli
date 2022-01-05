@@ -1,4 +1,4 @@
-# Copyright 2021 Canonical Ltd.
+# Copyright 2021-2022 Canonical Ltd.
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -71,12 +71,10 @@ class BaseCommand:
 
     - overview: a longer multi-line text with the whole command description
 
-    Also it may override the following ones to change their default:
+    Also it may override the following one to change its default:
 
     - common: if it's a common/starter command, which are prioritized in the help (default to
       False)
-
-    - needs_config: will ensure a config is provided when executing the command (default to False)
 
     It also must/can override some methods for the proper command behaviour (see each
     method's docstring).
@@ -87,7 +85,6 @@ class BaseCommand:
     """
 
     common = False
-    needs_config = False
     name: Optional[str] = None
     help_msg: Optional[str] = None
     overview: Optional[str] = None
