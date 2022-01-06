@@ -64,6 +64,11 @@ class _MessageInfo:  # pylint: disable=too-many-instance-attributes
     end_line: bool = False
     created_at: datetime = field(default_factory=datetime.now)
 
+    @property
+    def stream_is_terminal(self) -> bool:
+        """Return whether the message's stream is a terminal."""
+        return getattr(self.stream, "isatty", lambda: False)()
+
 
 # the different modes the Emitter can be set
 EmitterMode = enum.Enum("EmitterMode", "QUIET NORMAL VERBOSE TRACE")
@@ -324,7 +329,7 @@ class _Printer:
         if msg.bar_progress is None:
             # regular message, send it to the spinner (if the stream is a
             # terminal) and write it
-            if getattr(msg.stream, "isatty", lambda: False)():
+            if msg.stream_is_terminal:
                 self.spinner.supervise(msg)
             else:
                 self.spinner.supervise(None)
