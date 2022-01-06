@@ -1,5 +1,5 @@
 #
-# Copyright 2021 Canonical Ltd.
+# Copyright 2021-2022 Canonical Ltd.
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -75,3 +75,11 @@ class CraftError(Exception):
                 ]
             )
         return NotImplemented
+
+
+class ArgumentParsingError(Exception):
+    """Exception used when an argument parsing error is found."""
+
+
+class ProvideHelpException(Exception):
+    """Exception used to provide help to the user."""

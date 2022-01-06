@@ -1,4 +1,3 @@
-#
 # Copyright 2021-2022 Canonical Ltd.
 #
 # This program is free software; you can redistribute it and/or
@@ -14,12 +13,25 @@
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-"""Interact with Canonical services such as Charmhub and the Snap Store."""
+from typing import Type
 
-__version__ = "0.0.1.dev1"
+from craft_cli import BaseCommand
 
-# names included here only to be exposed as external API; the particular order of imports
-# is to break cyclic dependencies
-from .messages import EmitterMode, emit  # noqa: F401 ; isort:skip
-from .dispatcher import BaseCommand, CommandGroup, Dispatcher, GlobalArgument  # noqa: F401
-from .errors import ArgumentParsingError, CraftError, ProvideHelpException  # noqa: F401
+
+def create_command(
+    name: str,
+    help_msg: str = "",
+    common: bool = False,
+    overview: str = "",
+    class_name: str = "MyCommand",
+) -> Type["BaseCommand"]:
+    """Helper to create commands."""
+    attribs = {
+        "name": name,
+        "help_msg": help_msg,
+        "common": common,
+        "overview": overview,
+        "needs_config": False,
+        "run": lambda parsed_args: None,
+    }
+    return type(class_name, (BaseCommand,), attribs)
