@@ -1,5 +1,5 @@
 #
-# Copyright 2021 Canonical Ltd.
+# Copyright 2021-2022 Canonical Ltd.
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -588,7 +588,7 @@ class _Handler(logging.Handler):
 
     def emit(self, record: logging.LogRecord) -> None:
         """Send the message in the LogRecord to the printer."""
-        use_timestamp = self.mode == EmitterMode.VERBOSE or self.mode == EmitterMode.TRACE
+        use_timestamp = self.mode in (EmitterMode.VERBOSE, EmitterMode.TRACE)
         threshold = self.mode_to_log_map[self.mode]
         stream = sys.stderr if record.levelno >= threshold else None
         self.printer.show(stream, record.getMessage(), use_timestamp=use_timestamp)
@@ -680,7 +680,7 @@ class Emitter:
         self._mode = mode
         self._log_handler.mode = mode  # type: ignore
 
-        if self._mode == EmitterMode.VERBOSE or self._mode == EmitterMode.TRACE:
+        if mode in (EmitterMode.VERBOSE, EmitterMode.TRACE):
             # send the greeting to the screen before any further messages
             msgs = [
                 self._greeting,
@@ -700,7 +700,7 @@ class Emitter:
         with intermediate=True (which will include timestamp in verbose/trace mode).
         """
         use_timestamp = bool(
-            intermediate and (self._mode == EmitterMode.VERBOSE or self._mode == EmitterMode.TRACE)
+            intermediate and self._mode in (EmitterMode.VERBOSE, EmitterMode.TRACE)
         )
         self._printer.show(sys.stdout, text, use_timestamp=use_timestamp)  # type: ignore
 
@@ -763,7 +763,7 @@ class Emitter:
     def open_stream(self, text: str):
         """Open a stream context manager to get messages from subprocesses."""
         # don't show third party streams if quiet or normal
-        if self._mode == EmitterMode.QUIET or self._mode == EmitterMode.NORMAL:
+        if self._mode in (EmitterMode.QUIET, EmitterMode.NORMAL):
             stream = None
         else:
             stream = sys.stderr
@@ -783,7 +783,7 @@ class Emitter:
 
     def _report_error(self, error: errors.CraftError) -> None:
         """Report the different message lines from a CraftError."""
-        if self._mode == EmitterMode.QUIET or self._mode == EmitterMode.NORMAL:
+        if self._mode in (EmitterMode.QUIET, EmitterMode.NORMAL):
             use_timestamp = False
             full_stream = None
         else:
