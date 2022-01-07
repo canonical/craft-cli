@@ -39,7 +39,7 @@ import craft_cli  # noqa: E402
 # -- Project information -----------------------------------------------------
 
 project = "Craft CLI"
-copyright = "2021, Canonical Ltd."
+copyright = "2021-2022 Canonical Ltd."
 author = "Canonical Ltd."
 
 # The full version, including alpha/beta/rc tags
