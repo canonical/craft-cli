@@ -5,7 +5,7 @@ Explanations
 About the appropriate mode to initiate `emit`
 =============================================
 
-The first mandatory parameter of the ``emit`` object is ``mode``, which controls the verboseness level for the system to start with.
+The first mandatory parameter of the ``emit`` object is ``mode``, which controls the initial verboseness level of the system.
 
 As the user can change the level later using global arguments when executing the application (this is the application default level), it's recommended to use ``EmitterMode.NORMAL``, unless the application needs to honor any external configuration or indication (e.g. a ``DEBUG`` environment variable).
 
@@ -172,10 +172,10 @@ E.g.::
         subprocess.run(["ls", "-l"], stdout=stream, stderr=stream)
 
 
-How to easily try different combinations
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+How to easily try different message types
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-There is a collection of examples in the project, in the ``examples.py`` file.
+There is a collection of examples in the project, in the ``examples.py`` file. Some examples are very simple, exercising only one message type, but others use different combinations so it's easy to explore more complex behaviours.
 
 To run them using the library, a virtual environment needs to be setup::
 
