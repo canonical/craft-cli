@@ -29,7 +29,7 @@ CommandGroup = namedtuple("CommandGroup", "name commands")
 A list of these is what is passed to the ``Dispatcher`` to run commands as part
 of the application.
 
-:param name: identifier of the command group (to be used in helping texts).
+:param name: identifier of the command group (to be used in help texts).
 :param commands: a list of the commands in this group.
 """
 
@@ -42,7 +42,7 @@ GlobalArgument = namedtuple("GlobalArgument", "name type short_option long_optio
     specified (``False`` by default), or ``option`` if a value is needed after it.
 :param short_option: the short form of the argument (a dash with a letter, e.g. ``-s``).
 :param long_option: the long form of the argument (two dashes and a name, e.g. ``--secure``).
-:param help_message: the one-line text that describes the argument, for building the helping texts.
+:param help_message: the one-line text that describes the argument, for building the help texts.
 """
 _DEFAULT_GLOBAL_ARGS = [
     GlobalArgument(

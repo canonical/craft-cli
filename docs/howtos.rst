@@ -7,7 +7,7 @@ HOW TOs
 Use a different logfile structure than the default
 ==================================================
 
-To override the default management of application log files (`detailed here <FIXME>`_), a file path can be specified when initiating the `emit` object, using the ``log_filepath`` parameter::
+To override :ref:`the default management of application log files <expl_log_management>`, a file path can be specified when initiating the `emit` object, using the ``log_filepath`` parameter::
 
     emit.init(mode, appname, greeting, log_filepath)
 
@@ -106,7 +106,7 @@ So, in addition of just passing a message to the user...
 
 - ``retcode``: the code to return when the application finishes (see :ref:`how to use this when wrapping Dispatcher <howto_return_codes>`)
 
-You should use any combination of these, as looks appropiate.
+You should use any combination of these, as looks appropriate.
 
 For further information reported to the user and/or sent to the log file, you should create ``CraftError`` specifying the original exception (if any). E.g.::
 

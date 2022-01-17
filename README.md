@@ -1,7 +1,7 @@
 # Craft CLI
 
-A Command Line Client builder that follows Canonical's guidelines for a command line
-interface defined [in this forum post](https://discourse.ubuntu.com/c/design/cli-guidelines/62).
+A Command Line Client builder that follows the [Canonical's Guidelines for a Command Line
+Interface](https://discourse.ubuntu.com/c/design/cli-guidelines/62).
 
 The library provides two main functionalities: 
 
@@ -12,7 +12,7 @@ The library provides two main functionalities:
 
 # Documentation
 
-The documentation is in Read The Docs, [check it out](https://craft-cli.readthedocs.io).
+The [documentation](https://craft-cli.readthedocs.io) is available in Read The Docs.
 
 
 # Contributing

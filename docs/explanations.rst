@@ -2,8 +2,8 @@
 Explanations
 ************
 
-About the appropiate mode to initiate `emit`
-============================================
+About the appropriate mode to initiate `emit`
+=============================================
 
 The first mandatory parameter of the ``emit`` object is ``mode``, which controls the verboseness level for the system to start with.
 
@@ -17,12 +17,14 @@ The values for ``mode`` are the following attributes of the ``EmitterMode`` enum
 - ``EmitterMode.TRACE``: to also present debug-specific messages
 
 
+.. _expl_log_management:
+
 How Craft CLI manage the application logs
 =========================================
 
-Unless overriden when ``emit`` is initiated (see :ref:`how to do that <howto_other_logfile>`), the application logs will be managed by the Craft CLI library, according to the following rules:
+Unless overridden when ``emit`` is initiated (see :ref:`how to do that <howto_other_logfile>`), the application logs will be managed by the Craft CLI library, according to the following rules:
 
-- one log file is always produced for each application run (only exposed to the user if the application ends in error or a verbose run was requested by ``--verbose`` or ``--trace``), naming the files with a timestamp so they are unique.
+- one log file is always produced for each application run (only exposed to the user if the application ends in error or a verbose run was requested by ``--verbose`` or ``--trace``), naming the files with a timestamp so they are unique
 
 - log files are located in a directory with the application name under the user's log directory
 
@@ -49,7 +51,7 @@ The Dispatcher automatically provides the following global arguments, but more c
 - ``-t`` / ``--trace``: sets the ``emit`` output level to TRACE
 - ``-h`` / ``--help``: provides a help text for the application or command
 
-On the other hand, each command can specify its own arguments parsing rules using the ``fill_parser`` method, which receives an `ArgumentParser <https://docs.python.org/dev/library/argparse.html>`_ with all its features for parsing a command line argument. The parsing result will be passed to the command on execution, as the ``parsed_args`` parameter of the ``run`` method.
+Each command can also specify its own arguments parsing rules using the ``fill_parser`` method, which receives an `ArgumentParser <https://docs.python.org/dev/library/argparse.html>`_ with all its features for parsing a command line argument. The parsing result will be passed to the command on execution, as the ``parsed_args`` parameter of the ``run`` method.
 
 
 Group of commands
@@ -86,7 +88,7 @@ After bootstrapping the library as shown before, and importing ``emit`` wherever
 Regular messages
 ~~~~~~~~~~~~~~~~
 
-The ``message`` metod is for the final output of the running command.
+The ``message`` method is for the final output of the running command.
 
 If there is important information that needs to be shown to the user in the middle of the execution (and not overwritten by other messages) this method can be also used but passing ``intermediate=True``:
 
@@ -102,7 +104,7 @@ E.g.::
 Progress messages
 ~~~~~~~~~~~~~~~~~
 
-The ``progress`` method is for all the progress messages intended to provide information that the machinery is running and doing what. 
+The ``progress`` method is to present all the messages that provide information on what the application is currently doing.
 
 Messages shown this way are ephemeral in ``QUIET`` or ``NORMAL`` modes (overwritten by the next line) and will be truncated to the terminal's width in that case.
 
@@ -170,12 +172,12 @@ E.g.::
         subprocess.run(["ls", "-l"], stdout=stream, stderr=stream)
 
 
-How to easily test different combinations
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+How to easily try different combinations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 There is a collection of examples in the project, in the ``examples.py`` file.
 
-To run them using the library, a virtualenv needs to be setup::
+To run them using the library, a virtual environment needs to be setup::
 
     python3 -m venv env
     env/bin/pip install -e .[dev]

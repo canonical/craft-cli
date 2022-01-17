@@ -7,7 +7,7 @@ Run a command based application with craft-cli
 
 This tutorial will explain how to use Craft CLI to run an application that is based on commands.
 
-Along the way you will define a simple command (named `unlink`, with the functionality of removing files), and call the appropiate library mechanisms for that command to be executed when running the application.
+Along the way you will define a simple command (named `unlink`, with the functionality of removing files), and call the appropriate library mechanisms for that command to be executed when running the application.
 
 
 Prerequisites
@@ -32,7 +32,7 @@ Then enable the virtual environment and install Craft CLI::
 Define the command and run it using the Dispatcher
 --------------------------------------------------
 
-First start with a class subclassing `BaseCommand` with the appropiate attributes to name it and have automatic help texts, then provide a `fill_parser` method to declare what arguments are possible for this command, and finally a `run` method where the "real" functionality is implemented::
+First start with a class sub-classing `BaseCommand` with the appropriate attributes to name it and have automatic help texts, then provide a `fill_parser` method to declare what arguments are possible for this command, and finally a `run` method where the "real" functionality is implemented::
 
     import pathlib
     import textwrap
@@ -105,7 +105,7 @@ Then initiate the ``emit`` object and call the ``Dispatcher`` functionality::
     else:
         emit.ended_ok()
 
-Finally, put both chunks of code in a ``example-app.py`` file, and (having the virtualenv you prepared at the beginning still activated), run it. You should see the help message for the whole application (as a command is missing, which would be the same output if you pass the `help`, `-h` or `--help` parameters)::
+Finally, put both chunks of code in a ``example-app.py`` file, and (having the virtual environment you prepared at the beginning still activated), run it. You should see the help message for the whole application (as a command is missing, which would be the same output if you pass the `help`, `-h` or `--help` parameters)::
 
     $ python example-app.py
     Usage:
@@ -153,14 +153,12 @@ Ask help for specifically for the command::
     
 Time to run the command on a file, you should see the successful message::
 
-    12:00:03|facundo@camdeonita:~/canonical/craft-cli (improve-readme *)$ touch testfile
-    12:02:29|facundo@camdeonita:~/canonical/craft-cli (improve-readme *)$ ls testfile2
-    ls: no se puede acceder a 'testfile2': No existe el archivo o el directorio
-    12:02:37|facundo@camdeonita:~/canonical/craft-cli (improve-readme *)$ ls testfile
+    $ touch testfile
+    $ ls testfile
     testfile
-    12:02:39|facundo@camdeonita:~/canonical/craft-cli (improve-readme *)$ env/bin/python example-app.py unlink testfile 
-    File removed succesfully.                                                                                                                                                                            
-    12:02:52|facundo@camdeonita:~/canonical/craft-cli (improve-readme *)$ LANG=C ls testfile
+    $ env/bin/python example-app.py unlink testfile 
+    File removed succesfully.
+    $ ls testfile
     ls: cannot access 'testfile': No such file or directory
 
 Explore different error situations, first trying to remove a directory, then trying to remove a file but with "unexpected" problems::
