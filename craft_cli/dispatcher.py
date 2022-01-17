@@ -23,11 +23,27 @@ from craft_cli import EmitterMode, emit
 from craft_cli.errors import ArgumentParsingError, ProvideHelpException
 from craft_cli.helptexts import HelpBuilder
 
-# a helper to group some commands together
 CommandGroup = namedtuple("CommandGroup", "name commands")
+"""Definition of a command group.
 
-# global options: the name used internally, its type, short and long parameters, and help text
+A list of these is what is passed to the ``Dispatcher`` to run commands as part
+of the application.
+
+:param name: identifier of the command group (to be used in helping texts).
+:param commands: a list of the commands in this group.
+"""
+
 GlobalArgument = namedtuple("GlobalArgument", "name type short_option long_option help_message")
+"""Definition of a global argument to be handled by the Dispatcher.
+
+:param name: identifier of the argument (the reference in the dictionary returned
+    by ``Dispatcher.pre_parse_args`` method)
+:param type: the argument type: ``flag`` for arguments that are set to ``True`` if
+    specified (``False`` by default), or ``option`` if a value is needed after it.
+:param short_option: the short form of the argument (a dash with a letter, e.g. ``-s``).
+:param long_option: the long form of the argument (two dashes and a name, e.g. ``--secure``).
+:param help_message: the one-line text that describes the argument, for building the helping texts.
+"""
 _DEFAULT_GLOBAL_ARGS = [
     GlobalArgument(
         "help",
