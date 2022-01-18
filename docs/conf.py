@@ -39,7 +39,7 @@ import craft_cli  # noqa: E402
 # -- Project information -----------------------------------------------------
 
 project = "Craft CLI"
-copyright = "2021, Canonical Ltd."
+copyright = "2021-2022 Canonical Ltd."
 author = "Canonical Ltd."
 
 # The full version, including alpha/beta/rc tags
@@ -104,5 +104,12 @@ def run_apidoc(_):
     main(["-e", "-o", cur_dir, module, "--no-toc", "--force"])
 
 
+def no_namedtuple_attrib_docstring(app, what, name, obj, options, lines):
+    """Strips out silly "Alias for field number" lines in namedtuples reference."""
+    if len(lines) == 1 and lines[0].startswith('Alias for field number'):
+        del lines[:]
+
+
 def setup(app):
     app.connect("builder-inited", run_apidoc)
+    app.connect('autodoc-process-docstring', no_namedtuple_attrib_docstring)
