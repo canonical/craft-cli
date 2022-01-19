@@ -23,3 +23,15 @@ __version__ = "0.0.1.dev1"
 from .messages import EmitterMode, emit  # noqa: F401 ; isort:skip
 from .dispatcher import BaseCommand, CommandGroup, Dispatcher, GlobalArgument  # noqa: F401
 from .errors import ArgumentParsingError, CraftError, ProvideHelpException  # noqa: F401
+
+__all__ = [
+    "ArgumentParsingError",
+    "BaseCommand",
+    "CommandGroup",
+    "CraftError",
+    "Dispatcher",
+    "EmitterMode",
+    "GlobalArgument",
+    "ProvideHelpException",
+    "emit",
+]
