@@ -118,7 +118,7 @@ def test_dispatcher_command_execution_ok():
     dispatcher.pre_parse_args(["name2"])
     dispatcher.load_command(None)
     dispatcher.run()
-    assert MyCommand1._executed == []
+    assert not MyCommand1._executed
     assert isinstance(MyCommand2._executed[0], argparse.Namespace)
 
 

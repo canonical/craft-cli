@@ -15,6 +15,21 @@ The library provides two main functionalities:
 The [documentation](https://craft-cli.readthedocs.io) is available in Read The Docs.
 
 
+# Setting up the environment
+
+Install at system level:
+
+    sudo snap install pyright
+
+Create a virtual environment, activate it, and install developer dependencies:
+
+    python3 -m venv env
+    source env/bin/activate
+    pip install .[dev]
+
+That's all.
+
+
 # Contributing
 
 A `Makefile` is provided for easy interaction with the project. To see
