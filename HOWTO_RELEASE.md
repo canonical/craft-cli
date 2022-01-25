@@ -2,9 +2,9 @@
 
 Release early, release often. Don't be lazy.
 
-To use this doc: just replace 0.1.0 with the major.minor.patch version of
+To use this doc: just replace X.Y.Z with the major.minor.patch version of
 the release. The sequence of commands below should be good to copy and
-paste, but do please pay attention to details!
+paste, but please pay attention to details!
 
 
 ## Preparation
@@ -20,20 +20,20 @@ paste, but do please pay attention to details!
 
 - tag `main` with only the minor version:
 
-    git tag 0.1
+    git tag X.Y
     git push --tags
 
 - create a new release branch
 
-    git checkout -b release-0.1
+    git checkout -b release-X.Y
 
 - create release notes after all main changes from last tag
 
-    git log --first-parent main --decorate > release-0.1.0.txt
+    git log --first-parent main --decorate > release-X.Y.Z.txt
 
 - tag the release (using those release notes)
 
-    git tag -s 0.1.0
+    git tag -s X.Y.Z
     git push --tags
 
 
@@ -41,7 +41,7 @@ paste, but do please pay attention to details!
 
 - go to the release branch
 
-    git checkout release-0.1
+    git checkout release-X.Y
 
 - cherry pick the needed commits from main:
 
@@ -54,7 +54,7 @@ paste, but do please pay attention to details!
 
 - tag the release (using those release notes)
 
-    git tag -s 0.1.0
+    git tag -s X.Y.Z
     git push --tags
 
 
@@ -70,11 +70,11 @@ paste, but do please pay attention to details!
 - try the tarball
 
     mkdir /tmp/testrelease
-    cp dist/craft-cli-0.1.0.tar.gz /tmp/testrelease/
+    cp dist/craft-cli-X.Y.Z.tar.gz /tmp/testrelease/
     cd /tmp/testrelease/
     deactivate  # to be sure nothing is picked from the virtualenv
-    tar -xf craft-cli-0.1.0.tar.gz
-    PYTHONPATH=craft-cli-0.1.0 python3 -c "
+    tar -xf craft-cli-X.Y.Z.tar.gz
+    PYTHONPATH=craft-cli-X.Y.Z python3 -c "
         from craft_cli import EmitterMode, emit
         emit.init(EmitterMode.NORMAL, 'explorator', 'Greetings earthlings')
         emit.message('The meaning of life is 42.')
