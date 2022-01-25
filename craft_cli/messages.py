@@ -37,6 +37,7 @@ import time
 import traceback
 from dataclasses import dataclass, field
 from datetime import datetime
+from functools import lru_cache
 from typing import Literal, Optional, TextIO, Union
 
 import platformdirs
@@ -49,6 +50,11 @@ except ImportError:
     _WINDOWS_MODE = False
 
 from craft_cli import errors
+
+
+@lru_cache
+def _stream_is_terminal(stream: Union[TextIO, None]) -> bool:
+    return getattr(stream, "isatty", lambda: False)()
 
 
 @dataclass
@@ -326,7 +332,7 @@ class _Printer:
             self.spinner.supervise(msg)
             self._write_line(msg)
         else:
-            # progress bar, send None to the spinner (as it's not a "spinneable" message)
+            # progress bar, send None to the spinner (as it's not a "spinnable" message)
             # and write it
             self.spinner.supervise(None)
             self._write_bar(msg)
@@ -340,7 +346,8 @@ class _Printer:
 
     def spin(self, message: _MessageInfo, spintext: str) -> None:
         """Write a line message including a spin text."""
-        self._write_line(message, spintext=spintext)
+        if _stream_is_terminal(message.stream):
+            self._write_line(message, spintext=spintext)
 
     def show(
         self,
