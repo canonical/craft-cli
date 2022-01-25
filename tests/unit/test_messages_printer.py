@@ -45,6 +45,18 @@ def thread_guard(tmp_path):
             thread.stop()
 
 
+@pytest.fixture(autouse=True)
+def clear_stream_is_terminal_cache():
+    """Clear the _stream_is_terminal cache before and after tests.
+
+    Otherwise our isatty monkey-patching can either confuse or be confused
+    by other tests.
+    """
+    messages._stream_is_terminal.cache_clear()
+    yield
+    messages._stream_is_terminal.cache_clear()
+
+
 # -- simple helpers
 
 
@@ -526,9 +538,9 @@ def test_show_defaults_no_stream(recording_printer):
 
 @pytest.mark.parametrize("isatty", [True, False])
 @pytest.mark.parametrize("stream", [sys.stdout, sys.stderr])
-def test_show_defaults(stream, isatty, recording_printer):
+def test_show_defaults(stream, isatty, monkeypatch, recording_printer):
     """Write a message with all defaults (for the different valid streams)."""
-    stream.isatty = lambda: isatty
+    monkeypatch.setattr(stream, "isatty", lambda: isatty)
     before = datetime.now()
     recording_printer.show(stream, "test text")
 
@@ -551,12 +563,8 @@ def test_show_defaults(stream, isatty, recording_printer):
     (logged,) = recording_printer.logged
     assert msg is logged
 
-    if isatty:
-        # the spinner now has the shown message to supervise
-        assert recording_printer.spinner.supervised == [msg]
-    else:
-        # no spinner when the stream is not a terminal
-        assert recording_printer.spinner.supervised == [None]
+    # the spinner now has the shown message to supervise
+    assert recording_printer.spinner.supervised == [msg]
 
 
 def test_show_use_timestamp(recording_printer):
@@ -617,18 +625,23 @@ def test_progress_bar_valid_streams(stream, recording_printer):
     assert recording_printer.spinner.supervised == [None]
 
 
-def test_spin(recording_printer):
+@pytest.mark.parametrize("isatty", [True, False])
+def test_spin(isatty, monkeypatch, recording_printer):
     """Write a message using a spin text."""
+    monkeypatch.setattr(sys.stdout, "isatty", lambda: isatty)
     msg = _MessageInfo(sys.stdout, "test text")
     spin_text = "test spint text"
     recording_printer.spin(msg, spin_text)
 
     # check message written
     assert not recording_printer.written_bars
-    assert len(recording_printer.written_lines) == 1
-    written_msg, written_spintext = recording_printer.written_lines[0]
-    assert written_msg is msg
-    assert written_spintext is spin_text
+    if isatty:
+        assert len(recording_printer.written_lines) == 1
+        written_msg, written_spintext = recording_printer.written_lines[0]
+        assert written_msg is msg
+        assert written_spintext is spin_text
+    else:
+        assert len(recording_printer.written_lines) == 0
 
 
 def test_progress_bar_no_stream(recording_printer):

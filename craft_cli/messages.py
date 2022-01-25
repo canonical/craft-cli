@@ -37,6 +37,7 @@ import time
 import traceback
 from dataclasses import dataclass, field
 from datetime import datetime
+from functools import lru_cache
 from typing import Literal, Optional, TextIO, Union
 
 import platformdirs
@@ -51,6 +52,11 @@ except ImportError:
 from craft_cli import errors
 
 
+@lru_cache
+def _stream_is_terminal(stream: Union[TextIO, None]) -> bool:
+    return getattr(stream, "isatty", lambda: False)()
+
+
 @dataclass
 class _MessageInfo:  # pylint: disable=too-many-instance-attributes
     """Comprehensive information for a message that may go to screen and log."""
@@ -63,11 +69,6 @@ class _MessageInfo:  # pylint: disable=too-many-instance-attributes
     use_timestamp: bool = False
     end_line: bool = False
     created_at: datetime = field(default_factory=datetime.now)
-
-    @property
-    def stream_is_terminal(self) -> bool:
-        """Return whether the message's stream is a terminal."""
-        return getattr(self.stream, "isatty", lambda: False)()
 
 
 # the different modes the Emitter can be set
@@ -327,12 +328,8 @@ class _Printer:
             return
 
         if msg.bar_progress is None:
-            # regular message, send it to the spinner (if the stream is a
-            # terminal) and write it
-            if msg.stream_is_terminal:
-                self.spinner.supervise(msg)
-            else:
-                self.spinner.supervise(None)
+            # regular message, send it to the spinner and write it
+            self.spinner.supervise(msg)
             self._write_line(msg)
         else:
             # progress bar, send None to the spinner (as it's not a "spinnable" message)
@@ -349,7 +346,8 @@ class _Printer:
 
     def spin(self, message: _MessageInfo, spintext: str) -> None:
         """Write a line message including a spin text."""
-        self._write_line(message, spintext=spintext)
+        if _stream_is_terminal(message.stream):
+            self._write_line(message, spintext=spintext)
 
     def show(
         self,
