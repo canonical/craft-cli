@@ -16,6 +16,7 @@
 """Argument processing and command dispatching functionality."""
 
 import argparse
+import difflib
 from collections import namedtuple
 from typing import Any, Dict, List, Optional, Tuple, Type
 
@@ -270,6 +271,22 @@ class Dispatcher:
         help_text = self._help_builder.get_command_help(command, options)
         return help_text
 
+    def _build_no_command_error(self, missing_command: str) -> str:
+        """Build the error help text for missing command, providing options."""
+        all_alternatives = self.commands.keys()
+        similar = difflib.get_close_matches(missing_command, all_alternatives)
+        if len(similar) == 0:
+            extra_similar = ""
+        else:
+            if len(similar) == 1:
+                similar_text = repr(similar[0])
+            else:
+                *previous, last = similar
+                similar_text = ", ".join(repr(x) for x in previous) + f" or {last!r}"
+            extra_similar = f", maybe you meant {similar_text}"
+        msg = f"no such command {missing_command!r}{extra_similar}"
+        return self._help_builder.get_usage_message(msg)
+
     def pre_parse_args(
         self, sysargs: List[str]
     ):  # pylint: disable=too-many-branches disable=too-many-statements
@@ -352,8 +369,7 @@ class Dispatcher:
             try:
                 self._command_class = self.commands[command]
             except KeyError:
-                msg = f"no such command {command!r}"
-                help_text = self._help_builder.get_usage_message(msg)
+                help_text = self._build_no_command_error(command)
                 raise ArgumentParsingError(help_text)  # pylint: disable=raise-missing-from
         else:
             # no command passed!
