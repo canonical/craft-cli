@@ -65,7 +65,7 @@ In detail:
 Raise more informational errors
 ===============================
 
-To provide more information to the user in case of an error, you can use the `CraftError` exception provided by the `craft-cli` library.
+To provide more information to the user in case of an error, you can use the `CraftError` exception provided by the ``craft-cli`` library.
 
 So, in addition of just passing a message to the user...
 
@@ -125,7 +125,7 @@ Define and use other global arguments
 
 To define more automatic global arguments than the ones provided automatically by ``Dispatcher`` (see :ref:`this explanation <expl_global_args>` for more information), use the ``GlobalArgument`` object to create all you need and pass them to the ``Dispatcher`` at instatiaton time.
 
-Check `its reference <craft_cli.dispatcher.html#craft_cli.dispatcher.Dispatcher>`_ for more information about the parameters needed, but it's very straightforward to create these objects. E.g.::
+Check `its reference <craft_cli.dispatcher.html#craft_cli.dispatcher.GlobalArgument>`_ for more information about the parameters needed, but it's very straightforward to create these objects. E.g.::
 
     ga_sec = GlobalArgument("secure_mode", "flag", "-s", "--secure", "Run the app in secure mode")
     
@@ -135,5 +135,21 @@ To use it, just pass a list of the needed global arguments to the dispatcher usi
 
 The ``dispatcher.pre_parse_args`` method returns the global arguments already parsed, as a dictionary. Use the name you gave to the global argument to check for its value and react properly. E.g.::
 
-        global_args = dispatcher.pre_parse_args(sys.argv[1:])
-        app_config.set_secure_mode(global_args["secure_mode"])
+    global_args = dispatcher.pre_parse_args(sys.argv[1:])
+    app_config.set_secure_mode(global_args["secure_mode"])
+
+
+Set a default command in the application
+========================================
+
+To allow the application to run a command if none was given in the command line, you need to set a default command in the application when instantiating `Dispatcher <craft_cli.dispatcher.html#craft_cli.dispatcher.Dispatcher>`_::
+
+    dispatcher = Dispatcher(..., default_command=MyImportantCommand)
+
+This way ``craft-cli`` will run the specified command if none was given, e.g.::
+
+    $ my-super-app
+
+And even run the specified default command if options are given for that command::
+
+    $ my-super-app --important-option

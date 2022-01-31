@@ -65,6 +65,31 @@ def test_dispatcher_command_loading():
     assert command.config == "test-config"
 
 
+def test_dispatcher_command_default_simple():
+    """Support for a default command when nothing is passed."""
+    cmd1 = create_command("somecommand1")
+    cmd2 = create_command("somecommand2")
+    groups = [CommandGroup("title", [cmd1, cmd2])]
+    dispatcher = Dispatcher("appname", groups, default_command=cmd2)
+
+    with patch.object(emit, "trace") as mock_trace:
+        dispatcher.pre_parse_args([])
+    assert dispatcher._command_class is cmd2
+    assert dispatcher._command_args == []
+    mock_trace.assert_any_call("Using 'somecommand2' default command")
+
+
+def test_dispatcher_command_default_with_options():
+    """Support for a default command when giving options to that command."""
+    cmd1 = create_command("somecommand1")
+    cmd2 = create_command("somecommand2")
+    groups = [CommandGroup("title", [cmd1, cmd2])]
+    dispatcher = Dispatcher("appname", groups, default_command=cmd2)
+    dispatcher.pre_parse_args(["--option", "-v"])  # extra global one that is NOT for the command
+    assert dispatcher._command_class is cmd2
+    assert dispatcher._command_args == ["--option"]
+
+
 def test_dispatcher_missing_parsing():
     """Avoids loading the command if args not pre-parsed."""
     cmd = create_command("somecommand")
