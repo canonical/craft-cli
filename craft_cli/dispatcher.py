@@ -163,10 +163,17 @@ def _get_commands_info(commands_groups: List[CommandGroup]) -> Dict[str, Type[Ba
     return commands
 
 
-class Dispatcher:
+class Dispatcher:  # pylint: disable=too-many-instance-attributes
     """Set up infrastructure and let the needed command run.
 
     ♪♫"Leeeeeet, the command ruuun"♪♫ https://www.youtube.com/watch?v=cv-0mmVnxPA
+
+    :param appname: the name of the application
+    :param commands_groups: a list of command groups available to the user
+    :param summary: the summary of the application (for help texts)
+    :param extra_global_args: other automatic global arguments than the ones
+        provided automatically
+    :param default_command: the command to run if none was specified in the command line
     """
 
     def __init__(
@@ -176,7 +183,9 @@ class Dispatcher:
         *,
         summary: str = "",
         extra_global_args: Optional[List[GlobalArgument]] = None,
+        default_command: Optional[Type[BaseCommand]] = None,
     ):
+        self._default_command = default_command
         self._help_builder = HelpBuilder(appname, summary, commands_groups)
 
         self.global_arguments = _DEFAULT_GLOBAL_ARGS[:]
@@ -356,25 +365,29 @@ class Dispatcher:
             help_text = self._get_requested_help(filtered_sysargs)
             raise ProvideHelpException(help_text)
 
-        if filtered_sysargs:
-            command = filtered_sysargs[0]
-            cmd_args = filtered_sysargs[1:]
+        if not filtered_sysargs or filtered_sysargs[0].startswith("-"):
+            # no args or start with an option: trigger a default command, if any
+            if self._default_command is None:
+                help_text = self._get_general_help(detailed=False)
+                raise ArgumentParsingError(help_text)
+            emit.trace(f"Using default command: {self._default_command.name!r}")
+            assert self._default_command.name is not None  # validated by BaseCommand
+            filtered_sysargs.insert(0, self._default_command.name)
 
-            # handle requested help through implicit "help" command
-            if command == "help":
-                help_text = self._get_requested_help(cmd_args)
-                raise ProvideHelpException(help_text)
+        command = filtered_sysargs[0]
+        cmd_args = filtered_sysargs[1:]
 
-            self._command_args = cmd_args
-            try:
-                self._command_class = self.commands[command]
-            except KeyError:
-                help_text = self._build_no_command_error(command)
-                raise ArgumentParsingError(help_text)  # pylint: disable=raise-missing-from
-        else:
-            # no command passed!
-            help_text = self._get_general_help(detailed=False)
-            raise ArgumentParsingError(help_text)
+        # handle requested help through implicit "help" command
+        if command == "help":
+            help_text = self._get_requested_help(cmd_args)
+            raise ProvideHelpException(help_text)
+
+        self._command_args = cmd_args
+        try:
+            self._command_class = self.commands[command]
+        except KeyError:
+            help_text = self._build_no_command_error(command)
+            raise ArgumentParsingError(help_text)  # pylint: disable=raise-missing-from
 
         emit.trace(f"General parsed sysargs: command={ command!r} args={cmd_args}")
         return global_args
