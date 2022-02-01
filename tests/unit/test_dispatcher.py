@@ -76,7 +76,7 @@ def test_dispatcher_command_default_simple():
         dispatcher.pre_parse_args([])
     assert dispatcher._command_class is cmd2
     assert dispatcher._command_args == []
-    mock_trace.assert_any_call("Using 'somecommand2' default command")
+    mock_trace.assert_any_call("Using default command: 'somecommand2'")
 
 
 def test_dispatcher_command_default_with_options():

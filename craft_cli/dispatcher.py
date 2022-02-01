@@ -370,7 +370,7 @@ class Dispatcher:  # pylint: disable=too-many-instance-attributes
             if self._default_command is None:
                 help_text = self._get_general_help(detailed=False)
                 raise ArgumentParsingError(help_text)
-            emit.trace(f"Using {self._default_command.name!r} default command")
+            emit.trace(f"Using default command: {self._default_command.name!r}")
             assert self._default_command.name is not None  # validated by BaseCommand
             filtered_sysargs.insert(0, self._default_command.name)
 

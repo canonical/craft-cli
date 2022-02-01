@@ -65,7 +65,7 @@ In detail:
 Raise more informational errors
 ===============================
 
-To provide more information to the user in case of an error, you can use the `CraftError` exception provided by the ``craft-cli`` library.
+To provide more information to the user in case of an error, you can use the ``CraftError`` exception provided by the ``craft-cli`` library.
 
 So, in addition of just passing a message to the user...
 
@@ -115,7 +115,7 @@ For further information reported to the user and/or sent to the log file, you sh
     except IOError as exc:
         raise CraftError(f"Error when frunging the perculux: {exc}") from exc
 
-Finally, if you want to build a hierarchy of errors in the application, you should start the tree inheriting `CraftError` to use this functionality.
+Finally, if you want to build a hierarchy of errors in the application, you should start the tree inheriting ``CraftError`` to use this functionality.
 
 
 .. _howto_global_args:
