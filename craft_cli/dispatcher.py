@@ -163,7 +163,7 @@ def _get_commands_info(commands_groups: List[CommandGroup]) -> Dict[str, Type[Ba
     return commands
 
 
-class Dispatcher:
+class Dispatcher:  # pylint: disable=too-many-instance-attributes
     """Set up infrastructure and let the needed command run.
 
     ♪♫"Leeeeeet, the command ruuun"♪♫ https://www.youtube.com/watch?v=cv-0mmVnxPA
@@ -371,6 +371,7 @@ class Dispatcher:
                 help_text = self._get_general_help(detailed=False)
                 raise ArgumentParsingError(help_text)
             emit.trace(f"Using {self._default_command.name!r} default command")
+            assert self._default_command.name is not None  # validated by BaseCommand
             filtered_sysargs.insert(0, self._default_command.name)
 
         command = filtered_sysargs[0]
