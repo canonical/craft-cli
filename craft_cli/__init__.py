@@ -16,7 +16,7 @@
 
 """Interact with Canonical services such as Charmhub and the Snap Store."""
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 # names included here only to be exposed as external API; the particular order of imports
 # is to break cyclic dependencies
