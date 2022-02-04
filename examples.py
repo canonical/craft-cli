@@ -226,5 +226,19 @@ if func is None:
     exit()
 
 emit.init(EmitterMode.NORMAL, "explorator", "Greetings earthlings")
-value = 42
-emit.message(f"The meaning of life is {value}.")
+try:
+    func()
+except CraftError as err:
+    emit.error(err)
+except KeyboardInterrupt as exc:
+    msg = "User cancelled"
+    error = CraftError(msg)
+    error.__cause__ = exc
+    emit.error(error)
+except Exception as exc:
+    msg = f"Unexpected internal exception: {exc!r}"
+    error = CraftError(msg)
+    error.__cause__ = exc
+    emit.error(error)
+else:
+    emit.ended_ok()
