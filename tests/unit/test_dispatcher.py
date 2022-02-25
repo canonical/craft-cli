@@ -479,7 +479,7 @@ def test_basecommand_fill_parser_optional():
             self.done = True
 
     command = TestCommand(None)
-    command.run([])
+    command.run(argparse.Namespace())
     assert command.done
 
 
@@ -495,7 +495,7 @@ def test_basecommand_run_mandatory():
 
     command = TestCommand(None)
     with pytest.raises(NotImplementedError):
-        command.run([])  # type: ignore
+        command.run(argparse.Namespace())
 
 
 def test_basecommand_mandatory_attribute_name():
