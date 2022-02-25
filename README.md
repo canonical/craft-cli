@@ -12,7 +12,7 @@ The library provides two main functionalities:
 
 # Documentation
 
-The [documentation](https://craft-cli.readthedocs.io) is available in Read The Docs.
+The [documentation](https://craft-cli.readthedocs.io) is available on Read The Docs.
 
 
 # Setting up the environment
