@@ -1,8 +1,11 @@
 #!/bin/env python3
 
 import logging
+import os
 import subprocess
 import sys
+import tempfile
+import textwrap
 import time
 
 from craft_cli import CraftError, EmitterMode, emit
@@ -211,6 +214,51 @@ def example_20():
     with emit.open_stream("Running a simple Windows command") as stream:
         subprocess.run(["python.exe", "-V"], stdout=stream, stderr=subprocess.STDOUT)
     emit.message("Great!")
+
+
+def _run_subprocess_with_emitter(mode):
+    """Write a temp app that uses emitter and run it."""
+    emit.set_mode(mode)
+
+    example_test_sub_app = textwrap.dedent(
+        """
+        import sys
+        import time
+
+        from craft_cli import emit, EmitterMode
+
+        mode = EmitterMode[sys.argv[1]]
+
+        emit.init(mode, "subapp", "An example sub application.")
+        emit.progress("Sub app: starting")
+        time.sleep(6)
+        emit.progress("Sub app: Lot of work")
+        time.sleep(6)
+        emit.message("Sub app: Done")
+        emit.ended_ok()
+    """
+    )
+    temp_fh, temp_name = tempfile.mkstemp()
+    with open(temp_fh, "wt", encoding="utf8") as fh:
+        fh.write(example_test_sub_app)
+
+    emit.progress("We're about to test a sub app")
+    time.sleep(3)
+    with emit.pause():
+        subprocess.run([sys.executable, temp_name, mode.name], env={"PYTHONPATH": os.getcwd()})
+        # here we should collect the logs from the sub application
+    os.unlink(temp_name)
+    emit.message("All done!")
+
+
+def example_21():
+    """Run an app that uses emitter in a subprocess, pausing the external control, normal mode."""
+    _run_subprocess_with_emitter(EmitterMode.NORMAL)
+
+
+def example_22():
+    """Run an app that uses emitter in a subprocess, pausing the external control, trace mode."""
+    _run_subprocess_with_emitter(EmitterMode.TRACE)
 
 
 # -- end of test cases
