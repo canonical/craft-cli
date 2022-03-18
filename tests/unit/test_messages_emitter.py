@@ -26,6 +26,8 @@ from craft_cli import messages
 from craft_cli.errors import CraftError
 from craft_cli.messages import Emitter, EmitterMode, _Handler
 
+FAKE_LOG_NAME = "fakelog.log"
+
 
 @pytest.fixture(autouse=True)
 def clean_logging_handler():
@@ -55,7 +57,7 @@ def get_initiated_emitter(tmp_path, monkeypatch):
 
     It's used almost in all tests (except those that test the init call).
     """
-    fake_logpath = str(tmp_path / "fakelog.log")
+    fake_logpath = str(tmp_path / FAKE_LOG_NAME)
     monkeypatch.setattr(messages, "_get_log_filepath", lambda appname: fake_logpath)
     with patch("craft_cli.messages._Printer", autospec=True) as mock_printer:
 
@@ -82,7 +84,7 @@ def get_initiated_emitter(tmp_path, monkeypatch):
 def test_init_quietish(mode, tmp_path, monkeypatch):
     """Init the class in some quiet-ish mode."""
     # avoid using a real log file
-    fake_logpath = str(tmp_path / "fakelog.log")
+    fake_logpath = str(tmp_path / FAKE_LOG_NAME)
     monkeypatch.setattr(messages, "_get_log_filepath", lambda appname: fake_logpath)
 
     greeting = "greeting"
@@ -112,7 +114,7 @@ def test_init_quietish(mode, tmp_path, monkeypatch):
 def test_init_verboseish(mode, tmp_path, monkeypatch):
     """Init the class in some verbose-ish mode."""
     # avoid using a real log file
-    fake_logpath = str(tmp_path / "fakelog.log")
+    fake_logpath = str(tmp_path / FAKE_LOG_NAME)
     monkeypatch.setattr(messages, "_get_log_filepath", lambda appname: fake_logpath)
 
     greeting = "greeting"
@@ -151,7 +153,7 @@ def test_init_receiving_logfile(tmp_path, monkeypatch):
 
     greeting = "greeting"
     emitter = Emitter()
-    fake_logpath = tmp_path / "fakelog.log"
+    fake_logpath = tmp_path / FAKE_LOG_NAME
     with patch("craft_cli.messages._Printer") as mock_printer:
         emitter.init(EmitterMode.VERBOSE, "testappname", greeting, log_filepath=fake_logpath)
 
@@ -168,7 +170,7 @@ def test_init_receiving_logfile(tmp_path, monkeypatch):
 def test_init_double_regular_mode(tmp_path, monkeypatch):
     """Double init in regular usage mode."""
     # ensure it's not using the standard log filepath provider (that pollutes user dirs)
-    monkeypatch.setattr(messages, "_get_log_filepath", lambda appname: tmp_path / "fakelog.log")
+    monkeypatch.setattr(messages, "_get_log_filepath", lambda appname: tmp_path / FAKE_LOG_NAME)
 
     emitter = Emitter()
 
@@ -182,7 +184,7 @@ def test_init_double_regular_mode(tmp_path, monkeypatch):
 def test_init_double_tests_mode(tmp_path, monkeypatch):
     """Double init in tests usage mode."""
     # ensure it's not using the standard log filepath provider (that pollutes user dirs)
-    monkeypatch.setattr(messages, "_get_log_filepath", lambda appname: tmp_path / "fakelog.log")
+    monkeypatch.setattr(messages, "_get_log_filepath", lambda appname: tmp_path / FAKE_LOG_NAME)
 
     monkeypatch.setattr(messages, "TESTMODE", True)
     emitter = Emitter()
@@ -473,6 +475,53 @@ def test_ended_double_after_error(get_initiated_emitter):
 
     emitter.ended_ok()
     assert emitter.printer_calls == []
+
+
+# -- tests for pausing the machinery
+
+
+def test_paused_resumed_ok(get_initiated_emitter, tmp_path):
+    """The Emitter is paused and resumed fine after a successful body run."""
+    emitter = get_initiated_emitter(EmitterMode.QUIET)
+
+    with emitter.pause():
+        assert emitter.printer_calls == [
+            # the pausing message is shown and emitter is stopped
+            call().show(None, "Emitter: Pausing control of the terminal", use_timestamp=True),
+            call().stop(),
+        ]
+        emitter.printer_calls.clear()
+        # we end ok here
+
+    # a new _Printer is created, with same logpath and the resuming message is shown
+    assert emitter.printer_calls == [
+        call(str(tmp_path / FAKE_LOG_NAME)),
+        call().show(None, "Emitter: Resuming control of the terminal", use_timestamp=True),
+    ]
+
+
+def test_paused_resumed_error(get_initiated_emitter, tmp_path):
+    """The Emitter is paused and resumed fine even if an exception is raised."""
+    emitter = get_initiated_emitter(EmitterMode.QUIET)
+
+    with pytest.raises(ValueError):
+        with emitter.pause():
+            assert emitter.printer_calls == [
+                # the pausing message is shown and emitter is stopped
+                call().show(None, "Emitter: Pausing control of the terminal", use_timestamp=True),
+                call().stop(),
+            ]
+            emitter.printer_calls.clear()
+
+            # something bad goes here; note the exception should not be hidden (that's why
+            # all this is inside a `pytest.raises`, but the emitter should resume ok
+            raise ValueError()
+
+    # a new _Printer is created, with same logpath and the resuming message is shown
+    assert emitter.printer_calls == [
+        call(str(tmp_path / FAKE_LOG_NAME)),
+        call().show(None, "Emitter: Resuming control of the terminal", use_timestamp=True),
+    ]
 
 
 # -- tests for error reporting

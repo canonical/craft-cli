@@ -35,6 +35,7 @@ import sys
 import threading
 import time
 import traceback
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime
 from functools import lru_cache
@@ -775,6 +776,21 @@ class Emitter:
         else:
             stream = sys.stderr
         return _StreamContextManager(self._printer, text, stream)  # type: ignore
+
+    @_init_guard
+    @contextmanager
+    def pause(self):
+        """Context manager that pauses and resumes the control of the terminal.
+
+        Note that no messages will be collected while paused, not even for logging.
+        """
+        self.trace("Emitter: Pausing control of the terminal")
+        self._printer.stop()  # type: ignore
+        try:
+            yield
+        finally:
+            self._printer = _Printer(self._log_filepath)  # type: ignore
+            self.trace("Emitter: Resuming control of the terminal")
 
     def _stop(self) -> None:
         """Do all the stopping."""
