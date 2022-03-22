@@ -611,7 +611,7 @@ def _active_guard(ignore_when_stopped=False):
     """
 
     def decorator(wrapped_func):
-        def func(self, *args, **kwargs):
+        def func(self, *args, **kwargs):  # pylint: disable=inconsistent-return-statements
             if not self._initiated:  # pylint: disable=protected-access
                 raise RuntimeError("Emitter needs to be initiated first")
             if self._stopped:  # pylint: disable=protected-access
