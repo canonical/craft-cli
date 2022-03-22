@@ -477,6 +477,20 @@ def test_ended_double_after_error(get_initiated_emitter):
     assert emitter.printer_calls == []
 
 
+@pytest.mark.parametrize(
+    "method_name",
+    [x for x in dir(Emitter) if x[0] != "_" and x not in ("init", "ended_ok", "error")],
+)
+def test_needs_being_active(get_initiated_emitter, method_name):
+    """Check that calling public methods needs emitter to not be stopped."""
+    emitter = get_initiated_emitter(EmitterMode.QUIET)
+    emitter.ended_ok()
+
+    method = getattr(emitter, method_name)
+    with pytest.raises(RuntimeError, match="Emitter is stopped already"):
+        method()
+
+
 # -- tests for pausing the machinery
 
 
@@ -522,6 +536,15 @@ def test_paused_resumed_error(get_initiated_emitter, tmp_path):
         call(str(tmp_path / FAKE_LOG_NAME)),
         call().show(None, "Emitter: Resuming control of the terminal", use_timestamp=True),
     ]
+
+
+def test_paused_cant_show(get_initiated_emitter, tmp_path):
+    """The Emitter cannot show messages when paused."""
+    emitter = get_initiated_emitter(EmitterMode.QUIET)
+
+    with emitter.pause():
+        with pytest.raises(RuntimeError):
+            emitter.trace("fruta")
 
 
 # -- tests for error reporting

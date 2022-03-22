@@ -246,7 +246,7 @@ def _run_subprocess_with_emitter(mode):
     time.sleep(3)
     with emit.pause():
         subprocess.run([sys.executable, temp_name, mode.name], env={"PYTHONPATH": os.getcwd()})
-        # here we should collect the logs from the sub application
+        # note we cannot use `emit` while paused!
     os.unlink(temp_name)
     emit.message("All done!")
 

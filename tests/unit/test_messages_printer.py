@@ -484,7 +484,7 @@ def test_logfile_opened(log_filepath):
     """The logfile is properly opened."""
     printer = _Printer(log_filepath)
     assert not printer.log.closed
-    assert printer.log.mode == "wt"
+    assert printer.log.mode == "at"
     assert printer.log.encoding == "utf8"
 
 
