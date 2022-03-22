@@ -605,7 +605,7 @@ class _Handler(logging.Handler):
 def _active_guard(ignore_when_stopped=False):
     """Decorate Emitter methods to be called when active.
 
-    It will check that the emitter is initted and that is not stopped (except when
+    It will check that the emitter is initiated and that is not stopped (except when
     ignore_when_stopped=True, in that case the call will be ignored, to support
     double-ending).
     """
