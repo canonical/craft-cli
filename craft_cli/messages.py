@@ -229,7 +229,7 @@ class _Printer:
         self.prv_msg: Optional[_MessageInfo] = None
 
         # open the log file (will be closed explicitly later)
-        self.log = open(log_filepath, "wt", encoding="utf8")  # pylint: disable=consider-using-with
+        self.log = open(log_filepath, "at", encoding="utf8")  # pylint: disable=consider-using-with
 
         # keep account of output streams with unfinished lines
         self.unfinished_stream: Optional[TextIO] = None
@@ -602,15 +602,27 @@ class _Handler(logging.Handler):
         self.printer.show(stream, record.getMessage(), use_timestamp=use_timestamp)
 
 
-def _init_guard(wrapped_func):
-    """Decorate Emitter methods to be called *after* init."""
+def _active_guard(ignore_when_stopped=False):
+    """Decorate Emitter methods to be called when active.
 
-    def func(self, *args, **kwargs):
-        if not self._initiated:  # pylint: disable=protected-access
-            raise RuntimeError("Emitter needs to be initiated first")
-        return wrapped_func(self, *args, **kwargs)
+    It will check that the emitter is initted and that is not stopped (except when
+    ignore_when_stopped=True, in that case the call will be ignored, to support
+    double-ending).
+    """
 
-    return func
+    def decorator(wrapped_func):
+        def func(self, *args, **kwargs):
+            if not self._initiated:  # pylint: disable=protected-access
+                raise RuntimeError("Emitter needs to be initiated first")
+            if self._stopped:  # pylint: disable=protected-access
+                if ignore_when_stopped:
+                    return
+                raise RuntimeError("Emitter is stopped already")
+            return wrapped_func(self, *args, **kwargs)
+
+        return func
+
+    return decorator
 
 
 class Emitter:
@@ -677,12 +689,12 @@ class Emitter:
         self._stopped = False
         self.set_mode(mode)
 
-    @_init_guard
+    @_active_guard()
     def get_mode(self) -> EmitterMode:
         """Return the mode of the emitter."""
         return self._mode  # type: ignore
 
-    @_init_guard
+    @_active_guard()
     def set_mode(self, mode: EmitterMode) -> None:
         """Set the mode of the emitter."""
         self._mode = mode
@@ -699,7 +711,7 @@ class Emitter:
                     sys.stderr, msg, use_timestamp=True, avoid_logging=True, end_line=True
                 )
 
-    @_init_guard
+    @_active_guard()
     def message(self, text: str, intermediate: bool = False) -> None:
         """Show an important message to the user.
 
@@ -712,7 +724,7 @@ class Emitter:
         )
         self._printer.show(sys.stdout, text, use_timestamp=use_timestamp)  # type: ignore
 
-    @_init_guard
+    @_active_guard()
     def trace(self, text: str) -> None:
         """Trace/debug information.
 
@@ -722,7 +734,7 @@ class Emitter:
         stream = sys.stderr if self._mode == EmitterMode.TRACE else None
         self._printer.show(stream, text, use_timestamp=True)  # type: ignore
 
-    @_init_guard
+    @_active_guard()
     def progress(self, text: str) -> None:
         """Progress information for a multi-step command.
 
@@ -749,7 +761,7 @@ class Emitter:
 
         self._printer.show(stream, text, ephemeral=ephemeral, use_timestamp=use_timestamp)  # type: ignore
 
-    @_init_guard
+    @_active_guard()
     def progress_bar(self, text: str, total: Union[int, float], delta: bool = True) -> _Progresser:
         """Progress information for a potentially long-running single step of a command.
 
@@ -767,7 +779,7 @@ class Emitter:
         self._printer.show(stream, text, ephemeral=True)  # type: ignore
         return _Progresser(self._printer, total, text, stream, delta)  # type: ignore
 
-    @_init_guard
+    @_active_guard()
     def open_stream(self, text: str):
         """Open a stream context manager to get messages from subprocesses."""
         # don't show third party streams if quiet or normal
@@ -777,7 +789,7 @@ class Emitter:
             stream = sys.stderr
         return _StreamContextManager(self._printer, text, stream)  # type: ignore
 
-    @_init_guard
+    @_active_guard()
     @contextmanager
     def pause(self):
         """Context manager that pauses and resumes the control of the terminal.
@@ -786,9 +798,11 @@ class Emitter:
         """
         self.trace("Emitter: Pausing control of the terminal")
         self._printer.stop()  # type: ignore
+        self._stopped = True
         try:
             yield
         finally:
+            self._stopped = False
             self._printer = _Printer(self._log_filepath)  # type: ignore
             self.trace("Emitter: Resuming control of the terminal")
 
@@ -797,11 +811,9 @@ class Emitter:
         self._printer.stop()  # type: ignore
         self._stopped = True
 
-    @_init_guard
+    @_active_guard(ignore_when_stopped=True)
     def ended_ok(self) -> None:
         """Finish the messaging system gracefully."""
-        if self._stopped:
-            return
         self._stop()
 
     def _report_error(self, error: errors.CraftError) -> None:
@@ -835,11 +847,9 @@ class Emitter:
         text = f"Full execution log: {str(self._log_filepath)!r}"
         self._printer.show(sys.stderr, text, use_timestamp=use_timestamp, end_line=True)  # type: ignore
 
-    @_init_guard
+    @_active_guard(ignore_when_stopped=True)
     def error(self, error: errors.CraftError) -> None:
         """Handle the system's indicated error and stop machinery."""
-        if self._stopped:
-            return
         self._report_error(error)
         self._stop()
 
