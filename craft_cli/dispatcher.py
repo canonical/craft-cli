@@ -93,6 +93,9 @@ class BaseCommand:
     - common: if it's a common/starter command, which are prioritized in the help (default to
       False)
 
+    - hidden: do not show in help texts, useful for aliases or depreacated commands (default
+      to False)
+
     It also must/can override some methods for the proper command behaviour (see each
     method's docstring).
 
@@ -101,6 +104,7 @@ class BaseCommand:
     """
 
     common = False
+    hidden = False
     name: Optional[str] = None
     help_msg: Optional[str] = None
     overview: Optional[str] = None
@@ -113,6 +117,8 @@ class BaseCommand:
         for attr_name in mandatory:
             if getattr(self, attr_name) is None:
                 raise ValueError(f"Bad command configuration: missing value in '{attr_name}'.")
+        if self.common and self.hidden:
+            raise ValueError("Common commands can not be hidden.")
 
     def fill_parser(self, parser: "_CustomArgumentParser") -> None:
         """Specify command's specific parameters.
