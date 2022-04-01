@@ -21,7 +21,9 @@ from craft_cli import BaseCommand
 def create_command(
     name: str,
     help_msg: str = "",
+    *,
     common: bool = False,
+    hidden: bool = False,
     overview: str = "",
     class_name: str = "MyCommand",
 ) -> Type["BaseCommand"]:
@@ -30,6 +32,7 @@ def create_command(
         "name": name,
         "help_msg": help_msg,
         "common": common,
+        "hidden": hidden,
         "overview": overview,
         "needs_config": False,
         "run": lambda parsed_args: None,

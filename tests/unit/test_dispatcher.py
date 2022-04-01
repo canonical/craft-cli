@@ -547,3 +547,35 @@ def test_basecommand_mandatory_attribute_overview():
     with pytest.raises(ValueError) as exc_cm:
         TestCommand(None)
     assert str(exc_cm.value) == "Bad command configuration: missing value in 'overview'."
+
+
+@pytest.mark.parametrize(
+    "common_, hidden_, is_ok",
+    [
+        (True, True, False),
+        (True, False, True),
+        (False, True, True),
+        (False, False, True),
+    ],
+)
+def test_basecommand_common_xor_hidden(common_, hidden_, is_ok):
+    """A command cannot be hidden and common at the same time."""
+
+    class TestCommand(BaseCommand):
+        """Specifically defined command."""
+
+        overview = "fake overview"
+        help_msg = "help message"
+        name = "test"
+        common = common_
+        hidden = hidden_
+
+        def run(self, parsed_args):
+            pass
+
+    if is_ok:
+        TestCommand(None)
+    else:
+        with pytest.raises(ValueError) as exc_cm:
+            TestCommand(None)
+        assert str(exc_cm.value) == "Common commands can not be hidden."

@@ -74,11 +74,12 @@ def test_default_help_text():
     cmd5 = create_command("cmd5", "More help.")
     cmd6 = create_command("cmd6-really-long", "More help.", common=True)
     cmd7 = create_command("cmd7", "More help.")
+    cmd8 = create_command("cmd8", "More help.", hidden=True)
 
     command_groups = [
         CommandGroup("group1", [cmd6, cmd2]),
         CommandGroup("group3", [cmd7]),
-        CommandGroup("group2", [cmd3, cmd4, cmd5, cmd1]),
+        CommandGroup("group2", [cmd3, cmd4, cmd5, cmd1, cmd8]),
     ]
     fake_summary = textwrap.dedent(
         """
@@ -136,11 +137,12 @@ def test_detailed_help_text():
     cmd5 = create_command("cmd5", "More help.")
     cmd6 = create_command("cmd6-really-long", "More help.", common=True)
     cmd7 = create_command("cmd7", "More help.")
+    cmd8 = create_command("cmd8", "More help.", hidden=True)
 
     command_groups = [
         CommandGroup("Group 1 description", [cmd6, cmd2]),
         CommandGroup("Group 3 help text", [cmd7]),
-        CommandGroup("Group 2 stuff", [cmd3, cmd4, cmd5, cmd1]),
+        CommandGroup("Group 2 stuff", [cmd3, cmd4, cmd5, cmd1, cmd8]),
     ]
     fake_summary = textwrap.dedent(
         """
