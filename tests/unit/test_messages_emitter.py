@@ -627,7 +627,7 @@ def test_reporterror_chained_exception_quietish(mode, get_initiated_emitter):
 
     with patch("craft_cli.messages._get_traceback_lines") as tblines_mock:
         tblines_mock.return_value = ["traceback line 1", "traceback line 2"]
-        emitter.error(error)
+        emitter.error(error)  # pylint: disable=used-before-assignment
 
     full_log_message = f"Full execution log: {repr(emitter._log_filepath)}"
     assert emitter.printer_calls == [
@@ -639,7 +639,7 @@ def test_reporterror_chained_exception_quietish(mode, get_initiated_emitter):
     ]
 
     # check the traceback lines are generated using the original exception
-    tblines_mock.assert_called_with(orig_exception)  # type: ignore
+    tblines_mock.assert_called_with(orig_exception)  # type: ignore  # pylint: disable=used-before-assignment
 
 
 @pytest.mark.parametrize("mode", [EmitterMode.VERBOSE, EmitterMode.TRACE])
@@ -657,7 +657,7 @@ def test_reporterror_chained_exception_verboseish(mode, get_initiated_emitter):
 
     with patch("craft_cli.messages._get_traceback_lines") as tblines_mock:
         tblines_mock.return_value = ["traceback line 1", "traceback line 2"]
-        emitter.error(error)
+        emitter.error(error)  # pylint: disable=used-before-assignment
 
     full_log_message = f"Full execution log: {repr(emitter._log_filepath)}"
     assert emitter.printer_calls == [
@@ -669,7 +669,7 @@ def test_reporterror_chained_exception_verboseish(mode, get_initiated_emitter):
     ]
 
     # check the traceback lines are generated using the original exception
-    tblines_mock.assert_called_with(orig_exception)  # type: ignore
+    tblines_mock.assert_called_with(orig_exception)  # type: ignore  # pylint: disable=used-before-assignment
 
 
 @pytest.mark.parametrize("mode", [EmitterMode.QUIET, EmitterMode.NORMAL])
@@ -756,7 +756,7 @@ def test_reporterror_full_complete(get_initiated_emitter):
 
     with patch("craft_cli.messages._get_traceback_lines") as tblines_mock:
         tblines_mock.return_value = ["traceback line 1", "traceback line 2"]
-        emitter.error(error)
+        emitter.error(error)  # pylint: disable=used-before-assignment
 
     full_log_message = f"Full execution log: {repr(emitter._log_filepath)}"
     full_docs_message = "For more information, check out: https://charmhub.io/docs/whatever"

@@ -93,7 +93,7 @@ class BaseCommand:
     - common: if it's a common/starter command, which are prioritized in the help (default to
       False)
 
-    - hidden: do not show in help texts, useful for aliases or depreacated commands (default
+    - hidden: do not show in help texts, useful for aliases or deprecated commands (default
       to False)
 
     It also must/can override some methods for the proper command behaviour (see each
