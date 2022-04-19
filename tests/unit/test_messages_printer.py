@@ -1,5 +1,5 @@
 #
-# Copyright 2021 Canonical Ltd.
+# Copyright 2021-2022 Canonical Ltd.
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -25,6 +25,11 @@ import pytest
 
 from craft_cli import messages
 from craft_cli.messages import _MessageInfo, _Printer, _Spinner
+
+
+@pytest.fixture(autouse=True)
+def init_emitter():
+    """Disable the automatic init emitter fixture for all this module."""
 
 
 @pytest.fixture

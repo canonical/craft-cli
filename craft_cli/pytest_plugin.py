@@ -28,7 +28,7 @@ from craft_cli import messages
 
 
 @pytest.fixture(autouse=True)
-def init_emitter():
+def init_emitter(monkeypatch):
     """Ensure emit is always clean, and initted (in test mode).
 
     Note that the `init` is done in the current instance that all modules already
@@ -42,7 +42,7 @@ def init_emitter():
     os.close(temp_fd)
     temp_logfile = pathlib.Path(temp_logfile)
 
-    messages.TESTMODE = True
+    monkeypatch.setattr(messages, "TESTMODE", True)
     messages.emit.init(
         messages.EmitterMode.QUIET, "test-emitter", "Hello world", log_filepath=temp_logfile
     )

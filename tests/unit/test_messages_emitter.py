@@ -1,5 +1,5 @@
 #
-# Copyright 2021 Canonical Ltd.
+# Copyright 2021-2022 Canonical Ltd.
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -27,6 +27,11 @@ from craft_cli.errors import CraftError
 from craft_cli.messages import Emitter, EmitterMode, _Handler
 
 FAKE_LOG_NAME = "fakelog.log"
+
+
+@pytest.fixture(autouse=True)
+def init_emitter():
+    """Disable the automatic init emitter fixture for all this module."""
 
 
 @pytest.fixture(autouse=True)

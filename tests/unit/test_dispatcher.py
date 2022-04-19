@@ -30,11 +30,6 @@ from craft_cli.errors import ArgumentParsingError
 from tests.factory import create_command
 
 
-@pytest.fixture(autouse=True)
-def init_emitter(_init_emitter):
-    """Enable the init emitter fixture automatically for all this module."""
-
-
 # --- Tests for the Dispatcher
 
 
