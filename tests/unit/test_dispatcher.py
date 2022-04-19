@@ -29,7 +29,6 @@ from craft_cli.dispatcher import (
 from craft_cli.errors import ArgumentParsingError
 from tests.factory import create_command
 
-
 # --- Tests for the Dispatcher
 
 

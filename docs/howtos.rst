@@ -166,3 +166,24 @@ To be able to run another application (in other process) without interfering in 
 When the emitter is paused the terminal is freed, and the emitter does not have control on what happens in the terminal there until it's resumed, not even for logging purposes.
 
 The normal behaviour is resumed when the context manager exits (even if an exception was raised inside).
+
+
+Create unit tests for code that uses Craft CLI Emitter
+======================================================
+
+The library provides two fixtures that simplifies the testing of code using the Emitter when 
+using ``pytest``.
+
+One of the fixtures (``init_emitter``) is even set with ``autouse=True``, so it will 
+automatically initialize the Emitter and tear it down after each test. This way there is 
+nothing special you need to do in your code when testing it, just use it.
+
+The other fixture (``emitter``) is very useful to test code interaction with Emitter. It provides an internal recording emitter that has several methods which help to test its usage.
+
+The following example shows a simple usage, please refer to `its reference <craft_cli.dispatcher.html#craft_cli.pytest_plugin._RecordingEmitter>`_ for more information about the provided functionality::
+
+    def test_super_function(emitter):
+        """Check the super function."""
+        result = super_function(42)
+        assert result == "Secret of life, etc."
+        emitter.assert_trace("Function properly called with magic number.")

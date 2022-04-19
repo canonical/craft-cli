@@ -23,7 +23,6 @@ from craft_cli.errors import ArgumentParsingError, ProvideHelpException
 from craft_cli.helptexts import HelpBuilder
 from tests.factory import create_command
 
-
 # -- building "usage" help
 
 

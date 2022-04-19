@@ -52,7 +52,7 @@ def init_emitter(monkeypatch):
     temp_logfile.unlink()
 
 
-class RegexComparingText(str):
+class _RegexComparingText(str):
     """A string that compares for equality using regex.match."""
 
     def __eq__(self, other):
@@ -62,7 +62,7 @@ class RegexComparingText(str):
         return str.__hash__(self)
 
 
-class RecordingEmitter:
+class _RecordingEmitter:
     """Record what is shown using the emitter and provide a nice API for tests."""
 
     def __init__(self):
@@ -85,7 +85,7 @@ class RecordingEmitter:
     def _check(self, expected_text, method_name, regex, **kwargs):
         """Really verify messages."""
         if regex:
-            expected_text = RegexComparingText(expected_text)
+            expected_text = _RegexComparingText(expected_text)
         expected_call = call(method_name, expected_text, **kwargs)
         for stored_call in self.interactions:
             if stored_call == expected_call:
@@ -93,22 +93,43 @@ class RecordingEmitter:
         raise AssertionError(f"Expected call {expected_call} not found in {self.interactions}")
 
     def assert_message(self, expected_text, intermediate=None, regex=False):
-        """Check the 'message' method was properly used."""
+        """Check the 'message' method was properly used.
+
+        It verifies that the method was called at least once with the expected text (with
+        the given 'intermediate' flag).
+
+        If 'regex' is True, the expected text will be used as a regular expression.
+        """
         if intermediate is None:
-            return self._check(expected_text, "message", regex)
+            result = self._check(expected_text, "message", regex)
         else:
-            return self._check(expected_text, "message", regex, intermediate=intermediate)
+            result = self._check(expected_text, "message", regex, intermediate=intermediate)
+        return result
 
     def assert_progress(self, expected_text, regex=False):
-        """Check the 'progress' method was properly used."""
+        """Check the 'progress' method was properly used.
+
+        It verifies that the method was called at least once with the expected text.
+
+        If 'regex' is True, the expected text will be used as a regular expression.
+        """
         return self._check(expected_text, "progress", regex)
 
     def assert_trace(self, expected_text, regex=False):
-        """Check the 'trace' method was properly used."""
+        """Check the 'trace' method was properly used.
+
+        It verifies that the method was called at least once with the expected text.
+
+        If 'regex' is True, the expected text will be used as a regular expression.
+        """
         return self._check(expected_text, "trace", regex)
 
     def assert_messages(self, texts):
-        """Check the list of messages (this is helper for a common case of commands results)."""
+        """Check that the 'message' method was called several times with the given texts.
+
+        This is helper for a common case that happen in multiline commands results
+        where 'message' is called several times.
+        """
         self.assert_interactions([call("message", text) for text in texts])
 
     def assert_interactions(self, expected_call_list):
@@ -128,11 +149,12 @@ class RecordingEmitter:
         else:
             pos = 0
 
-        stored = self.interactions[pos: pos + len(expected_call_list)]
+        end_pos = pos + len(expected_call_list)
+        stored = self.interactions[pos:end_pos]
         assert stored == expected_call_list
 
 
-class RecordingProgresser:
+class _RecordingProgresser:
     def __init__(self, recording_emitter):
         self.recording_emitter = recording_emitter
 
@@ -149,8 +171,8 @@ class RecordingProgresser:
 
 @pytest.fixture
 def emitter(monkeypatch):
-    """Helper to test everything that was shown using craft-cli Emitter."""
-    recording_emitter = RecordingEmitter()
+    """Provide a helper to test everything that was shown using craft-cli Emitter."""
+    recording_emitter = _RecordingEmitter()
     for method_name in ("message", "progress", "trace"):
         monkeypatch.setattr(
             messages.emit,
@@ -162,7 +184,7 @@ def emitter(monkeypatch):
     # something that will record progress calls
     def fake_progress_bar(*a, **k):
         recording_emitter.record("progress_bar", a, k)
-        return RecordingProgresser(recording_emitter)
+        return _RecordingProgresser(recording_emitter)
 
     monkeypatch.setattr(messages.emit, "progress_bar", fake_progress_bar)
 

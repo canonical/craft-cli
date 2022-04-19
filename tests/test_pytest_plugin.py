@@ -17,10 +17,9 @@
 
 from unittest.mock import call
 
-from craft_cli import messages
-
 import pytest
 
+from craft_cli import messages
 
 # -- tests for the `init_emitter` auto-fixture
 
@@ -39,7 +38,7 @@ def test_initemitter_testmode():
 def test_initemitter_isolated_tempdir(tmp_path):
     """The pytest's temp path is not polluted with Emitter logs."""
     messages.emit.trace("test")
-    assert list(tmp_path.iterdir()) == []
+    assert not list(tmp_path.iterdir())
 
 
 # -- tests for the `emitter` fixture
@@ -113,12 +112,14 @@ def test_emitter_record_trace_regex(emitter):
 
 def test_emitter_record_progress_bar_ok(emitter):
     """Calls to `progress_bar` are recorded."""
-    with messages.emit.progress_bar("title", 20, delta=True) as bar:
-        bar.advance(100)
-    emitter.assert_interactions([
-        call("progress_bar", "title", 20, delta=True),
-        call("advance", 100),
-    ])
+    with messages.emit.progress_bar("title", 20, delta=True) as progress_bar:
+        progress_bar.advance(100)
+    emitter.assert_interactions(
+        [
+            call("progress_bar", "title", 20, delta=True),
+            call("advance", 100),
+        ]
+    )
 
 
 def test_emitter_record_progress_bar_safe(emitter):
@@ -140,11 +141,13 @@ def test_emitter_messages(emitter):
     """Can verify several calls to `message`."""
     for result in range(3):  # simulated bunch of resuls
         messages.emit.message(f"Got: {result}")
-    emitter.assert_messages([
-        "Got: 0",
-        "Got: 1",
-        "Got: 2",
-    ])
+    emitter.assert_messages(
+        [
+            "Got: 0",
+            "Got: 1",
+            "Got: 2",
+        ]
+    )
 
 
 def test_emitter_interactions_positive_complete(emitter):
@@ -153,11 +156,13 @@ def test_emitter_interactions_positive_complete(emitter):
     messages.emit.trace("bar")
     messages.emit.message("baz")
 
-    emitter.assert_interactions([
-        call("progress", "foo"),
-        call("trace", "bar"),
-        call("message", "baz"),
-    ])
+    emitter.assert_interactions(
+        [
+            call("progress", "foo"),
+            call("trace", "bar"),
+            call("message", "baz"),
+        ]
+    )
 
 
 def test_emitter_interactions_positive_cross_data(emitter):
@@ -167,9 +172,11 @@ def test_emitter_interactions_positive_cross_data(emitter):
     messages.emit.message("baz")
 
     with pytest.raises(AssertionError):
-        emitter.assert_interactions([
-            call("progress", "bar"),
-        ])
+        emitter.assert_interactions(
+            [
+                call("progress", "bar"),
+            ]
+        )
 
 
 def test_emitter_interactions_positive_sequence(emitter):
@@ -178,10 +185,12 @@ def test_emitter_interactions_positive_sequence(emitter):
     messages.emit.trace("bar")
     messages.emit.message("baz")
 
-    emitter.assert_interactions([
-        call("trace", "bar"),
-        call("message", "baz"),
-    ])
+    emitter.assert_interactions(
+        [
+            call("trace", "bar"),
+            call("message", "baz"),
+        ]
+    )
 
 
 def test_emitter_interactions_positive_not_sequence(emitter):
@@ -191,10 +200,12 @@ def test_emitter_interactions_positive_not_sequence(emitter):
     messages.emit.message("baz")
 
     with pytest.raises(AssertionError):
-        emitter.assert_interactions([
-            call("progress", "foo"),
-            call("message", "baz"),
-        ])
+        emitter.assert_interactions(
+            [
+                call("progress", "foo"),
+                call("message", "baz"),
+            ]
+        )
 
 
 def test_emitter_interactions_negative(emitter):
