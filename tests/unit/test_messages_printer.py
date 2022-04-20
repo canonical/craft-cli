@@ -29,7 +29,7 @@ from craft_cli.messages import _MessageInfo, _Printer, _Spinner
 
 @pytest.fixture(autouse=True)
 def init_emitter():
-    """Disable the automatic init emitter fixture for all this module."""
+    """Disable the automatic init emitter fixture for this entire module."""
 
 
 @pytest.fixture

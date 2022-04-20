@@ -29,15 +29,17 @@ from craft_cli import messages
 
 @pytest.fixture(autouse=True)
 def init_emitter(monkeypatch):
-    """Ensure emit is always clean, and initted (in test mode).
+    """Ensure ``emit`` is always clean, and initiated (in test mode).
 
-    Note that the `init` is done in the current instance that all modules already
+    Note that the ``init`` is done in the current instance that all modules already
     acquired.
+
+    This is an "autouse" fixture, so it just works, no need to declare it in your tests.
     """
-    # init with a custom log filepath so user directories are not involved here; note that
+    # initiate with a custom log filepath so user directories are not involved here; note that
     # we're not using pytest's standard tmp_path as Emitter would write logs there, and in
     # effect we would be polluting that temporary directory (potentially messing with
-    # tests, that may need that empty), so we use another one.
+    # tests, that may need that empty), so we use another one
     temp_fd, temp_logfile = tempfile.mkstemp(prefix="emitter-logs")
     os.close(temp_fd)
     temp_logfile = pathlib.Path(temp_logfile)
@@ -62,8 +64,12 @@ class _RegexComparingText(str):
         return str.__hash__(self)
 
 
-class _RecordingEmitter:
-    """Record what is shown using the emitter and provide a nice API for tests."""
+class RecordingEmitter:
+    """Record what is shown using the emitter and provide a nice API for tests.
+
+    This class is NOT meant to be used directly, please use the ``emitter`` fixture instead
+    which provides an instance of this class with context properly set up.
+    """
 
     def __init__(self):
         self.interactions = []
@@ -171,8 +177,8 @@ class _RecordingProgresser:
 
 @pytest.fixture
 def emitter(monkeypatch):
-    """Provide a helper to test everything that was shown using craft-cli Emitter."""
-    recording_emitter = _RecordingEmitter()
+    """Provide a helper to test everything that was shown using the Emitter."""
+    recording_emitter = RecordingEmitter()
     for method_name in ("message", "progress", "trace"):
         monkeypatch.setattr(
             messages.emit,

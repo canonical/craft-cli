@@ -31,7 +31,7 @@ FAKE_LOG_NAME = "fakelog.log"
 
 @pytest.fixture(autouse=True)
 def init_emitter():
-    """Disable the automatic init emitter fixture for all this module."""
+    """Disable the automatic init emitter fixture for this entire module."""
 
 
 @pytest.fixture(autouse=True)
