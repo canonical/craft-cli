@@ -125,7 +125,7 @@ Define and use other global arguments
 
 To define more automatic global arguments than the ones provided automatically by ``Dispatcher`` (see :ref:`this explanation <expl_global_args>` for more information), use the ``GlobalArgument`` object to create all you need and pass them to the ``Dispatcher`` at instatiaton time.
 
-Check :class:`its reference <craft_cli.dispatcher.GlobalArgument>` for more information about the parameters needed, but it's very straightforward to create these objects. E.g.::
+Check :class:`craft_cli.dispatcher.GlobalArgument` for more information about the parameters needed, but it's very straightforward to create these objects. E.g.::
 
     ga_sec = GlobalArgument("secure_mode", "flag", "-s", "--secure", "Run the app in secure mode")
     
@@ -142,7 +142,7 @@ The ``dispatcher.pre_parse_args`` method returns the global arguments already pa
 Set a default command in the application
 ========================================
 
-To allow the application to run a command if none was given in the command line, you need to set a default command in the application when instantiating :class:`Dispatcher <craft_cli.dispatcher.Dispatcher>`::
+To allow the application to run a command if none was given in the command line, you need to set a default command in the application when instantiating :class:`craft_cli.dispatcher.Dispatcher`::
 
     dispatcher = Dispatcher(..., default_command=MyImportantCommand)
 
@@ -177,7 +177,7 @@ One of the fixtures (``init_emitter``) is even set with ``autouse=True``, so it 
 
 The other fixture (``emitter``) is very useful to test code interaction with Emitter. It provides an internal recording emitter that has several methods which help to test its usage.
 
-The following example shows a simple usage, please refer to :class:`its reference <craft_cli.pytest_plugin.RecordingEmitter>` for more information about the provided functionality::
+The following example shows a simple usage, please refer to :class:`craft_cli.pytest_plugin.RecordingEmitter` for more information about the provided functionality::
 
     def test_super_function(emitter):
         """Check the super function."""
