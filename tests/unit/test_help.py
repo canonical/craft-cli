@@ -23,12 +23,6 @@ from craft_cli.errors import ArgumentParsingError, ProvideHelpException
 from craft_cli.helptexts import HelpBuilder
 from tests.factory import create_command
 
-
-@pytest.fixture(autouse=True)
-def init_emitter(_init_emitter):
-    """Enable the init emitter fixture automatically for all this module."""
-
-
 # -- building "usage" help
 
 
