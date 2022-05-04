@@ -15,6 +15,7 @@
 
 """Provide all help texts."""
 
+import argparse
 import textwrap
 from operator import attrgetter
 from typing import TYPE_CHECKING, List, Tuple
@@ -22,6 +23,12 @@ from typing import TYPE_CHECKING, List, Tuple
 if TYPE_CHECKING:
     from craft_cli.dispatcher import BaseCommand, CommandGroup
 
+
+# if the `help` of any argument (global or for any command, option or parameter) is set to this
+# value, the argument will not be shown in help messages; the default is to support the
+# non-documented argparse attribute (so if users were using it, will just work) in a secure way
+# in case it disappears in the future.
+HIDDEN = getattr(argparse, "SUPPRESS")
 
 # max columns used in the terminal
 TERMINAL_WIDTH = 72
@@ -129,7 +136,8 @@ class HelpBuilder:
 
         global_lines = ["Global options:"]
         for title, text in global_options:
-            global_lines.extend(_build_item(title, text, max_title_len))
+            if text is not HIDDEN:
+                global_lines.extend(_build_item(title, text, max_title_len))
         textblocks.append("\n".join(global_lines))
 
         common_lines = ["Starter commands:"]
@@ -190,7 +198,8 @@ class HelpBuilder:
 
         global_lines = ["Global options:"]
         for title, text in global_options:
-            global_lines.extend(_build_item(title, text, max_title_len))
+            if text is not HIDDEN:
+                global_lines.extend(_build_item(title, text, max_title_len))
         textblocks.append("\n".join(global_lines))
 
         textblocks.append("Commands can be classified as follows:")
@@ -222,7 +231,8 @@ class HelpBuilder:
 
         - command: the instantiated command for which help is prepared
 
-        - arguments: all command options and parameters, with the (name, description) structure
+        - arguments: all command options and parameters, with the (name, description) structure;
+            note that any argument with description being `HIDDEN` will be ignored.
 
         The help text has the following structure:
 
@@ -239,6 +249,8 @@ class HelpBuilder:
         parameters = []
         options = []
         for name, title in arguments:
+            if title is HIDDEN:
+                continue
             if name[0] == "-":
                 options.append((name, title))
             else:
