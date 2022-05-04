@@ -23,6 +23,7 @@ __version__ = "0.5.0"
 from .messages import EmitterMode, emit  # noqa: F401 ; isort:skip
 from .dispatcher import BaseCommand, CommandGroup, Dispatcher, GlobalArgument  # noqa: F401
 from .errors import ArgumentParsingError, CraftError, ProvideHelpException  # noqa: F401
+from .helptexts import HIDDEN  # noqa: F401
 
 __all__ = [
     "ArgumentParsingError",

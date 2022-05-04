@@ -13,6 +13,7 @@
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import argparse
 import textwrap
 from unittest.mock import patch
 
@@ -20,7 +21,7 @@ import pytest
 
 from craft_cli.dispatcher import CommandGroup, Dispatcher
 from craft_cli.errors import ArgumentParsingError, ProvideHelpException
-from craft_cli.helptexts import HelpBuilder
+from craft_cli.helptexts import HIDDEN, HelpBuilder
 from tests.factory import create_command
 
 # -- building "usage" help
@@ -84,6 +85,8 @@ def test_default_help_text():
     global_options = [
         ("-h, --help", "Show this help message and exit."),
         ("-q, --quiet", "Only show warnings and errors, not progress."),
+        ("--experimental-1", HIDDEN),
+        ("--experimental-2", argparse.SUPPRESS),
     ]
 
     help_builder = HelpBuilder("testapp", fake_summary, command_groups)
@@ -147,6 +150,8 @@ def test_detailed_help_text():
     global_options = [
         ("-h, --help", "Show this help message and exit."),
         ("-q, --quiet", "Only show warnings and errors, not progress."),
+        ("--experimental-1", HIDDEN),
+        ("--experimental-2", argparse.SUPPRESS),
     ]
 
     help_builder = HelpBuilder("testapp", fake_summary, command_groups)
@@ -261,6 +266,8 @@ def test_command_help_text_with_parameters():
         ("--revision", "The revision to release (defaults to latest)."),
         ("extraparam", "Another parameter.."),
         ("--other-option", "Other option."),
+        ("--experimental-1", HIDDEN),
+        ("--experimental-2", argparse.SUPPRESS),
     ]
 
     help_builder = HelpBuilder("testapp", "general summary", command_groups)
