@@ -55,6 +55,7 @@ from craft_cli import errors
 
 @lru_cache
 def _stream_is_terminal(stream: Union[TextIO, None]) -> bool:
+    """Check if the stream is a terminal."""
     return getattr(stream, "isatty", lambda: False)()
 
 
@@ -239,7 +240,7 @@ class _Printer:
         if not TESTMODE:
             self.spinner.start()
 
-    def _write_line(self, message: _MessageInfo, *, spintext: str = "") -> None:
+    def _write_line_terminal(self, message: _MessageInfo, *, spintext: str = "") -> None:
         """Write a simple line message to the screen."""
         # prepare the text with (maybe) the timestamp
         if message.use_timestamp:
@@ -287,7 +288,18 @@ class _Printer:
         else:
             self.unfinished_stream = message.stream
 
-    def _write_bar(self, message: _MessageInfo) -> None:
+    def _write_line_captured(self, message: _MessageInfo) -> None:
+        """Write a simple line message to a captured output."""
+        # prepare the text with (maybe) the timestamp
+        if message.use_timestamp:
+            timestamp_str = message.created_at.isoformat(sep=" ", timespec="milliseconds")
+            text = timestamp_str + " " + message.text
+        else:
+            text = message.text
+
+        print(text, file=message.stream)
+
+    def _write_bar_terminal(self, message: _MessageInfo) -> None:
         """Write a progress bar to the screen."""
         if self.prv_msg is None or self.prv_msg.end_line:
             # first message, or previous message completed the line: start clean
@@ -322,21 +334,33 @@ class _Printer:
         print(line, end="", flush=True, file=message.stream)
         self.unfinished_stream = message.stream
 
+    def _write_bar_captured(self, message: _MessageInfo) -> None:
+        """Do not write any progress bar to the captured output."""
+
     def _show(self, msg: _MessageInfo) -> None:
         """Show the composed message."""
         # show the message in one way or the other only if there is a stream
         if msg.stream is None:
             return
 
+        # the writing functions depend of the final output: if the stream is captured or it's
+        # a real terminal
+        if _stream_is_terminal(msg.stream):
+            write_line = self._write_line_terminal
+            write_bar = self._write_bar_terminal
+        else:
+            write_line = self._write_line_captured
+            write_bar = self._write_bar_captured
+
         if msg.bar_progress is None:
             # regular message, send it to the spinner and write it
             self.spinner.supervise(msg)
-            self._write_line(msg)
+            write_line(msg)
         else:
             # progress bar, send None to the spinner (as it's not a "spinnable" message)
             # and write it
             self.spinner.supervise(None)
-            self._write_bar(msg)
+            write_bar(msg)
         self.prv_msg = msg
 
     def _log(self, message: _MessageInfo) -> None:
@@ -346,9 +370,9 @@ class _Printer:
         self.log.write(f"{timestamp_str} {message.text}\n")
 
     def spin(self, message: _MessageInfo, spintext: str) -> None:
-        """Write a line message including a spin text."""
+        """Write a line message including a spin text, only to a terminal."""
         if _stream_is_terminal(message.stream):
-            self._write_line(message, spintext=spintext)
+            self._write_line_terminal(message, spintext=spintext)
 
     def show(
         self,
