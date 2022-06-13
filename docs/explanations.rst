@@ -182,6 +182,40 @@ E.g.::
         subprocess.run(["ls", "-l"], stdout=stream, stderr=stream)
 
 
+Emitter modes and startup
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``emit`` singleton object is first configured with an explicit call ``init()``:
+
+E.g.::
+
+    emit.init(
+        EmitterMode.NORMAL,
+        "craft",
+        f"Starting craft version {__version__}",
+        log_filepath=logpath,
+    )
+
+It is only after this point that ``emit`` can be used for printing. Note that the mode is typically initialized to ``EmitterMode.NORMAL``. The user can control the emitter mode through global arguments. The ``Dispatcher``, as mentioned earlier, handles global arguments (including help). However, the ``Dispatcher`` only applies emitter mode changes during ``pre_parse_args()`` when parsing the global arguments (e.g. ``--trace``) later on in the code.
+
+E.g.::
+
+    dispatcher.pre_parse_args(sys.argv[1:])
+
+The implication of the two step process above is that between ``init()`` and ``pre_parse_args()`` tracing type messages will be dropped. If you wish to support configurable message verbosity levels during early initialisation, only do that after the dispatcher's ``pre_parse_args()``.
+
+Proposed emitter and dispatcher startup::
+
+    emit.init(...)
+    dispatcher = Dispatcher(...)
+    global_args = dispatcher.pre_parse_args(sys.argv[1:])
+    dispatcher.load_command(global_args)
+
+    <early initialisation with support for verbosity levels>
+
+    dispatcher.run()
+
+
 How to easily try different message types
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
