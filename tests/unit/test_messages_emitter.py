@@ -795,3 +795,15 @@ def test_reporterror_double_after_error(get_initiated_emitter):
 
     emitter.error(CraftError("test message"))
     assert emitter.printer_calls == []
+
+
+def test_reporterror_no_logpath(get_initiated_emitter):
+    """The log path is not reported if indicated."""
+    emitter = get_initiated_emitter(EmitterMode.TRACE)
+    error = CraftError("test message", logpath_report=False)
+    emitter.error(error)
+
+    assert emitter.printer_calls == [
+        call().show(sys.stderr, "test message", use_timestamp=True, end_line=True),
+        call().stop(),
+    ]
