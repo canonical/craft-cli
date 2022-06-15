@@ -74,7 +74,7 @@ class _MessageInfo:  # pylint: disable=too-many-instance-attributes
 
 
 # the different modes the Emitter can be set
-EmitterMode = enum.Enum("EmitterMode", "QUIET NORMAL VERBOSE TRACE")
+EmitterMode = enum.Enum("EmitterMode", "QUIET BRIEF VERBOSE DEBUG TRACE")
 
 # the limit to how many log files to have
 _MAX_LOG_FILES = 5
@@ -480,8 +480,9 @@ class _PipeReaderThread(threading.Thread):
     # byte used to unblock the reading (under Windows)
     UNBLOCK_BYTE = b"\x00"
 
-    def __init__(self, printer: _Printer, stream: Optional[TextIO]):
+    def __init__(self, printer: _Printer, stream: Optional[TextIO], use_timestamp: bool):
         super().__init__()
+        self.use_timestamp = use_timestamp
 
         # prepare the pipe pair: the one to read (used in the thread core loop) and the
         # one which is to be written externally (and also used internally under windows
@@ -526,7 +527,7 @@ class _PipeReaderThread(threading.Thread):
             # write the useful line to intended outputs
             unicode_line = useful_line.decode("utf8")
             text = f":: {unicode_line}"
-            self.printer.show(self.stream, text, end_line=True, use_timestamp=True)
+            self.printer.show(self.stream, text, end_line=True, use_timestamp=self.use_timestamp)
 
     def _run_posix(self) -> None:
         """Run the thread, handling pipes in the POSIX way."""
@@ -581,13 +582,13 @@ class _PipeReaderThread(threading.Thread):
 class _StreamContextManager:
     """A context manager that provides a pipe for subprocess to write its output."""
 
-    def __init__(self, printer: _Printer, text: str, stream: Optional[TextIO]):
+    def __init__(self, printer: _Printer, text: str, stream: Optional[TextIO], use_timestamp: bool):
         # show the intended text (explicitly asking for a complete line) before passing the
         # output command to the pip-reading thread
-        printer.show(stream, text, end_line=True, use_timestamp=True)
+        printer.show(stream, text, end_line=True, use_timestamp=use_timestamp)
 
         # enable the thread to read and show what comes through the provided pipe
-        self.pipe_reader = _PipeReaderThread(printer, stream)
+        self.pipe_reader = _PipeReaderThread(printer, stream, use_timestamp)
 
     def __enter__(self):
         self.pipe_reader.start()
@@ -601,14 +602,6 @@ class _StreamContextManager:
 class _Handler(logging.Handler):
     """A logging handler that emits messages through the core Printer."""
 
-    # a table to map which logging messages show to the screen according to the selected mode
-    mode_to_log_map = {
-        EmitterMode.QUIET: logging.WARNING,
-        EmitterMode.NORMAL: logging.INFO,
-        EmitterMode.VERBOSE: logging.DEBUG,
-        EmitterMode.TRACE: logging.DEBUG,
-    }
-
     def __init__(self, printer: _Printer):
         super().__init__()
         self.printer = printer
@@ -620,9 +613,24 @@ class _Handler(logging.Handler):
 
     def emit(self, record: logging.LogRecord) -> None:
         """Send the message in the LogRecord to the printer."""
-        use_timestamp = self.mode in (EmitterMode.VERBOSE, EmitterMode.TRACE)
-        threshold = self.mode_to_log_map[self.mode]
-        stream = sys.stderr if record.levelno >= threshold else None
+        # under DEBUG level only in trace mode, the rest is not even logged
+        if record.levelno < logging.DEBUG and self.mode != EmitterMode.TRACE:
+            return
+
+        if self.mode in (EmitterMode.QUIET, EmitterMode.BRIEF):
+            # no stream in more quietish modes
+            stream = None
+        elif self.mode == EmitterMode.VERBOSE:
+            # in verbose, only info, warning, error, etc
+            stream = sys.stderr if record.levelno > logging.DEBUG else None
+        elif self.mode == EmitterMode.DEBUG:
+            # in debug mode, also include debug log level
+            stream = sys.stderr if record.levelno >= logging.DEBUG else None
+        else:
+            # in trace, everything
+            stream = sys.stderr
+
+        use_timestamp = self.mode in (EmitterMode.DEBUG, EmitterMode.TRACE)
         self.printer.show(stream, record.getMessage(), use_timestamp=use_timestamp)
 
 
@@ -724,7 +732,7 @@ class Emitter:
         self._mode = mode
         self._log_handler.mode = mode  # type: ignore
 
-        if mode in (EmitterMode.VERBOSE, EmitterMode.TRACE):
+        if mode in (EmitterMode.VERBOSE, EmitterMode.DEBUG, EmitterMode.TRACE):
             # send the greeting to the screen before any further messages
             msgs = [
                 self._greeting,
@@ -736,53 +744,99 @@ class Emitter:
                 )
 
     @_active_guard()
-    def message(self, text: str, intermediate: bool = False) -> None:
+    def message(self, text: str) -> None:
         """Show an important message to the user.
 
-        Normally used as the final message, to show the result of a command, but it can
-        also be used for important messages during the command's execution,
-        with intermediate=True (which will include timestamp in verbose/trace mode).
+        Normally used as the final message, to show the result of a command.
         """
-        use_timestamp = bool(
-            intermediate and self._mode in (EmitterMode.VERBOSE, EmitterMode.TRACE)
-        )
-        self._printer.show(sys.stdout, text, use_timestamp=use_timestamp)  # type: ignore
+        stream = None if self._mode == EmitterMode.QUIET else sys.stdout
+        self._printer.show(stream, text)  # type: ignore
 
     @_active_guard()
-    def trace(self, text: str) -> None:
-        """Trace/debug information.
+    def verbose(self, text: str) -> None:
+        """Verbose information.
 
-        This is to record everything that the user may not want to normally see, but it's
-        useful for postmortem analysis.
+        Useful to provide more information to the user that shouldn't be exposed
+        when in brief mode for clarity and simplicity.
         """
-        stream = sys.stderr if self._mode == EmitterMode.TRACE else None
+        if self._mode in (EmitterMode.QUIET, EmitterMode.BRIEF):
+            stream = None
+            use_timestamp = False
+        elif self._mode == EmitterMode.VERBOSE:
+            stream = sys.stderr
+            use_timestamp = False
+        else:
+            stream = sys.stderr
+            use_timestamp = True
+        self._printer.show(stream, text, use_timestamp=use_timestamp)  # type: ignore
+
+    @_active_guard()
+    def debug(self, text: str) -> None:
+        """Debug information.
+
+        To record everything that the user may not want to normally see but useful
+        for the app developers to understand why things are failing or performing
+        forensics on the produced logs.
+        """
+        if self._mode in (EmitterMode.QUIET, EmitterMode.BRIEF, EmitterMode.VERBOSE):
+            stream = None
+        else:
+            stream = sys.stderr
         self._printer.show(stream, text, use_timestamp=True)  # type: ignore
 
     @_active_guard()
-    def progress(self, text: str) -> None:
-        """Progress information for a multi-step command.
+    def trace(self, text: str) -> None:
+        """Trace information.
 
-        This is normally used to present several separated text messages.
-
-        These messages will be truncated to the terminal's width, and overwritten by the next
-        line (unless verbose/trace mode).
+        A way to expose system-generated information, about the general process or
+        particular information, which in general would be too overwhelming for
+        debugging purposes but sometimes needed for particular analysis.
         """
+        # if not in trace mode we're not even logging anything: so instead of calling the
+        # printer with no stream and avoid_logging flag (which would be more consistent
+        # with the rest of the Emitter methods, in this case we just avoid moving any
+        # machinery as much as possible, because potentially there will be huge number
+        # of trace calls.
+        if self._mode == EmitterMode.TRACE:
+            self._printer.show(sys.stderr, text, use_timestamp=True)  # type: ignore
+
+    def _get_progress_params(self, permanent: bool):
+        """Calculate the different parameters for progress information."""
         if self._mode == EmitterMode.QUIET:
             # will not be shown in the screen (always logged to the file)
             stream = None
             use_timestamp = False
             ephemeral = True
-        elif self._mode == EmitterMode.NORMAL:
-            # show the indicated message to stderr (ephemeral) and log it
+        elif self._mode == EmitterMode.BRIEF:
+            # show the indicated message to stderr (ephemeral, unless flag is used) and log it
             stream = sys.stderr
             use_timestamp = False
-            ephemeral = True
+            ephemeral = not permanent
+        elif self._mode == EmitterMode.VERBOSE:
+            # show the indicated message to stderr (permanent) and log it
+            stream = sys.stderr
+            use_timestamp = False
+            ephemeral = False
         else:
             # show to stderr with timestamp (permanent), and log it
             stream = sys.stderr
             use_timestamp = True
             ephemeral = False
+        return stream, use_timestamp, ephemeral
 
+    @_active_guard()
+    def progress(self, text: str, permanent: bool = False) -> None:
+        """Progress information for a multi-step command.
+
+        This is normally used to present several separated text messages.
+
+        If a progress message is important enough that it should not be overwritten by the
+        next ones, use 'permanent=True'.
+
+        These messages will be truncated to the terminal's width, and overwritten by the next
+        line (unless verbose/trace mode).
+        """
+        stream, use_timestamp, ephemeral = self._get_progress_params(permanent)
         self._printer.show(stream, text, ephemeral=ephemeral, use_timestamp=use_timestamp)  # type: ignore
 
     @_active_guard()
@@ -795,23 +849,25 @@ class Emitter:
         delta progress, unless delta=False here, which implies that the calls to `.advance` should
         pass the total so far).
         """
-        # don't show progress if quiet
-        if self._mode == EmitterMode.QUIET:
-            stream = None
-        else:
-            stream = sys.stderr
-        self._printer.show(stream, text, ephemeral=True)  # type: ignore
+        stream, use_timestamp, ephemeral = self._get_progress_params(permanent=False)
+        ephemeral = True  #FIXME: improve how params are handled here
+        self._printer.show(stream, text, ephemeral=ephemeral, use_timestamp=use_timestamp)  # type: ignore
         return _Progresser(self._printer, total, text, stream, delta)  # type: ignore
 
     @_active_guard()
     def open_stream(self, text: str):
         """Open a stream context manager to get messages from subprocesses."""
-        # don't show third party streams if quiet or normal
-        if self._mode in (EmitterMode.QUIET, EmitterMode.NORMAL):
+        if self._mode in (EmitterMode.QUIET, EmitterMode.BRIEF):
+            # don't show third party streams if quiet or normal
             stream = None
+            use_timestamp = False
+        elif self._mode == EmitterMode.VERBOSE:
+            stream = sys.stderr
+            use_timestamp = False
         else:
             stream = sys.stderr
-        return _StreamContextManager(self._printer, text, stream)  # type: ignore
+            use_timestamp = True
+        return _StreamContextManager(self._printer, text, stream=stream, use_timestamp=use_timestamp)  # type: ignore
 
     @_active_guard()
     @contextmanager
@@ -820,7 +876,7 @@ class Emitter:
 
         Note that no messages will be collected while paused, not even for logging.
         """
-        self.trace("Emitter: Pausing control of the terminal")
+        self.debug("Emitter: Pausing control of the terminal")
         self._printer.stop()  # type: ignore
         self._stopped = True
         try:
@@ -828,7 +884,7 @@ class Emitter:
         finally:
             self._stopped = False
             self._printer = _Printer(self._log_filepath)  # type: ignore
-            self.trace("Emitter: Resuming control of the terminal")
+            self.debug("Emitter: Resuming control of the terminal")
 
     def _stop(self) -> None:
         """Do all the stopping."""
@@ -842,7 +898,7 @@ class Emitter:
 
     def _report_error(self, error: errors.CraftError) -> None:
         """Report the different message lines from a CraftError."""
-        if self._mode in (EmitterMode.QUIET, EmitterMode.NORMAL):
+        if self._mode in (EmitterMode.QUIET, EmitterMode.BRIEF):
             use_timestamp = False
             full_stream = None
         else:

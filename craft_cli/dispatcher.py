@@ -68,11 +68,11 @@ _DEFAULT_GLOBAL_ARGS = [
         "Only show warnings and errors, not progress",
     ),
     GlobalArgument(
-        "trace",
-        "flag",
-        "-t",
-        "--trace",
-        "Show all information needed to trace internal behaviour",
+        "verbosity",
+        "option",
+        None,
+        "--verbosity",
+        "Set the verbosity level to 'quiet', 'brief', 'verbose', 'debug', or 'trace'",
     ),
 ]
 
@@ -223,7 +223,11 @@ class Dispatcher:  # pylint: disable=too-many-instance-attributes
         """Return the global flags ready to present in the help messages as options."""
         options = []
         for arg in self.global_arguments:
-            options.append((f"{arg.short_option}, {arg.long_option}", arg.help_message))
+            if arg.short_option is None:
+                indicator = f"{arg.long_option}"
+            else:
+                indicator = f"{arg.short_option}, {arg.long_option}"
+            options.append((indicator, arg.help_message))
         return options
 
     def _get_general_help(self, *, detailed):
@@ -320,7 +324,8 @@ class Dispatcher:  # pylint: disable=too-many-instance-attributes
         arg_per_option = {}
         options_with_equal = []
         for arg in self.global_arguments:
-            arg_per_option[arg.short_option] = arg
+            if arg.short_option is not None:
+                arg_per_option[arg.short_option] = arg
             arg_per_option[arg.long_option] = arg
             if arg.type == "flag":
                 global_args[arg.name] = False
@@ -354,16 +359,22 @@ class Dispatcher:  # pylint: disable=too-many-instance-attributes
                 filtered_sysargs.append(sysarg)
 
         # control and use quiet/verbose options
-        if sum([global_args[key] for key in ("quiet", "verbose", "trace")]) > 1:
+        if sum([bool(global_args[key]) for key in ("quiet", "verbose", "verbosity")]) > 1:
             raise ArgumentParsingError(
-                "The 'verbose', 'trace' and 'quiet' options are mutually exclusive."
+                "The 'verbose', 'quiet' and 'verbosity' options are mutually exclusive."
             )
         if global_args["quiet"]:
             emit.set_mode(EmitterMode.QUIET)
         elif global_args["verbose"]:
             emit.set_mode(EmitterMode.VERBOSE)
-        elif global_args["trace"]:
-            emit.set_mode(EmitterMode.TRACE)
+        elif global_args["verbosity"]:
+            try:
+                verbosity_level = EmitterMode[global_args["verbosity"].upper()]
+            except KeyError:
+                raise ArgumentParsingError(
+                    "Bad verbosity level; allowed are "
+                    "'quiet', 'brief', 'verbose', 'debug', and 'trace'.")
+            emit.set_mode(verbosity_level)
         emit.trace(f"Raw pre-parsed sysargs: args={global_args} filtered={filtered_sysargs}")
 
         # handle requested help through -h/--help options
