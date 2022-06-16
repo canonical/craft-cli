@@ -681,28 +681,31 @@ def test_show_defaults_captured(stream, monkeypatch, recording_printer):
     assert recording_printer.spinner.supervised == [msg]
 
 
-def test_show_use_timestamp(recording_printer):
+def test_show_use_timestamp(recording_printer, monkeypatch):
     """Control on message's use_timestamp flag."""
+    monkeypatch.setattr(sys.stdout, "isatty", lambda: True)
     recording_printer.show(sys.stdout, "test text", use_timestamp=True)
     (msg,) = recording_printer.written_terminal_lines  # pylint: disable=unbalanced-tuple-unpacking
     assert msg.use_timestamp is True
 
 
-def test_show_end_line(recording_printer):
+def test_show_end_line(recording_printer, monkeypatch):
     """Control on message's end_line flag."""
+    monkeypatch.setattr(sys.stdout, "isatty", lambda: True)
     recording_printer.show(sys.stdout, "test text", end_line=True)
     (msg,) = recording_printer.written_terminal_lines  # pylint: disable=unbalanced-tuple-unpacking
     assert msg.end_line is True
 
 
-def test_show_avoid_logging(recording_printer):
+def test_show_avoid_logging(recording_printer, monkeypatch):
     """Control if some message should avoid being logged."""
     recording_printer.show(sys.stdout, "test text", avoid_logging=True)
     assert not recording_printer.logged
 
 
-def test_show_ephemeral(recording_printer):
+def test_show_ephemeral(recording_printer, monkeypatch):
     """Control if some message is ephemeral."""
+    monkeypatch.setattr(sys.stdout, "isatty", lambda: True)
     recording_printer.show(sys.stdout, "test text", ephemeral=True)
     (msg,) = recording_printer.written_terminal_lines  # pylint: disable=unbalanced-tuple-unpacking
     assert msg.ephemeral is True

@@ -80,7 +80,7 @@ def example_06():
     msg = ""
     for i in range(30):
         msg += "progress permanent blah {} ".format(i)
-    emit.message(msg, intermediate=True)
+    emit.progress(msg, permanent=True)
 
     time.sleep(5)
 
@@ -102,11 +102,11 @@ def example_07():
 def example_08():
     """Show some progress that are permanent, mixed with ephemeral, then the result."""
     emit.message("We need to know!")
-    emit.message("Building computer...", intermediate=True)
+    emit.progress("Building computer...", permanent=True)
     time.sleep(1)
     emit.progress("Assembling stuff...")
     time.sleep(1)
-    emit.message("Asking question...", intermediate=True)
+    emit.progress("Asking question...", permanent=True)
     time.sleep(1)
     emit.message("The meaning of life is 42.")
 
@@ -144,20 +144,20 @@ def example_13():
 
 def example_14():
     """Support some library logging."""
-    #FIXME
     logger = logging.getLogger()
     logger.setLevel(0)
 
     for mode in EmitterMode:
         emit.set_mode(mode)
-        emit.message(f"====== mode: {mode}")
-        logger.error("Some logging in ERROR")
-        logger.info("Some logging in INFO")
-        logger.debug("Some logging in TRACE")
+        emit.progress(f"Mode set to {mode}", permanent=True)
+        logger.error("   some logging in ERROR")
+        logger.info("   some logging in INFO")
+        logger.debug("   some logging in DEBUG")
+        logger.log(5, "   some logging in custom level 5")
 
 
 def example_15():
-    """Specific combination of long message with other progress, in verbose."""
+    """Specific combination of long message with final message in TRACE."""
     emit.set_mode(EmitterMode.TRACE)
     emit.progress("Asking question...")
     time.sleep(3)
@@ -187,7 +187,7 @@ def example_17():
         raise ValueError("pumba")
 
     emit.set_mode(EmitterMode.VERBOSE)
-    emit.message("Start to work", intermediate=True)
+    emit.progress("Start to work", permanent=True)
     try:
         f()
     except ValueError as exc:

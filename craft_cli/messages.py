@@ -421,7 +421,7 @@ class _Printer:
             bar_progress=progress,
             bar_total=total,
             ephemeral=True,  # so it gets eventually overwritten by other message
-            use_timestamp=use_timestamp,  #FIXME test
+            use_timestamp=use_timestamp,
         )
         self._show(msg)
 
@@ -754,7 +754,8 @@ class Emitter:
         self._log_handler.mode = mode  # type: ignore
 
         if mode in (EmitterMode.VERBOSE, EmitterMode.DEBUG, EmitterMode.TRACE):
-            use_timestamp = mode != EmitterMode.VERBOSE #FIXME: refactor a little?
+            use_timestamp = mode != EmitterMode.VERBOSE
+
             # send the greeting to the screen before any further messages
             msgs = [
                 self._greeting,
@@ -871,16 +872,7 @@ class Emitter:
         delta progress, unless delta=False here, which implies that the calls to `.advance` should
         pass the total so far).
         """
-        stream, use_timestamp, ephemeral = self._get_progress_params(permanent=True)
-        #FIXME: improve how params are handled here
-        if self._mode == EmitterMode.QUIET:
-            ephemeral = True
-        elif self._mode == EmitterMode.BRIEF:
-            ephemeral = True
-        elif self._mode == EmitterMode.VERBOSE:
-            ephemeral = False
-        else:
-            ephemeral = False
+        stream, use_timestamp, ephemeral = self._get_progress_params(permanent=False)
         return _Progresser(self._printer, total, text, stream, delta, use_timestamp, ephemeral)  # type: ignore
 
     @_active_guard()
