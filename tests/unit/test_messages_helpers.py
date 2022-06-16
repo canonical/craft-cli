@@ -175,13 +175,17 @@ def test_progresser_absolute_mode():
     text = "test text"
     total = 123
     fake_printer = MagicMock()
-    with _Progresser(fake_printer, total, text, stream, delta=False) as progresser:
+    ephemeral = True
+    use_timestamp = True
+    with _Progresser(fake_printer, total, text, stream, delta=False, ephemeral_context=ephemeral, use_timestamp=use_timestamp) as progresser:
         progresser.advance(20)
         progresser.advance(30.0)
 
     assert fake_printer.mock_calls == [
-        call.progress_bar(stream, text, 20, total),
-        call.progress_bar(stream, text, 30.0, total),
+        call.show(stream, "test text (--->)", ephemeral=ephemeral, use_timestamp=use_timestamp),
+        call.progress_bar(stream, text, 20, total, use_timestamp),
+        call.progress_bar(stream, text, 30.0, total, use_timestamp),
+        call.show(stream, "test text (<---)", ephemeral=ephemeral, use_timestamp=use_timestamp),
     ]
 
 
@@ -191,13 +195,17 @@ def test_progresser_delta_mode():
     text = "test text"
     total = 123
     fake_printer = MagicMock()
-    with _Progresser(fake_printer, total, text, stream, delta=True) as progresser:
+    ephemeral = True
+    use_timestamp = True
+    with _Progresser(fake_printer, total, text, stream, delta=True, ephemeral_context=ephemeral, use_timestamp=use_timestamp) as progresser:
         progresser.advance(20.5)
         progresser.advance(30)
 
     assert fake_printer.mock_calls == [
-        call.progress_bar(stream, text, 20.5, total),
-        call.progress_bar(stream, text, 50.5, total),
+        call.show(stream, "test text (--->)", ephemeral=ephemeral, use_timestamp=use_timestamp),
+        call.progress_bar(stream, text, 20.5, total, use_timestamp),
+        call.progress_bar(stream, text, 50.5, total, use_timestamp),
+        call.show(stream, "test text (<---)", ephemeral=ephemeral, use_timestamp=use_timestamp),
     ]
 
 
@@ -205,7 +213,7 @@ def test_progresser_delta_mode():
 def test_progresser_negative_values(delta):
     """The progress cannot be negative."""
     fake_printer = MagicMock()
-    with _Progresser(fake_printer, 123, "test text", sys.stdout, delta=delta) as progresser:
+    with _Progresser(fake_printer, 123, "test text", sys.stdout, delta, True, True) as progresser:
         with pytest.raises(ValueError, match="The advance amount cannot be negative"):
             progresser.advance(-1)
 
@@ -214,7 +222,7 @@ def test_progresser_dont_consume_exceptions():
     """It lets the exceptions go through."""
     fake_printer = MagicMock()
     with pytest.raises(ValueError):
-        with _Progresser(fake_printer, 123, "test text", sys.stdout, delta=True):
+        with _Progresser(fake_printer, 123, "test text", sys.stdout, True, True, True):
             raise ValueError()
 
 

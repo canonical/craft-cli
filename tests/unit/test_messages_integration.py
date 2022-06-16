@@ -148,6 +148,7 @@ def assert_outputs(capsys, emit, expected_out=None, expected_err=None, expected_
         assert expected_logged_texts == logged_texts
 
 
+@pytest.mark.parametrize("output_is_terminal", [None])
 def test_exposed_api():
     """Verify names are properly exposed."""
     # pylint: disable=import-outside-toplevel
@@ -317,9 +318,10 @@ def test_progressbar_quiet(capsys):
             progress.advance(uploaded)
     emit.ended_ok()
 
-    # nothing to the screen, first line to the log
+    # nothing to the screen, just to the log
     expected_log = [
-        Line("Uploading stuff"),
+        Line("Uploading stuff (--->)"),
+        Line("Uploading stuff (<---)"),
     ]
     assert_outputs(capsys, emit, expected_log=expected_log)
 
@@ -343,15 +345,22 @@ def test_progressbar_brief_terminal(capsys, monkeypatch):
     with emit.progress_bar("Uploading stuff", 1788) as progress:
         for uploaded in [700, 700, 388]:
             progress.advance(uploaded)
+    emit.progress("And so on")  # just a line so last progress line is not artificially permanent
     emit.ended_ok()
 
     expected_screen = [
-        Line("Uploading stuff", permanent=False),
+        Line("Uploading stuff (--->)", permanent=False),
         Line("Uploading stuff [████████████                    ] 700/1788", permanent=False),
         Line("Uploading stuff [████████████████████████       ] 1400/1788", permanent=False),
-        Line("Uploading stuff [███████████████████████████████] 1788/1788", permanent=True),
+        Line("Uploading stuff [███████████████████████████████] 1788/1788", permanent=False),
+        Line("Uploading stuff (<---)", permanent=False),
+        Line("And so on", permanent=True),
     ]
-    expected_log = expected_screen[:1]  # just the first line, no progress in the logs!
+    expected_log = [
+        Line("Uploading stuff (--->)"),
+        Line("Uploading stuff (<---)"),
+        Line("And so on"),
+    ]
     assert_outputs(capsys, emit, expected_err=expected_screen, expected_log=expected_log)
 
 
@@ -374,7 +383,8 @@ def test_progressbar_captured_quietish(capsys, monkeypatch, mode):
     emit.ended_ok()
 
     expected = [
-        Line("Uploading stuff", permanent=True),
+        Line("Uploading stuff (--->)", permanent=True),
+        Line("Uploading stuff (<---)", permanent=True),
     ]
     assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)
 
@@ -398,7 +408,8 @@ def test_progressbar_captured_developer_modes(capsys, monkeypatch, mode):
     emit.ended_ok()
 
     expected = [
-        Line("Uploading stuff", permanent=True, timestamp=True),
+        Line("Uploading stuff (--->)", permanent=True, timestamp=True),
+        Line("Uploading stuff (<---)", permanent=True, timestamp=True),
     ]
     assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)
 
@@ -422,15 +433,22 @@ def test_progressbar_verbose(capsys, monkeypatch):
     with emit.progress_bar("Uploading stuff", 1788) as progress:
         for uploaded in [700, 700, 388]:
             progress.advance(uploaded)
+    emit.progress("And so on")  # just a line so last progress line is not artificially permanent
     emit.ended_ok()
 
     expected_screen = [
-        Line("Uploading stuff", permanent=False),
+        Line("Uploading stuff (--->)", permanent=True),  # this starting line will endure
         Line("Uploading stuff [████████████                    ] 700/1788", permanent=False),
         Line("Uploading stuff [████████████████████████       ] 1400/1788", permanent=False),
-        Line("Uploading stuff [███████████████████████████████] 1788/1788", permanent=True),
+        Line("Uploading stuff [███████████████████████████████] 1788/1788", permanent=False),
+        Line("Uploading stuff (<---)", permanent=True),  # this closing line will endure
+        Line("And so on", permanent=True),
     ]
-    expected_log = expected_screen[:1]  # just the first line, no progress in the logs!
+    expected_log = [
+        Line("Uploading stuff (--->)"),
+        Line("Uploading stuff (<---)"),
+        Line("And so on"),
+    ]
     assert_outputs(capsys, emit, expected_err=expected_screen, expected_log=expected_log)
 
 
@@ -460,15 +478,22 @@ def test_progressbar_developer_modes(capsys, mode, monkeypatch):
     with emit.progress_bar("Uploading stuff", 1788) as progress:
         for uploaded in [700, 700, 388]:
             progress.advance(uploaded)
+    emit.progress("And so on")  # just a line so last progress line is not artificially permanent
     emit.ended_ok()
 
     expected_screen = [
-        Line("Uploading stuff", permanent=False, timestamp=True),
-        Line("Uploading stuff [████████████                    ] 700/1788", permanent=False, timestamp=True),
-        Line("Uploading stuff [████████████████████████       ] 1400/1788", permanent=False, timestamp=True),
-        Line("Uploading stuff [███████████████████████████████] 1788/1788", permanent=True, timestamp=True),
+        Line("Uploading stuff (--->)", permanent=True, timestamp=True),  # this line will endure
+        Line("Uploading stuff [███     ] 700/1788", permanent=False, timestamp=True),
+        Line("Uploading stuff [█████  ] 1400/1788", permanent=False, timestamp=True),
+        Line("Uploading stuff [███████] 1788/1788", permanent=False, timestamp=True),
+        Line("Uploading stuff (<---)", permanent=True, timestamp=True),  # this line will endure
+        Line("And so on", permanent=True, timestamp=True),
     ]
-    expected_log = expected_screen[:1]  # just the first line, no progress in the logs!
+    expected_log = [
+        Line("Uploading stuff (--->)"),
+        Line("Uploading stuff (<---)"),
+        Line("And so on"),
+    ]
     assert_outputs(capsys, emit, expected_err=expected_screen, expected_log=expected_log)
 
 
@@ -493,6 +518,7 @@ def test_verbose_in_quietish_modes(capsys, mode):
     assert_outputs(capsys, emit, expected_log=expected)
 
 
+@pytest.mark.parametrize("output_is_terminal", [True, False])
 def test_verbose_in_verbose_mode(capsys):
     """The verbose method in the verbose mode."""
     emit = Emitter()
@@ -589,6 +615,7 @@ def test_trace_in_quietish_modes(capsys, mode):
     assert_outputs(capsys, emit)  # nothing, not even in the logs!!
 
 
+@pytest.mark.parametrize("output_is_terminal", [True, False])
 def test_trace_in_trace_mode(capsys):
     """The trace method in trace mode."""
     emit = Emitter()
@@ -891,7 +918,7 @@ def test_logging_in_quietish_modes(capsys, logger, mode):
 def test_logging_in_verbose_mode(capsys, logger):
     """Handle the different logging levels when in verbose mode."""
     emit = Emitter()
-    emit.init(EmitterMode.BRIEF, "testapp", GREETING)
+    emit.init(EmitterMode.VERBOSE, "testapp", GREETING)
     logger.error("--error-- %s", "with args")
     logger.warning("--warning--")
     logger.info("--info--")
@@ -914,7 +941,7 @@ def test_logging_in_verbose_mode(capsys, logger):
 def test_logging_in_debug_mode(capsys, logger):
     """Handle the different logging levels when in debug mode."""
     emit = Emitter()
-    emit.init(EmitterMode.BRIEF, "testapp", GREETING)
+    emit.init(EmitterMode.DEBUG, "testapp", GREETING)
     logger.error("--error-- %s", "with args")
     logger.warning("--warning--")
     logger.info("--info--")
@@ -935,7 +962,7 @@ def test_logging_in_debug_mode(capsys, logger):
 def test_logging_in_trace_mode(capsys, logger):
     """Handle the different logging levels when in trace mode."""
     emit = Emitter()
-    emit.init(EmitterMode.BRIEF, "testapp", GREETING)
+    emit.init(EmitterMode.TRACE, "testapp", GREETING)
     logger.error("--error-- %s", "with args")
     logger.warning("--warning--")
     logger.info("--info--")
@@ -953,16 +980,9 @@ def test_logging_in_trace_mode(capsys, logger):
     assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)
 
 
-@pytest.mark.parametrize(
-    "mode",
-    [
-        EmitterMode.QUIET,
-        EmitterMode.BRIEF,
-    ],
-)
 @pytest.mark.parametrize("output_is_terminal", [True, False])
-def test_initial_messages_when_quietish(capsys, mode, monkeypatch, tmp_path):
-    """Check the initial messages are sent when setting the mode to more quiet modes."""
+def test_initial_messages_when_quiet_mode(capsys, monkeypatch, tmp_path):
+    """Check the initial messages are sent when setting the mode to QUIET."""
     # use different greeting and file logpath so we can actually test them
     different_greeting = "different greeting to not be ignored"
     different_logpath = str(tmp_path / "otherfile.log")
@@ -970,9 +990,34 @@ def test_initial_messages_when_quietish(capsys, mode, monkeypatch, tmp_path):
 
     emit = Emitter()
     emit.init(EmitterMode.BRIEF, "testapp", different_greeting)
-    emit.trace("initial trace")
-    emit.set_mode(mode)
-    emit.trace("second trace")
+    emit.debug("initial debug")
+    emit.set_mode(EmitterMode.QUIET)
+    emit.debug("second debug")
+    emit.message("final message")
+    emit.ended_ok()
+
+    expected_log = [
+        Line(different_greeting),
+        Line("initial debug"),
+        Line("second debug"),
+        Line("final message"),
+    ]
+    assert_outputs(capsys, emit, expected_log=expected_log)
+
+
+@pytest.mark.parametrize("output_is_terminal", [True, False])
+def test_initial_messages_when_brief_mode(capsys, monkeypatch, tmp_path):
+    """Check the initial messages are sent when setting the mode to BRIEF."""
+    # use different greeting and file logpath so we can actually test them
+    different_greeting = "different greeting to not be ignored"
+    different_logpath = str(tmp_path / "otherfile.log")
+    monkeypatch.setattr(messages, "_get_log_filepath", lambda appname: different_logpath)
+
+    emit = Emitter()
+    emit.init(EmitterMode.QUIET, "testapp", different_greeting)
+    emit.debug("initial debug")
+    emit.set_mode(EmitterMode.BRIEF)
+    emit.debug("second debug")
     emit.message("final message")
     emit.ended_ok()
 
@@ -981,8 +1026,8 @@ def test_initial_messages_when_quietish(capsys, mode, monkeypatch, tmp_path):
     ]
     expected_log = [
         Line(different_greeting),
-        Line("initial trace"),
-        Line("second trace"),
+        Line("initial debug"),
+        Line("second debug"),
         Line("final message"),
     ]
     assert_outputs(capsys, emit, expected_out=expected_out, expected_log=expected_log)
@@ -998,9 +1043,9 @@ def test_initial_messages_when_verbose(capsys, tmp_path, monkeypatch):
 
     emit = Emitter()
     emit.init(EmitterMode.BRIEF, "testapp", different_greeting)
-    emit.trace("initial trace")
+    emit.debug("initial debug")
     emit.set_mode(EmitterMode.VERBOSE)
-    emit.trace("second trace")
+    emit.debug("second debug")
     emit.message("final message")
     emit.ended_ok()
 
@@ -1008,13 +1053,13 @@ def test_initial_messages_when_verbose(capsys, tmp_path, monkeypatch):
         Line("final message"),
     ]
     expected_err = [
-        Line(different_greeting, timestamp=True),
-        Line(f"Logging execution to {different_logpath!r}", timestamp=True),
+        Line(different_greeting),
+        Line(f"Logging execution to {different_logpath!r}"),
     ]
     expected_log = [
         Line(different_greeting),
-        Line("initial trace"),
-        Line("second trace"),
+        Line("initial debug"),
+        Line("second debug"),
         Line("final message"),
     ]
     assert_outputs(
@@ -1043,9 +1088,9 @@ def test_initial_messages_when_developer_modes(capsys, tmp_path, monkeypatch, mo
 
     emit = Emitter()
     emit.init(EmitterMode.BRIEF, "testapp", different_greeting)
-    emit.trace("initial trace")
+    emit.debug("initial debug")
     emit.set_mode(mode)
-    emit.trace("second trace")
+    emit.debug("second debug")
     emit.message("final message")
     emit.ended_ok()
 
@@ -1055,12 +1100,12 @@ def test_initial_messages_when_developer_modes(capsys, tmp_path, monkeypatch, mo
     expected_err = [
         Line(different_greeting, timestamp=True),
         Line(f"Logging execution to {str(different_logpath)!r}", timestamp=True),
-        Line("second trace", timestamp=True),
+        Line("second debug", timestamp=True),
     ]
     expected_log = [
         Line(different_greeting),
-        Line("initial trace"),
-        Line("second trace"),
+        Line("initial debug"),
+        Line("second debug"),
         Line("final message"),
     ]
     assert_outputs(
@@ -1082,6 +1127,6 @@ def test_logging_after_closing(capsys, logger):
     logger.info("info 2")
 
     expected = [
-        Line("info 1", timestamp=True),
+        Line("info 1"),
     ]
     assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)

@@ -39,7 +39,7 @@ def example_03():
 
 
 def example_04():
-    """Show a progress bar."""
+    """Show a progress bar in brief mode."""
     emit.message("We need to know!")
     emit.progress("Deciding to build a computer or upload it...")
     time.sleep(1.5)
@@ -297,6 +297,42 @@ def example_23():
     emit.message("Captured output:")
     for line in filter(None, itertools.chain(proc.stderr.split("\n"), proc.stdout.split("\n"))):
         emit.message(f":: {line}")
+
+
+def example_24():
+    """Show a progress bar in verbose mode."""
+    emit.set_mode(EmitterMode.VERBOSE)
+
+    emit.progress("We need to know!", permanent=True)
+    emit.progress("Deciding to build a computer or upload it...")
+    time.sleep(1.5)
+
+    with emit.progress_bar("Uploading computer: planetary model", 1788) as progress:
+        for uploaded in [500, 500, 500, 288]:
+            progress.advance(uploaded)
+            time.sleep(1.5)
+
+    emit.progress("Asking question...")
+    time.sleep(1.5)
+    emit.message("The meaning of life is 42.")
+
+
+def example_25():
+    """Show a progress bar in debug mode."""
+    emit.set_mode(EmitterMode.DEBUG)
+
+    emit.progress("We need to know!", permanent=True)
+    emit.progress("Deciding to build a computer or upload it...")
+    time.sleep(1.5)
+
+    with emit.progress_bar("Uploading computer: planetary model", 1788) as progress:
+        for uploaded in [500, 500, 500, 288]:
+            progress.advance(uploaded)
+            time.sleep(1.5)
+
+    emit.progress("Asking question...")
+    time.sleep(1.5)
+    emit.message("The meaning of life is 42.")
 
 
 # -- end of test cases

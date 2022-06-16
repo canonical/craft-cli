@@ -377,6 +377,26 @@ def test_writebarterminal_simple(capsys, monkeypatch, log_filepath):
     assert out == "test text [██████████          ] 50/100"
 
 
+def test_writebarterminal_timestamp(capsys, monkeypatch, log_filepath):
+    """A timestamp was indicated to use."""
+    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 60)
+    printer = _Printer(log_filepath)
+
+    fake_now = datetime(2009, 9, 1, 12, 13, 15, 123456)
+    msg = _MessageInfo(
+        sys.stdout, "test text", bar_progress=50, bar_total=100, use_timestamp=True, created_at=fake_now)
+    printer._write_bar_terminal(msg)
+    assert printer.unfinished_stream == sys.stdout
+
+    out, err = capsys.readouterr()
+    assert not err
+
+    # output completes the terminal width (leaving space for the cursor), and
+    # without a finishing newline
+    assert len(out) == 59
+    assert out == "2009-09-01 12:13:15.123 test text [████████        ] 50/100"
+
+
 def test_writebarterminal_simple_empty(capsys, monkeypatch, log_filepath):
     """The indicated progress is zero."""
     monkeypatch.setattr(messages, "_get_terminal_width", lambda: 40)

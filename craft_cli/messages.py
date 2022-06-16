@@ -301,6 +301,13 @@ class _Printer:
 
     def _write_bar_terminal(self, message: _MessageInfo) -> None:
         """Write a progress bar to the screen."""
+        # prepare the text with (maybe) the timestamp
+        if message.use_timestamp:
+            timestamp_str = message.created_at.isoformat(sep=" ", timespec="milliseconds")
+            text = timestamp_str + " " + message.text
+        else:
+            text = message.text
+
         if self.prv_msg is None or self.prv_msg.end_line:
             # first message, or previous message completed the line: start clean
             maybe_cr = ""
@@ -318,7 +325,7 @@ class _Printer:
         # terminal size minus the text and numerical progress, and 5 (the cursor at the end,
         # two spaces before and after the bar, and two surrounding brackets)
         terminal_width = _get_terminal_width()
-        bar_width = terminal_width - len(message.text) - len(numerical_progress) - 5
+        bar_width = terminal_width - len(text) - len(numerical_progress) - 5
 
         # only show the bar with progress if there is enough space, otherwise just the
         # message (truncated, if needed)
@@ -326,9 +333,9 @@ class _Printer:
             completed_width = math.floor(bar_width * min(bar_percentage, 100))
             completed_bar = _PROGRESS_BAR_SYMBOL * completed_width
             empty_bar = " " * (bar_width - completed_width)
-            line = f"{maybe_cr}{message.text} [{completed_bar}{empty_bar}] {numerical_progress}"
+            line = f"{maybe_cr}{text} [{completed_bar}{empty_bar}] {numerical_progress}"
         else:
-            text = message.text[: terminal_width - 1]  # space for cursor
+            text = text[: terminal_width - 1]  # space for cursor
             line = f"{maybe_cr}{text}"
 
         print(line, end="", flush=True, file=message.stream)
@@ -405,6 +412,7 @@ class _Printer:
         text: str,
         progress: Union[int, float],
         total: Union[int, float],
+        use_timestamp: bool = False,
     ) -> None:
         """Show a progress bar to the given stream."""
         msg = _MessageInfo(
@@ -413,6 +421,7 @@ class _Printer:
             bar_progress=progress,
             bar_total=total,
             ephemeral=True,  # so it gets eventually overwritten by other message
+            use_timestamp=use_timestamp,  #FIXME test
         )
         self._show(msg)
 
@@ -433,6 +442,7 @@ class _Printer:
 
 
 class _Progresser:
+    """A context manager to follow progress on any specific action."""
     def __init__(  # pylint: disable=too-many-arguments
         self,
         printer: _Printer,
@@ -440,6 +450,8 @@ class _Progresser:
         text: str,
         stream: Optional[TextIO],
         delta: bool,
+        use_timestamp: bool,
+        ephemeral_context: bool,
     ):
         self.printer = printer
         self.total = total
@@ -447,11 +459,20 @@ class _Progresser:
         self.accumulated: Union[int, float] = 0
         self.stream = stream
         self.delta = delta
+        self.use_timestamp = use_timestamp
+
+        # this is only for the "before" and "after" messages; the progress itself
+        # is always ephemeral
+        self.ephemeral_context = ephemeral_context
 
     def __enter__(self) -> "_Progresser":
+        text = f"{self.text} (--->)"
+        self.printer.show(self.stream, text, ephemeral=self.ephemeral_context, use_timestamp=self.use_timestamp)
         return self
 
     def __exit__(self, *exc_info) -> Literal[False]:
+        text = f"{self.text} (<---)"
+        self.printer.show(self.stream, text, ephemeral=self.ephemeral_context, use_timestamp=self.use_timestamp)
         return False  # do not consume any exception
 
     def advance(self, amount: Union[int, float]) -> None:
@@ -462,7 +483,7 @@ class _Progresser:
             self.accumulated += amount
         else:
             self.accumulated = amount
-        self.printer.progress_bar(self.stream, self.text, self.accumulated, self.total)
+        self.printer.progress_bar(self.stream, self.text, self.accumulated, self.total, self.use_timestamp)
 
 
 class _PipeReaderThread(threading.Thread):
@@ -733,6 +754,7 @@ class Emitter:
         self._log_handler.mode = mode  # type: ignore
 
         if mode in (EmitterMode.VERBOSE, EmitterMode.DEBUG, EmitterMode.TRACE):
+            use_timestamp = mode != EmitterMode.VERBOSE #FIXME: refactor a little?
             # send the greeting to the screen before any further messages
             msgs = [
                 self._greeting,
@@ -740,7 +762,7 @@ class Emitter:
             ]
             for msg in msgs:
                 self._printer.show(  # type: ignore
-                    sys.stderr, msg, use_timestamp=True, avoid_logging=True, end_line=True
+                    sys.stderr, msg, use_timestamp=use_timestamp, avoid_logging=True, end_line=True
                 )
 
     @_active_guard()
@@ -849,10 +871,17 @@ class Emitter:
         delta progress, unless delta=False here, which implies that the calls to `.advance` should
         pass the total so far).
         """
-        stream, use_timestamp, ephemeral = self._get_progress_params(permanent=False)
-        ephemeral = True  #FIXME: improve how params are handled here
-        self._printer.show(stream, text, ephemeral=ephemeral, use_timestamp=use_timestamp)  # type: ignore
-        return _Progresser(self._printer, total, text, stream, delta)  # type: ignore
+        stream, use_timestamp, ephemeral = self._get_progress_params(permanent=True)
+        #FIXME: improve how params are handled here
+        if self._mode == EmitterMode.QUIET:
+            ephemeral = True
+        elif self._mode == EmitterMode.BRIEF:
+            ephemeral = True
+        elif self._mode == EmitterMode.VERBOSE:
+            ephemeral = False
+        else:
+            ephemeral = False
+        return _Progresser(self._printer, total, text, stream, delta, use_timestamp, ephemeral)  # type: ignore
 
     @_active_guard()
     def open_stream(self, text: str):
