@@ -39,6 +39,9 @@ class CraftError(Exception):
     :ivar docs_url: an URL to point the user to documentation (to be shown
       together with 'message')
 
+    :ivar logpath_report: if the location of the log filepath should be presented
+      in the screen as the final message
+
     :ivar reportable: if an error report should be sent to some error-handling
       backend (like Sentry)
 
@@ -52,6 +55,7 @@ class CraftError(Exception):
         details: Optional[str] = None,
         resolution: Optional[str] = None,
         docs_url: Optional[str] = None,
+        logpath_report: bool = True,
         reportable: bool = True,
         retcode: int = 1,
     ):
@@ -59,6 +63,7 @@ class CraftError(Exception):
         self.details = details
         self.resolution = resolution
         self.docs_url = docs_url
+        self.logpath_report = logpath_report
         self.reportable = reportable
         self.retcode = retcode
 
@@ -70,6 +75,7 @@ class CraftError(Exception):
                     self.details == other.details,
                     self.resolution == other.resolution,
                     self.docs_url == other.docs_url,
+                    self.logpath_report == other.logpath_report,
                     self.reportable == other.reportable,
                     self.retcode == other.retcode,
                 ]

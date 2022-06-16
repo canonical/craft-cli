@@ -354,7 +354,7 @@ class Dispatcher:  # pylint: disable=too-many-instance-attributes
                 filtered_sysargs.append(sysarg)
 
         # control and use quiet/verbose options
-        if sum([global_args[key] for key in ("quiet", "verbose", "trace")]) > 1:
+        if sum(global_args[key] for key in ("quiet", "verbose", "trace")) > 1:
             raise ArgumentParsingError(
                 "The 'verbose', 'trace' and 'quiet' options are mutually exclusive."
             )

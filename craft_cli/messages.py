@@ -844,8 +844,10 @@ class Emitter:
             text = f"For more information, check out: {error.docs_url}"
             self._printer.show(sys.stderr, text, use_timestamp=use_timestamp, end_line=True)  # type: ignore
 
-        text = f"Full execution log: {str(self._log_filepath)!r}"
-        self._printer.show(sys.stderr, text, use_timestamp=use_timestamp, end_line=True)  # type: ignore
+        # expose the logfile path only if indicated
+        if error.logpath_report:
+            text = f"Full execution log: {str(self._log_filepath)!r}"
+            self._printer.show(sys.stderr, text, use_timestamp=use_timestamp, end_line=True)  # type: ignore
 
     @_active_guard(ignore_when_stopped=True)
     def error(self, error: errors.CraftError) -> None:
