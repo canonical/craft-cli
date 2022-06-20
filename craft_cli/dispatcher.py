@@ -41,7 +41,8 @@ GlobalArgument = namedtuple("GlobalArgument", "name type short_option long_optio
     by ``Dispatcher.pre_parse_args`` method)
 :param type: the argument type: ``flag`` for arguments that are set to ``True`` if
     specified (``False`` by default), or ``option`` if a value is needed after it.
-:param short_option: the short form of the argument (a dash with a letter, e.g. ``-s``).
+:param short_option: the short form of the argument (a dash with a letter, e.g. ``-s``); it can
+    be None if the option does not have a short form.
 :param long_option: the long form of the argument (two dashes and a name, e.g. ``--secure``).
 :param help_message: the one-line text that describes the argument, for building the help texts.
 """
@@ -223,7 +224,11 @@ class Dispatcher:  # pylint: disable=too-many-instance-attributes
         """Return the global flags ready to present in the help messages as options."""
         options = []
         for arg in self.global_arguments:
-            options.append((f"{arg.short_option}, {arg.long_option}", arg.help_message))
+            if arg.short_option is None:
+                indicator = f"{arg.long_option}"
+            else:
+                indicator = f"{arg.short_option}, {arg.long_option}"
+            options.append((indicator, arg.help_message))
         return options
 
     def _get_general_help(self, *, detailed):
@@ -320,7 +325,8 @@ class Dispatcher:  # pylint: disable=too-many-instance-attributes
         arg_per_option = {}
         options_with_equal = []
         for arg in self.global_arguments:
-            arg_per_option[arg.short_option] = arg
+            if arg.short_option is not None:
+                arg_per_option[arg.short_option] = arg
             arg_per_option[arg.long_option] = arg
             if arg.type == "flag":
                 global_args[arg.name] = False
