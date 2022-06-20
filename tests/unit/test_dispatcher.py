@@ -349,6 +349,17 @@ def test_dispatcher_generic_setup_paramglobal_without_param_confusing(options):
     assert str(err.value) == "help text"
 
 
+def test_dispatcher_generic_setup_paramglobal_no_short():
+    """Generic parameter handling for a param type global arg without short option."""
+    cmd = create_command("somecommand")
+    groups = [CommandGroup("title", [cmd])]
+    extra = GlobalArgument("globalparam", "option", None, "--globalparam", "Test global param.")
+    dispatcher = Dispatcher("appname", groups, extra_global_args=[extra])
+
+    global_args = dispatcher.pre_parse_args(["somecommand", "--globalparam=foobar"])
+    assert global_args["globalparam"] == "foobar"
+
+
 def test_dispatcher_build_commands_ok():
     """Correct command loading."""
     cmd0, cmd1, cmd2 = [create_command(f"cmd-name-{n}", "cmd help") for n in range(3)]

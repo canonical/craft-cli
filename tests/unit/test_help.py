@@ -19,7 +19,8 @@ from unittest.mock import patch
 
 import pytest
 
-from craft_cli.dispatcher import CommandGroup, Dispatcher
+from craft_cli import dispatcher
+from craft_cli.dispatcher import CommandGroup, Dispatcher, GlobalArgument
 from craft_cli.errors import ArgumentParsingError, ProvideHelpException
 from craft_cli.helptexts import HIDDEN, HelpBuilder
 from tests.factory import create_command
@@ -801,6 +802,35 @@ def test_tool_exec_help_command_all():
     # check the given information to the help text builder
     args = mock.call_args[0]
     assert sorted(x[0] for x in args[0]) == [
+        "-h, --help",
+        "-q, --quiet",
+        "-t, --trace",
+        "-v, --verbose",
+    ]
+
+
+def test_tool_exec_help_when_globalarg_without_short_form(monkeypatch):
+    """Validate that the args for help are ok without a short form."""
+    new_global = GlobalArgument(
+        "foobar",
+        "flag",
+        None,
+        "--xyz",
+        "An option without short form",
+    )
+    new_default_globals = dispatcher._DEFAULT_GLOBAL_ARGS + [new_global]
+    monkeypatch.setattr(dispatcher, "_DEFAULT_GLOBAL_ARGS", new_default_globals)
+
+    d = Dispatcher("testapp", [])
+    with patch("craft_cli.helptexts.HelpBuilder.get_full_help") as mock:
+        mock.return_value = "test help"
+        with pytest.raises(ProvideHelpException) as exc_cm:
+            d.pre_parse_args(["--help"])
+
+    # check the given information to the help text builder
+    args = mock.call_args[0]
+    assert sorted(x[0] for x in args[0]) == [
+        "--xyz",
         "-h, --help",
         "-q, --quiet",
         "-t, --trace",
