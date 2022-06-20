@@ -19,7 +19,7 @@ from unittest.mock import patch
 
 import pytest
 
-from craft_cli import dispatcher
+from craft_cli import dispatcher as dispatcher_mod
 from craft_cli.dispatcher import CommandGroup, Dispatcher, GlobalArgument
 from craft_cli.errors import ArgumentParsingError, ProvideHelpException
 from craft_cli.helptexts import HIDDEN, HelpBuilder
@@ -818,14 +818,13 @@ def test_tool_exec_help_when_globalarg_without_short_form(monkeypatch):
         "--xyz",
         "An option without short form",
     )
-    new_default_globals = dispatcher._DEFAULT_GLOBAL_ARGS + [new_global]
-    monkeypatch.setattr(dispatcher, "_DEFAULT_GLOBAL_ARGS", new_default_globals)
+    new_default_globals = dispatcher_mod._DEFAULT_GLOBAL_ARGS + [new_global]
+    monkeypatch.setattr(dispatcher_mod, "_DEFAULT_GLOBAL_ARGS", new_default_globals)
 
-    d = Dispatcher("testapp", [])
+    dispatcher = Dispatcher("testapp", [])
     with patch("craft_cli.helptexts.HelpBuilder.get_full_help") as mock:
-        mock.return_value = "test help"
-        with pytest.raises(ProvideHelpException) as exc_cm:
-            d.pre_parse_args(["--help"])
+        with pytest.raises(ProvideHelpException):
+            dispatcher.pre_parse_args(["--help"])
 
     # check the given information to the help text builder
     args = mock.call_args[0]
