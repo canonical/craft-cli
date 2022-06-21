@@ -80,7 +80,7 @@ First start with a class sub-classing `BaseCommand` with the appropriate attribu
 
 Then initiate the ``emit`` object and call the ``Dispatcher`` functionality::
 
-    emit.init(EmitterMode.NORMAL, "example-app", "Starting example app v1.")
+    emit.init(EmitterMode.BRIEF, "example-app", "Starting example app v1.")
     command_groups = [CommandGroup("Basic", [RemoveFileCommand])]
     summary = "Example application for the craft-cli tutorial."
 

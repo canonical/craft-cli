@@ -407,9 +407,9 @@ def test_handler_emit_quiet(handler):
     ]
 
 
-def test_handler_emit_normal(handler):
-    """Check emit behaviour in NORMAL mode."""
-    handler.mode = EmitterMode.NORMAL
+def test_handler_emit_brief(handler):
+    """Check emit behaviour in BRIEF mode."""
+    handler.mode = EmitterMode.BRIEF
 
     logger = logging.getLogger()
     logger.error("test error")

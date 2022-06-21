@@ -7,14 +7,15 @@ About the appropriate mode to initiate `emit`
 
 The first mandatory parameter of the ``emit`` object is ``mode``, which controls the initial verboseness level of the system.
 
-As the user can change the level later using global arguments when executing the application (this is the application default level), it's recommended to use ``EmitterMode.NORMAL``, unless the application needs to honor any external configuration or indication (e.g. a ``DEBUG`` environment variable).
+As the user can change the level later using global arguments when executing the application (this is the application default level), it's recommended to use ``EmitterMode.BRIEF``, unless the application needs to honor any external configuration or indication (e.g. a ``DEBUG`` environment variable).
 
 The values for ``mode`` are the following attributes of the ``EmitterMode`` enumerator:
 
-- ``EmitterMode.QUIET``: to present only error messages
-- ``EmitterMode.NORMAL``: error and info messages, with nice progress indications
-- ``EmitterMode.VERBOSE``: for more verbose outputs, including timestamps on each line
-- ``EmitterMode.TRACE``: to also present debug-specific messages
+- ``EmitterMode.QUIET``: to present only error messages, if they happen
+- ``EmitterMode.BRIEF``: error and info messages, with nice progress indications
+- ``EmitterMode.VERBOSE``: for more verbose outputs, showing extra information to the user
+- ``EmitterMode.DEBUG``: aimed to provide useful information to the application developers; this includes timestamps on each line
+- ``EmitterMode.TRACE``: to also expose system-generated information (in general too overwhelming for debugging purposes but sometimes needed for particular analysis)
 
 
 .. _expl_log_management:
@@ -89,7 +90,7 @@ It's a singleton, just import it wherever it needs to be used::
 
 Before using it, though, it must be initiated. For example::
 
-    emit.init(EmitterMode.NORMAL, "example-app", "Starting example app v1.")
+    emit.init(EmitterMode.BRIEF, "example-app", "Starting example app v1.")
 
 
 After bootstrapping the library as shown before, and importing ``emit`` wherever is needed, all its usage is just sending information to the user. The following sections describe the different ways of doing that.
@@ -116,7 +117,7 @@ Progress messages
 
 The ``progress`` method is to present all the messages that provide information on what the application is currently doing.
 
-Messages shown this way are ephemeral in ``QUIET`` or ``NORMAL`` modes (overwritten by the next line) and will be truncated to the terminal's width in that case.
+Messages shown this way are ephemeral in ``QUIET`` or ``BRIEF`` modes (overwritten by the next line) and will be truncated to the terminal's width in that case.
 
 ::
 
@@ -190,13 +191,13 @@ The ``emit`` singleton object is first configured with an explicit call ``init()
 E.g.::
 
     emit.init(
-        EmitterMode.NORMAL,
+        EmitterMode.BRIEF,
         "craft",
         f"Starting craft version {__version__}",
         log_filepath=logpath,
     )
 
-It is only after this point that ``emit`` can be used for printing. Note that the mode is typically initialized to ``EmitterMode.NORMAL``. The user can control the emitter mode through global arguments. The ``Dispatcher``, as mentioned earlier, handles global arguments (including help). However, the ``Dispatcher`` only applies emitter mode changes during ``pre_parse_args()`` when parsing the global arguments (e.g. ``--trace``) later on in the code.
+It is only after this point that ``emit`` can be used for printing. Note that the mode is typically initialized to ``EmitterMode.BRIEF``. The user can control the emitter mode through global arguments. The ``Dispatcher``, as mentioned earlier, handles global arguments (including help). However, the ``Dispatcher`` only applies emitter mode changes during ``pre_parse_args()`` when parsing the global arguments (e.g. ``--trace``) later on in the code.
 
 E.g.::
 

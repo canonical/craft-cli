@@ -83,7 +83,7 @@ def get_initiated_emitter(tmp_path, monkeypatch):
     "mode",
     [
         EmitterMode.QUIET,
-        EmitterMode.NORMAL,
+        EmitterMode.BRIEF,
     ],
 )
 def test_init_quietish(mode, tmp_path, monkeypatch):
@@ -206,7 +206,7 @@ def test_init_double_tests_mode(tmp_path, monkeypatch):
     "mode",
     [
         EmitterMode.QUIET,
-        EmitterMode.NORMAL,
+        EmitterMode.BRIEF,
     ],
 )
 def test_set_mode_quietish(get_initiated_emitter, mode):
@@ -270,7 +270,7 @@ def test_message_final(get_initiated_emitter, mode):
     "mode",
     [
         EmitterMode.QUIET,
-        EmitterMode.NORMAL,
+        EmitterMode.BRIEF,
     ],
 )
 def test_message_intermediate_quietish(get_initiated_emitter, mode):
@@ -304,7 +304,7 @@ def test_message_intermediate_verboseish(get_initiated_emitter, mode):
     "mode",
     [
         EmitterMode.QUIET,
-        EmitterMode.NORMAL,
+        EmitterMode.BRIEF,
         EmitterMode.VERBOSE,
     ],
 )
@@ -340,7 +340,7 @@ def test_progress_in_quiet_mode(get_initiated_emitter):
 
 def test_progress_in_normal_mode(get_initiated_emitter):
     """Send to stderr (ephermeral) and log it."""
-    emitter = get_initiated_emitter(EmitterMode.NORMAL)
+    emitter = get_initiated_emitter(EmitterMode.BRIEF)
     emitter.progress("some text")
 
     assert emitter.printer_calls == [
@@ -368,7 +368,7 @@ def test_progress_in_verboseish_modes(get_initiated_emitter, mode):
 @pytest.mark.parametrize(
     "mode",
     [
-        EmitterMode.NORMAL,
+        EmitterMode.BRIEF,
         EmitterMode.VERBOSE,
         EmitterMode.TRACE,
     ],
@@ -409,7 +409,7 @@ def test_progressbar_in_quiet_mode(get_initiated_emitter):
     "mode",
     [
         EmitterMode.QUIET,
-        EmitterMode.NORMAL,
+        EmitterMode.BRIEF,
     ],
 )
 def test_openstream_in_quietish_modes(get_initiated_emitter, mode):
@@ -555,7 +555,7 @@ def test_paused_cant_show(get_initiated_emitter, tmp_path):
 # -- tests for error reporting
 
 
-@pytest.mark.parametrize("mode", [EmitterMode.QUIET, EmitterMode.NORMAL])
+@pytest.mark.parametrize("mode", [EmitterMode.QUIET, EmitterMode.BRIEF])
 def test_reporterror_simple_message_only_quietish(mode, get_initiated_emitter):
     """Report just a simple message, in silent modes."""
     emitter = get_initiated_emitter(mode)
@@ -585,7 +585,7 @@ def test_reporterror_simple_message_only_verboseish(mode, get_initiated_emitter)
     ]
 
 
-@pytest.mark.parametrize("mode", [EmitterMode.QUIET, EmitterMode.NORMAL])
+@pytest.mark.parametrize("mode", [EmitterMode.QUIET, EmitterMode.BRIEF])
 def test_reporterror_detailed_info_quietish(mode, get_initiated_emitter):
     """Report an error having detailed information, in silent modes."""
     emitter = get_initiated_emitter(mode)
@@ -617,7 +617,7 @@ def test_reporterror_detailed_info_verboseish(mode, get_initiated_emitter):
     ]
 
 
-@pytest.mark.parametrize("mode", [EmitterMode.QUIET, EmitterMode.NORMAL])
+@pytest.mark.parametrize("mode", [EmitterMode.QUIET, EmitterMode.BRIEF])
 def test_reporterror_chained_exception_quietish(mode, get_initiated_emitter):
     """Report an error that was originated after other exception, in silent modes."""
     emitter = get_initiated_emitter(mode)
@@ -677,7 +677,7 @@ def test_reporterror_chained_exception_verboseish(mode, get_initiated_emitter):
     tblines_mock.assert_called_with(orig_exception)  # type: ignore  # pylint: disable=used-before-assignment
 
 
-@pytest.mark.parametrize("mode", [EmitterMode.QUIET, EmitterMode.NORMAL])
+@pytest.mark.parametrize("mode", [EmitterMode.QUIET, EmitterMode.BRIEF])
 def test_reporterror_with_resolution_quietish(mode, get_initiated_emitter):
     """Report an error with a recommended resolution, in silent modes."""
     emitter = get_initiated_emitter(mode)
@@ -709,7 +709,7 @@ def test_reporterror_with_resolution_verboseish(mode, get_initiated_emitter):
     ]
 
 
-@pytest.mark.parametrize("mode", [EmitterMode.QUIET, EmitterMode.NORMAL])
+@pytest.mark.parametrize("mode", [EmitterMode.QUIET, EmitterMode.BRIEF])
 def test_reporterror_with_docs_quietish(mode, get_initiated_emitter):
     """Report including a docs url, in silent modes."""
     emitter = get_initiated_emitter(mode)

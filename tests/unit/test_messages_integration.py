@@ -1,5 +1,5 @@
 #
-# Copyright 2021 Canonical Ltd.
+# Copyright 2021-2022 Canonical Ltd.
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -18,10 +18,6 @@
 
 These are "integration" tests in the sense that call the external API and verify final
 outputs.
-
-Most of the different cases here mimic the specification table in:
-
-    https://docs.google.com/document/d/1Pe-0ED6db53SmrUGIAgVMzxeCOGJQwsZJWf7jzFSagQ/
 """
 
 import logging
@@ -168,7 +164,7 @@ def test_01_expected_cmd_result(capsys, mode):
     "mode",
     [
         EmitterMode.QUIET,
-        EmitterMode.NORMAL,
+        EmitterMode.BRIEF,
     ],
 )
 def test_01_intermediate_message_quiet(capsys, mode):
@@ -217,10 +213,10 @@ def test_02_progress_message_quiet(capsys):
     assert_outputs(capsys, emit, expected_log=expected)
 
 
-def test_02_progress_message_normal(capsys):
-    """Show a progress message in normal mode."""
+def test_02_progress_message_brief(capsys):
+    """Show a progress message in brief mode."""
     emit = Emitter()
-    emit.init(EmitterMode.NORMAL, "testapp", GREETING)
+    emit.init(EmitterMode.BRIEF, "testapp", GREETING)
     emit.progress("The meaning of life is 42.")
     emit.progress("Another message.")
     emit.ended_ok()
@@ -274,7 +270,7 @@ def test_03_progress_bar_quiet(capsys):
 @pytest.mark.parametrize(
     "mode",
     [
-        EmitterMode.NORMAL,
+        EmitterMode.BRIEF,
         EmitterMode.VERBOSE,
         EmitterMode.TRACE,
     ],
@@ -313,7 +309,7 @@ def test_03_progress_bar_other_modes(capsys, mode, monkeypatch):
     "mode",
     [
         EmitterMode.QUIET,
-        EmitterMode.NORMAL,
+        EmitterMode.BRIEF,
         EmitterMode.VERBOSE,
     ],
 )
@@ -347,7 +343,7 @@ def test_04_5_trace_in_trace(capsys):
     "mode",
     [
         EmitterMode.QUIET,
-        EmitterMode.NORMAL,
+        EmitterMode.BRIEF,
     ],
 )
 def test_04_third_party_output_other_modes(capsys, tmp_path, mode):
@@ -415,11 +411,11 @@ def test_04_third_party_output_verbose(capsys, tmp_path, mode):
     "mode",
     [
         EmitterMode.QUIET,
-        EmitterMode.NORMAL,
+        EmitterMode.BRIEF,
     ],
 )
 def test_05_06_simple_errors_quietly(capsys, mode):
-    """Error because of application or external rules, quiet and normal mode."""
+    """Error because of application or external rules, quiet and brief mode."""
     emit = Emitter()
     emit.init(mode, "testapp", GREETING)
     error = CraftError(
@@ -461,11 +457,11 @@ def test_05_06_simple_errors_verbosely(capsys, mode):
     "mode",
     [
         EmitterMode.QUIET,
-        EmitterMode.NORMAL,
+        EmitterMode.BRIEF,
     ],
 )
 def test_07_error_api_quietly(capsys, mode):
-    """Somewhat expected API error, quiet and normal mode."""
+    """Somewhat expected API error, quiet and brief mode."""
     emit = Emitter()
     emit.init(mode, "testapp", GREETING)
     full_error = {"message": "Invalid channel.", "code": "BAD-CHANNEL"}
@@ -508,11 +504,11 @@ def test_07_error_api_verbosely(capsys, mode):
     "mode",
     [
         EmitterMode.QUIET,
-        EmitterMode.NORMAL,
+        EmitterMode.BRIEF,
     ],
 )
 def test_08_09_error_unexpected_quietly(capsys, mode):
-    """Unexpected error from a 3rd party or application crash, quiet and normal mode."""
+    """Unexpected error from a 3rd party or application crash, quiet and brief mode."""
     emit = Emitter()
     emit.init(mode, "testapp", GREETING)
     try:
@@ -582,10 +578,10 @@ def test_logging_when_quiet(capsys, logger):
     assert_outputs(capsys, emit, expected_err=expected_err, expected_log=expected_log)
 
 
-def test_logging_when_normal(capsys, logger):
-    """Handle the different logging levels when in normal mode."""
+def test_logging_when_brief(capsys, logger):
+    """Handle the different logging levels when in brief mode."""
     emit = Emitter()
-    emit.init(EmitterMode.NORMAL, "testapp", GREETING)
+    emit.init(EmitterMode.BRIEF, "testapp", GREETING)
     logger.error("--error-- %s", "with args")
     logger.warning("--warning--")
     logger.info("--info--")
@@ -611,7 +607,7 @@ def test_logging_when_normal(capsys, logger):
     ],
 )
 def test_logging_when_verboseish(capsys, logger, mode):
-    """Handle the different logging levels when in normal mode."""
+    """Handle the different logging levels when in verboseish modes."""
     emit = Emitter()
     emit.init(mode, "testapp", GREETING)
     logger.error("--error-- %s", "with args")
@@ -633,7 +629,7 @@ def test_logging_when_verboseish(capsys, logger, mode):
     "mode",
     [
         EmitterMode.QUIET,
-        EmitterMode.NORMAL,
+        EmitterMode.BRIEF,
     ],
 )
 def test_initial_messages_when_quietish(capsys, mode, monkeypatch, tmp_path):
@@ -644,7 +640,7 @@ def test_initial_messages_when_quietish(capsys, mode, monkeypatch, tmp_path):
     monkeypatch.setattr(messages, "_get_log_filepath", lambda appname: different_logpath)
 
     emit = Emitter()
-    emit.init(EmitterMode.NORMAL, "testapp", different_greeting)
+    emit.init(EmitterMode.BRIEF, "testapp", different_greeting)
     emit.trace("initial trace")
     emit.set_mode(mode)
     emit.trace("second trace")
@@ -671,7 +667,7 @@ def test_initial_messages_when_verbose(capsys, tmp_path, monkeypatch):
     monkeypatch.setattr(messages, "_get_log_filepath", lambda appname: different_logpath)
 
     emit = Emitter()
-    emit.init(EmitterMode.NORMAL, "testapp", different_greeting)
+    emit.init(EmitterMode.BRIEF, "testapp", different_greeting)
     emit.trace("initial trace")
     emit.set_mode(EmitterMode.VERBOSE)
     emit.trace("second trace")
@@ -708,7 +704,7 @@ def test_initial_messages_when_trace(capsys, tmp_path, monkeypatch):
     monkeypatch.setattr(messages, "_get_log_filepath", lambda appname: different_logpath)
 
     emit = Emitter()
-    emit.init(EmitterMode.NORMAL, "testapp", different_greeting)
+    emit.init(EmitterMode.BRIEF, "testapp", different_greeting)
     emit.trace("initial trace")
     emit.set_mode(EmitterMode.TRACE)
     emit.trace("second trace")
