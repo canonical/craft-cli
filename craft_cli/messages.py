@@ -73,7 +73,7 @@ class _MessageInfo:  # pylint: disable=too-many-instance-attributes
 
 
 # the different modes the Emitter can be set
-EmitterMode = enum.Enum("EmitterMode", "QUIET NORMAL VERBOSE TRACE")
+EmitterMode = enum.Enum("EmitterMode", "QUIET BRIEF VERBOSE DEBUG TRACE")
 
 # the limit to how many log files to have
 _MAX_LOG_FILES = 5
@@ -580,7 +580,7 @@ class _Handler(logging.Handler):
     # a table to map which logging messages show to the screen according to the selected mode
     mode_to_log_map = {
         EmitterMode.QUIET: logging.WARNING,
-        EmitterMode.NORMAL: logging.INFO,
+        EmitterMode.BRIEF: logging.INFO,
         EmitterMode.VERBOSE: logging.DEBUG,
         EmitterMode.TRACE: logging.DEBUG,
     }
@@ -748,7 +748,7 @@ class Emitter:
             stream = None
             use_timestamp = False
             ephemeral = True
-        elif self._mode == EmitterMode.NORMAL:
+        elif self._mode == EmitterMode.BRIEF:
             # show the indicated message to stderr (ephemeral) and log it
             stream = sys.stderr
             use_timestamp = False
@@ -783,7 +783,7 @@ class Emitter:
     def open_stream(self, text: str):
         """Open a stream context manager to get messages from subprocesses."""
         # don't show third party streams if quiet or normal
-        if self._mode in (EmitterMode.QUIET, EmitterMode.NORMAL):
+        if self._mode in (EmitterMode.QUIET, EmitterMode.BRIEF):
             stream = None
         else:
             stream = sys.stderr
@@ -818,7 +818,7 @@ class Emitter:
 
     def _report_error(self, error: errors.CraftError) -> None:
         """Report the different message lines from a CraftError."""
-        if self._mode in (EmitterMode.QUIET, EmitterMode.NORMAL):
+        if self._mode in (EmitterMode.QUIET, EmitterMode.BRIEF):
             use_timestamp = False
             full_stream = None
         else:

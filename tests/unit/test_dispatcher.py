@@ -187,10 +187,10 @@ def test_dispatcher_generic_setup_default():
     """Generic parameter handling for default values."""
     cmd = create_command("somecommand")
     groups = [CommandGroup("title", [cmd])]
-    emit.set_mode(EmitterMode.NORMAL)  # this is how `main` will init the Emitter
+    emit.set_mode(EmitterMode.BRIEF)  # this is how `main` will init the Emitter
     dispatcher = Dispatcher("appname", groups)
     dispatcher.pre_parse_args(["somecommand"])
-    assert emit.get_mode() == EmitterMode.NORMAL
+    assert emit.get_mode() == EmitterMode.BRIEF
 
 
 @pytest.mark.parametrize(
@@ -207,7 +207,7 @@ def test_dispatcher_generic_setup_verbose(options):
     """Generic parameter handling for verbose log setup, directly or after the command."""
     cmd = create_command("somecommand")
     groups = [CommandGroup("title", [cmd])]
-    emit.set_mode(EmitterMode.NORMAL)  # this is how `main` will init the Emitter
+    emit.set_mode(EmitterMode.BRIEF)  # this is how `main` will init the Emitter
     dispatcher = Dispatcher("appname", groups)
     dispatcher.pre_parse_args(options)
     assert emit.get_mode() == EmitterMode.VERBOSE
@@ -227,7 +227,7 @@ def test_dispatcher_generic_setup_quiet(options):
     """Generic parameter handling for quiet log setup, directly or after the command."""
     cmd = create_command("somecommand")
     groups = [CommandGroup("title", [cmd])]
-    emit.set_mode(EmitterMode.NORMAL)  # this is how `main` will init the Emitter
+    emit.set_mode(EmitterMode.BRIEF)  # this is how `main` will init the Emitter
     dispatcher = Dispatcher("appname", groups)
     dispatcher.pre_parse_args(options)
     assert emit.get_mode() == EmitterMode.QUIET
@@ -247,7 +247,7 @@ def test_dispatcher_generic_setup_trace(options):
     """Generic parameter handling for trace log setup, directly or after the command."""
     cmd = create_command("somecommand")
     groups = [CommandGroup("title", [cmd])]
-    emit.set_mode(EmitterMode.NORMAL)  # this is how `main` will init the Emitter
+    emit.set_mode(EmitterMode.BRIEF)  # this is how `main` will init the Emitter
     dispatcher = Dispatcher("appname", groups)
     dispatcher.pre_parse_args(options)
     assert emit.get_mode() == EmitterMode.TRACE

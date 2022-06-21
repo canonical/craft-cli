@@ -253,7 +253,7 @@ def _run_subprocess_with_emitter(mode):
 
 def example_21():
     """Run an app that uses emitter in a subprocess, pausing the external control, normal mode."""
-    _run_subprocess_with_emitter(EmitterMode.NORMAL)
+    _run_subprocess_with_emitter(EmitterMode.BRIEF)
 
 
 def example_22():
@@ -273,7 +273,7 @@ if func is None:
     print(f"ERROR: function {name!r} not found")
     exit()
 
-emit.init(EmitterMode.NORMAL, "explorator", "Greetings earthlings")
+emit.init(EmitterMode.BRIEF, "explorator", "Greetings earthlings")
 try:
     func()
 except CraftError as err:
