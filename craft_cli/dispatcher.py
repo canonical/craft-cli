@@ -69,11 +69,11 @@ _DEFAULT_GLOBAL_ARGS = [
         "Only show warnings and errors, not progress",
     ),
     GlobalArgument(
-        "trace",
-        "flag",
-        "-t",
-        "--trace",
-        "Show all information needed to trace internal behaviour",
+        "verbosity",
+        "option",
+        None,
+        "--verbosity",
+        "Set the verbosity level to 'quiet', 'brief', 'verbose', 'debug' or 'trace'",
     ),
 ]
 
@@ -359,17 +359,24 @@ class Dispatcher:  # pylint: disable=too-many-instance-attributes
             else:
                 filtered_sysargs.append(sysarg)
 
-        # control and use quiet/verbose options
-        if sum(global_args[key] for key in ("quiet", "verbose", "trace")) > 1:
+        # control and use quiet/verbose/verbosity options
+        if sum(1 for key in ("quiet", "verbose", "verbosity") if global_args[key]) > 1:
             raise ArgumentParsingError(
-                "The 'verbose', 'trace' and 'quiet' options are mutually exclusive."
+                "The 'verbose', 'quiet' and 'verbosity' options are mutually exclusive."
             )
         if global_args["quiet"]:
             emit.set_mode(EmitterMode.QUIET)
         elif global_args["verbose"]:
             emit.set_mode(EmitterMode.VERBOSE)
-        elif global_args["trace"]:
-            emit.set_mode(EmitterMode.TRACE)
+        elif global_args["verbosity"]:
+            try:
+                verbosity_level = EmitterMode[global_args["verbosity"].upper()]
+            except KeyError:
+                raise ArgumentParsingError(  # pylint: disable=raise-missing-from
+                    "Bad verbosity level; allowed are "
+                    "'quiet', 'brief', 'verbose', 'debug' and 'trace'."
+                )
+            emit.set_mode(verbosity_level)
         emit.trace(f"Raw pre-parsed sysargs: args={global_args} filtered={filtered_sysargs}")
 
         # handle requested help through -h/--help options

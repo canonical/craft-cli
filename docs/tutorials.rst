@@ -117,8 +117,8 @@ Finally, put both chunks of code in a ``example-app.py`` file, and (having the v
            -h, --help:  Show this help message and exit
         -v, --verbose:  Show debug information and be more verbose
           -q, --quiet:  Only show warnings and errors, not progress
-          -t, --trace:  Show all information needed to trace internal
-                        behaviour
+          --verbosity:  Set the verbosity level to 'quiet', 'brief', 
+                        'verbose', 'debug' or 'trace'",
     
     Starter commands:
     
@@ -146,8 +146,8 @@ Ask help for specifically for the command::
            -h, --help:  Show this help message and exit
         -v, --verbose:  Show debug information and be more verbose
           -q, --quiet:  Only show warnings and errors, not progress
-          -t, --trace:  Show all information needed to trace internal
-                        behaviour
+          --verbosity:  Set the verbosity level to 'quiet', 'brief', 
+                        'verbose', 'debug' or 'trace'",
     
     For a summary of all commands, run 'example-app help --all'.
     

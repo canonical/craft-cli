@@ -25,7 +25,7 @@ How Craft CLI manage the application logs
 
 Unless overridden when ``emit`` is initiated (see :ref:`how to do that <howto_other_logfile>`), the application logs will be managed by the Craft CLI library, according to the following rules:
 
-- one log file is always produced for each application run (only exposed to the user if the application ends in error or a verbose run was requested by ``--verbose`` or ``--trace``), naming the files with a timestamp so they are unique
+- one log file is always produced for each application run (only exposed to the user if the application ends in error or a verbose run was requested by ``--verbose`` or ``--verbosity=trace``), naming the files with a timestamp so they are unique
 
 - log files are located in a directory with the application name under the user's log directory
 
@@ -47,10 +47,10 @@ For example, all these application executions are equivalent:
 
 The Dispatcher automatically provides the following global arguments, but more can be specified through the `extra_global_args` option (see :ref:`how to do that <howto_global_args>`):
 
+- ``-h`` / ``--help``: provides a help text for the application or command
 - ``-q`` / ``--quiet``: sets the ``emit`` output level to QUIET
 - ``-v`` / ``--verbose``: sets the ``emit`` output level to VERBOSE
-- ``-t`` / ``--trace``: sets the ``emit`` output level to TRACE
-- ``-h`` / ``--help``: provides a help text for the application or command
+- ``--verbosity=LEVEL``: sets the ``emit`` output level to the specified level (allowed are ``quiet``, ``brief``, ``verbose``, ``debug`` and ``trace``).
 
 Each command can also specify its own arguments parsing rules using the ``fill_parser`` method, which receives an `ArgumentParser <https://docs.python.org/dev/library/argparse.html>`_ with all its features for parsing a command line argument. The parsing result will be passed to the command on execution, as the ``parsed_args`` parameter of the ``run`` method.
 
@@ -197,7 +197,7 @@ E.g.::
         log_filepath=logpath,
     )
 
-It is only after this point that ``emit`` can be used for printing. Note that the mode is typically initialized to ``EmitterMode.BRIEF``. The user can control the emitter mode through global arguments. The ``Dispatcher``, as mentioned earlier, handles global arguments (including help). However, the ``Dispatcher`` only applies emitter mode changes during ``pre_parse_args()`` when parsing the global arguments (e.g. ``--trace``) later on in the code.
+It is only after this point that ``emit`` can be used for printing. Note that the mode is typically initialized to ``EmitterMode.BRIEF``. The user can control the emitter mode through global arguments. The ``Dispatcher``, as mentioned earlier, handles global arguments (including help). However, the ``Dispatcher`` only applies emitter mode changes during ``pre_parse_args()`` when parsing the global arguments (e.g. ``--verbosity=trace``) later on in the code.
 
 E.g.::
 
