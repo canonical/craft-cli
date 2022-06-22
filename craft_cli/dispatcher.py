@@ -373,7 +373,7 @@ class Dispatcher:  # pylint: disable=too-many-instance-attributes
                 verbosity_level = EmitterMode[global_args["verbosity"].upper()]
             except KeyError:
                 raise ArgumentParsingError(  # pylint: disable=raise-missing-from
-                    "Bad verbosity level; allowed are "
+                    "Bad verbosity level; valid values are "
                     "'quiet', 'brief', 'verbose', 'debug' and 'trace'."
                 )
             emit.set_mode(verbosity_level)

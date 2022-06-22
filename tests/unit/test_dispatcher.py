@@ -286,7 +286,7 @@ def test_dispatcher_generic_setup_verbosity_levels_wrong():
     with pytest.raises(ArgumentParsingError) as err:
         dispatcher.pre_parse_args(["--verbosity", "yelling", "somecommand"])
     assert str(err.value) == (
-        "Bad verbosity level; allowed are 'quiet', 'brief', 'verbose', 'debug' and 'trace'."
+        "Bad verbosity level; valid values are 'quiet', 'brief', 'verbose', 'debug' and 'trace'."
     )
 
 
