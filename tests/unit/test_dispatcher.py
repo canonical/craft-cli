@@ -45,7 +45,7 @@ def test_dispatcher_pre_parsing():
     groups = [CommandGroup("title", [create_command("somecommand")])]
     dispatcher = Dispatcher("appname", groups)
     global_args = dispatcher.pre_parse_args(["-q", "somecommand"])
-    assert global_args == {"help": False, "verbose": False, "quiet": True, "trace": False}
+    assert global_args == {"help": False, "verbose": False, "quiet": True, "verbosity": None}
 
 
 def test_dispatcher_command_loading():
@@ -236,21 +236,58 @@ def test_dispatcher_generic_setup_quiet(options):
 @pytest.mark.parametrize(
     "options",
     [
-        ["somecommand", "--trace"],
-        ["somecommand", "-t"],
-        ["-t", "somecommand"],
-        ["--trace", "somecommand"],
-        ["--trace", "somecommand", "-t"],
+        ["somecommand", "--verbosity", "debug"],
+        ["--verbosity", "debug", "somecommand"],
+        ["somecommand", "--verbosity=debug"],
+        ["--verbosity=debug", "somecommand"],
     ],
 )
-def test_dispatcher_generic_setup_trace(options):
-    """Generic parameter handling for trace log setup, directly or after the command."""
+def test_dispatcher_generic_setup_verbosity_option(options):
+    """Generic parameter handling for verbosity setup, directly or after the command."""
     cmd = create_command("somecommand")
     groups = [CommandGroup("title", [cmd])]
     emit.set_mode(EmitterMode.BRIEF)  # this is how `main` will init the Emitter
     dispatcher = Dispatcher("appname", groups)
     dispatcher.pre_parse_args(options)
-    assert emit.get_mode() == EmitterMode.TRACE
+    assert emit.get_mode() == EmitterMode.DEBUG
+
+
+@pytest.mark.parametrize(
+    "initial_level, requested_level, setup_level",
+    [
+        (EmitterMode.BRIEF, "quiet", EmitterMode.QUIET),
+        (EmitterMode.QUIET, "brief", EmitterMode.BRIEF),
+        (EmitterMode.BRIEF, "verbose", EmitterMode.VERBOSE),
+        (EmitterMode.BRIEF, "debug", EmitterMode.DEBUG),
+        (EmitterMode.BRIEF, "trace", EmitterMode.TRACE),
+        (EmitterMode.BRIEF, "QUIET", EmitterMode.QUIET),
+        (EmitterMode.QUIET, "BRIEF", EmitterMode.BRIEF),
+        (EmitterMode.BRIEF, "VERBOSE", EmitterMode.VERBOSE),
+        (EmitterMode.BRIEF, "DEBUG", EmitterMode.DEBUG),
+        (EmitterMode.BRIEF, "TRACE", EmitterMode.TRACE),
+    ],
+)
+def test_dispatcher_generic_setup_verbosity_levels_ok(initial_level, requested_level, setup_level):
+    """Generic parameter handling for verbosity setup indicating the specific level."""
+    cmd = create_command("somecommand")
+    groups = [CommandGroup("title", [cmd])]
+    emit.set_mode(initial_level)  # this is how `main` will init the Emitter
+    dispatcher = Dispatcher("appname", groups)
+    dispatcher.pre_parse_args(["--verbosity", requested_level, "somecommand"])
+    assert emit.get_mode() == setup_level
+
+
+def test_dispatcher_generic_setup_verbosity_levels_wrong():
+    """Generic parameter handling for verbosity setup indicating a wrong level."""
+    cmd = create_command("somecommand")
+    groups = [CommandGroup("title", [cmd])]
+    emit.set_mode(EmitterMode.BRIEF)  # this is how `main` will init the Emitter
+    dispatcher = Dispatcher("appname", groups)
+    with pytest.raises(ArgumentParsingError) as err:
+        dispatcher.pre_parse_args(["--verbosity", "yelling", "somecommand"])
+    assert str(err.value) == (
+        "Bad verbosity level; valid values are 'quiet', 'brief', 'verbose', 'debug' and 'trace'."
+    )
 
 
 @pytest.mark.parametrize(
@@ -262,18 +299,22 @@ def test_dispatcher_generic_setup_trace(options):
         ["somecommand", "-v", "-q"],
         ["--verbose", "somecommand", "--quiet"],
         ["-q", "somecommand", "-v"],
-        ["--trace", "--verbose", "somecommand"],
-        ["-v", "-t", "somecommand"],
-        ["somecommand", "--trace", "--verbose"],
-        ["somecommand", "-v", "-t"],
-        ["--verbose", "somecommand", "--trace"],
-        ["-t", "somecommand", "-v"],
-        ["--quiet", "--trace", "somecommand"],
-        ["-t", "-q", "somecommand"],
-        ["somecommand", "--quiet", "--trace"],
-        ["somecommand", "-t", "-q"],
-        ["--trace", "somecommand", "--quiet"],
-        ["-q", "somecommand", "-t"],
+        ["--quiet", "--verbosity=trace", "somecommand"],
+        ["-q", "--verbosity=trace", "somecommand"],
+        ["--verbose", "--verbosity=trace", "somecommand"],
+        ["-v", "--verbosity=trace", "somecommand"],
+        ["--verbosity=trace", "--quiet", "somecommand"],
+        ["--verbosity=trace", "-q", "somecommand"],
+        ["--verbosity=trace", "--verbose", "somecommand"],
+        ["--verbosity=trace", "-v", "somecommand"],
+        ["somecommand", "--quiet", "--verbosity=trace"],
+        ["somecommand", "-q", "--verbosity=trace"],
+        ["somecommand", "--verbose", "--verbosity=trace"],
+        ["somecommand", "-v", "--verbosity=trace"],
+        ["somecommand", "--verbosity=trace", "--quiet"],
+        ["somecommand", "--verbosity=trace", "-q"],
+        ["somecommand", "--verbosity=trace", "--verbose"],
+        ["somecommand", "--verbosity=trace", "-v"],
     ],
 )
 def test_dispatcher_generic_setup_mutually_exclusive(options):
@@ -283,7 +324,9 @@ def test_dispatcher_generic_setup_mutually_exclusive(options):
     dispatcher = Dispatcher("appname", groups)
     with pytest.raises(ArgumentParsingError) as err:
         dispatcher.pre_parse_args(options)
-    assert str(err.value) == "The 'verbose', 'trace' and 'quiet' options are mutually exclusive."
+    assert str(err.value) == (
+        "The 'verbose', 'quiet' and 'verbosity' options are mutually exclusive."
+    )
 
 
 @pytest.mark.parametrize(
