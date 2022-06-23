@@ -109,15 +109,41 @@ def test_init_quietish(mode, tmp_path, monkeypatch):
     assert handler.mode == mode
 
 
+def test_init_verbose_mode(tmp_path, monkeypatch):
+    """Init the class in verbose mode."""
+    # avoid using a real log file
+    fake_logpath = str(tmp_path / FAKE_LOG_NAME)
+    monkeypatch.setattr(messages, "_get_log_filepath", lambda appname: fake_logpath)
+
+    greeting = "greeting"
+    emitter = Emitter()
+    with patch("craft_cli.messages._Printer") as mock_printer:
+        emitter.init(EmitterMode.VERBOSE, "testappname", greeting)
+
+    assert emitter._mode == EmitterMode.VERBOSE
+    log_locat = f"Logging execution to {fake_logpath!r}"
+    assert mock_printer.mock_calls == [
+        call(fake_logpath),  # the _Printer instantiation, passing the log filepath
+        call().show(None, "greeting"),  # the greeting, only sent to the log
+        call().show(sys.stderr, greeting, use_timestamp=False, end_line=True, avoid_logging=True),
+        call().show(sys.stderr, log_locat, use_timestamp=False, end_line=True, avoid_logging=True),
+    ]
+
+    # log handler is properly setup
+    logger = logging.getLogger("")
+    (handler,) = [x for x in logger.handlers if isinstance(x, _Handler)]
+    assert handler.mode == EmitterMode.VERBOSE
+
+
 @pytest.mark.parametrize(
     "mode",
     [
-        EmitterMode.VERBOSE,
+        EmitterMode.DEBUG,
         EmitterMode.TRACE,
     ],
 )
-def test_init_verboseish(mode, tmp_path, monkeypatch):
-    """Init the class in some verbose-ish mode."""
+def test_init_developer_modes(mode, tmp_path, monkeypatch):
+    """Init the class in developer modes."""
     # avoid using a real log file
     fake_logpath = str(tmp_path / FAKE_LOG_NAME)
     monkeypatch.setattr(messages, "_get_log_filepath", lambda appname: fake_logpath)
@@ -160,7 +186,7 @@ def test_init_receiving_logfile(tmp_path, monkeypatch):
     emitter = Emitter()
     fake_logpath = tmp_path / FAKE_LOG_NAME
     with patch("craft_cli.messages._Printer") as mock_printer:
-        emitter.init(EmitterMode.VERBOSE, "testappname", greeting, log_filepath=fake_logpath)
+        emitter.init(EmitterMode.DEBUG, "testappname", greeting, log_filepath=fake_logpath)
 
     # filepath is properly informed and passed to the printer
     log_locat = f"Logging execution to {str(fake_logpath)!r}"
@@ -225,15 +251,35 @@ def test_set_mode_quietish(get_initiated_emitter, mode):
     assert handler.mode == mode
 
 
+def test_set_mode_verbose_mode(get_initiated_emitter):
+    """Set the class to verbose mode."""
+    greeting = "greeting"
+    emitter = get_initiated_emitter(EmitterMode.QUIET, greeting=greeting)
+    emitter.set_mode(EmitterMode.VERBOSE)
+
+    assert emitter._mode == EmitterMode.VERBOSE
+    assert emitter.get_mode() == EmitterMode.VERBOSE
+    log_locat = f"Logging execution to {emitter._log_filepath!r}"
+    assert emitter.printer_calls == [
+        call().show(sys.stderr, greeting, use_timestamp=False, avoid_logging=True, end_line=True),
+        call().show(sys.stderr, log_locat, use_timestamp=False, avoid_logging=True, end_line=True),
+    ]
+
+    # log handler is affected
+    logger = logging.getLogger("")
+    (handler,) = [x for x in logger.handlers if isinstance(x, _Handler)]
+    assert handler.mode == EmitterMode.VERBOSE
+
+
 @pytest.mark.parametrize(
     "mode",
     [
-        EmitterMode.VERBOSE,
+        EmitterMode.DEBUG,
         EmitterMode.TRACE,
     ],
 )
-def test_set_mode_verboseish(get_initiated_emitter, mode):
-    """Set the class to some verbose-ish mode."""
+def test_set_mode_developer_modes(get_initiated_emitter, mode):
+    """Set the class to developer modes."""
     greeting = "greeting"
     emitter = get_initiated_emitter(EmitterMode.QUIET, greeting=greeting)
     emitter.set_mode(mode)
@@ -255,76 +301,32 @@ def test_set_mode_verboseish(get_initiated_emitter, mode):
 # -- tests for emitting messages of all kind
 
 
-@pytest.mark.parametrize("mode", EmitterMode)  # all modes!
-def test_message_final(get_initiated_emitter, mode):
+def test_message_final_quiet(get_initiated_emitter):
+    """Emit a final message."""
+    emitter = get_initiated_emitter(EmitterMode.QUIET)
+    emitter.message("some text")
+
+    assert emitter.printer_calls == [
+        call().show(None, "some text", use_timestamp=False),
+    ]
+
+
+@pytest.mark.parametrize(
+    "mode",
+    [
+        EmitterMode.BRIEF,
+        EmitterMode.VERBOSE,
+        EmitterMode.DEBUG,
+        EmitterMode.TRACE,
+    ],
+)
+def test_message_final_not_quiet(get_initiated_emitter, mode):
     """Emit a final message."""
     emitter = get_initiated_emitter(mode)
     emitter.message("some text")
 
     assert emitter.printer_calls == [
         call().show(sys.stdout, "some text", use_timestamp=False),
-    ]
-
-
-@pytest.mark.parametrize(
-    "mode",
-    [
-        EmitterMode.QUIET,
-        EmitterMode.BRIEF,
-    ],
-)
-def test_message_intermediate_quietish(get_initiated_emitter, mode):
-    """Emit an intermediate message when in a quiet-ish mode."""
-    emitter = get_initiated_emitter(mode)
-    emitter.message("some text", intermediate=True)
-
-    assert emitter.printer_calls == [
-        call().show(sys.stdout, "some text", use_timestamp=False),
-    ]
-
-
-@pytest.mark.parametrize(
-    "mode",
-    [
-        EmitterMode.VERBOSE,
-        EmitterMode.TRACE,
-    ],
-)
-def test_message_intermediate_verboseish(get_initiated_emitter, mode):
-    """Emit an intermediate message when in a verbose-ish mode."""
-    emitter = get_initiated_emitter(mode)
-    emitter.message("some text", intermediate=True)
-
-    assert emitter.printer_calls == [
-        call().show(sys.stdout, "some text", use_timestamp=True),
-    ]
-
-
-@pytest.mark.parametrize(
-    "mode",
-    [
-        EmitterMode.QUIET,
-        EmitterMode.BRIEF,
-        EmitterMode.VERBOSE,
-    ],
-)
-def test_trace_in_non_trace_modes(get_initiated_emitter, mode):
-    """Only log the message."""
-    emitter = get_initiated_emitter(mode)
-    emitter.trace("some text")
-
-    assert emitter.printer_calls == [
-        call().show(None, "some text", use_timestamp=True),
-    ]
-
-
-def test_trace_in_trace_mode(get_initiated_emitter):
-    """Log the message and show it in stderr."""
-    emitter = get_initiated_emitter(EmitterMode.TRACE)
-    emitter.trace("some text")
-
-    assert emitter.printer_calls == [
-        call().show(sys.stderr, "some text", use_timestamp=True),
     ]
 
 
@@ -338,7 +340,7 @@ def test_progress_in_quiet_mode(get_initiated_emitter):
     ]
 
 
-def test_progress_in_normal_mode(get_initiated_emitter):
+def test_progress_in_brief_mode(get_initiated_emitter):
     """Send to stderr (ephermeral) and log it."""
     emitter = get_initiated_emitter(EmitterMode.BRIEF)
     emitter.progress("some text")
@@ -348,14 +350,24 @@ def test_progress_in_normal_mode(get_initiated_emitter):
     ]
 
 
+def test_progress_in_verbose_mode(get_initiated_emitter):
+    """Send to stderr (ephermeral) and log it."""
+    emitter = get_initiated_emitter(EmitterMode.VERBOSE)
+    emitter.progress("some text")
+
+    assert emitter.printer_calls == [
+        call().show(sys.stderr, "some text", use_timestamp=False, ephemeral=False),
+    ]
+
+
 @pytest.mark.parametrize(
     "mode",
     [
-        EmitterMode.VERBOSE,
+        EmitterMode.DEBUG,
         EmitterMode.TRACE,
     ],
 )
-def test_progress_in_verboseish_modes(get_initiated_emitter, mode):
+def test_progress_in_developer_modes(get_initiated_emitter, mode):
     """Send to stderr (permanent, with timestamp) and log it."""
     emitter = get_initiated_emitter(mode)
     emitter.progress("some text")
@@ -365,16 +377,56 @@ def test_progress_in_verboseish_modes(get_initiated_emitter, mode):
     ]
 
 
+def test_progressbar_in_quiet_mode(get_initiated_emitter):
+    """Set up and return the progress bar progresser properly."""
+    emitter = get_initiated_emitter(EmitterMode.QUIET)
+    progresser = emitter.progress_bar("some text", 5000)
+
+    assert emitter.printer_calls == [
+        call().show(None, "some text", ephemeral=True),
+    ]
+    assert progresser.total == 5000
+    assert progresser.text == "some text"
+    assert progresser.stream is None
+
+
+def test_progressbar_in_brief_mode(get_initiated_emitter):
+    """Set up and return the progress bar progresser properly."""
+    emitter = get_initiated_emitter(EmitterMode.BRIEF)
+    progresser = emitter.progress_bar("some text", 5000)
+
+    assert emitter.printer_calls == [
+        call().show(sys.stderr, "some text", ephemeral=True),
+    ]
+    assert progresser.total == 5000
+    assert progresser.text == "some text"
+    assert progresser.stream == sys.stderr
+    assert progresser.delta is True
+
+
+def test_progressbar_in_verbose_mode(get_initiated_emitter):
+    """Set up and return the progress bar progresser properly."""
+    emitter = get_initiated_emitter(EmitterMode.VERBOSE)
+    progresser = emitter.progress_bar("some text", 5000)
+
+    assert emitter.printer_calls == [
+        call().show(sys.stderr, "some text", ephemeral=True),
+    ]
+    assert progresser.total == 5000
+    assert progresser.text == "some text"
+    assert progresser.stream == sys.stderr
+    assert progresser.delta is True
+
+
 @pytest.mark.parametrize(
     "mode",
     [
-        EmitterMode.BRIEF,
-        EmitterMode.VERBOSE,
+        EmitterMode.DEBUG,
         EmitterMode.TRACE,
     ],
 )
-def test_progressbar_in_useful_modes(get_initiated_emitter, mode):
-    """Show the initial message to stderr and init _Progresser correctly."""
+def test_progressbar_in_developer_modes(get_initiated_emitter, mode):
+    """Set up and return the progress bar progresser properly."""
     emitter = get_initiated_emitter(mode)
     progresser = emitter.progress_bar("some text", 5000)
 
@@ -392,17 +444,6 @@ def test_progressbar_with_delta_false(get_initiated_emitter):
     emitter = get_initiated_emitter(EmitterMode.QUIET)
     progresser = emitter.progress_bar("some text", 5000, delta=False)
     assert progresser.delta is False
-
-
-def test_progressbar_in_quiet_mode(get_initiated_emitter):
-    """Do not show the initial message (but log it) and init _Progresser with stream in None."""
-    emitter = get_initiated_emitter(EmitterMode.QUIET)
-    progresser = emitter.progress_bar("some text", 5000)
-
-    assert emitter.printer_calls == [
-        call().show(None, "some text", ephemeral=True),
-    ]
-    assert progresser.stream is None
 
 
 @pytest.mark.parametrize(
@@ -424,18 +465,34 @@ def test_openstream_in_quietish_modes(get_initiated_emitter, mode):
     assert emitter.printer_calls == []
     assert context_manager is instantiated_cm
     assert stream_context_manager_mock.mock_calls == [
-        call(emitter._printer, "some text", None),
+        call(emitter._printer, "some text", stream=None),
+    ]
+
+
+def test_openstream_in_verbose_mode(get_initiated_emitter):
+    """Return a stream context manager with stderr as the output stream."""
+    emitter = get_initiated_emitter(EmitterMode.VERBOSE)
+
+    with patch("craft_cli.messages._StreamContextManager") as stream_context_manager_mock:
+        instantiated_cm = object()
+        stream_context_manager_mock.return_value = instantiated_cm
+        context_manager = emitter.open_stream("some text")
+
+    assert emitter.printer_calls == []
+    assert context_manager is instantiated_cm
+    assert stream_context_manager_mock.mock_calls == [
+        call(emitter._printer, "some text", stream=sys.stderr),
     ]
 
 
 @pytest.mark.parametrize(
     "mode",
     [
-        EmitterMode.VERBOSE,
+        EmitterMode.DEBUG,
         EmitterMode.TRACE,
     ],
 )
-def test_openstream_in_verboseish_modes(get_initiated_emitter, mode):
+def test_openstream_in_developer_modes(get_initiated_emitter, mode):
     """Return a stream context manager with stderr as the output stream."""
     emitter = get_initiated_emitter(mode)
 
@@ -447,7 +504,33 @@ def test_openstream_in_verboseish_modes(get_initiated_emitter, mode):
     assert emitter.printer_calls == []
     assert context_manager is instantiated_cm
     assert stream_context_manager_mock.mock_calls == [
-        call(emitter._printer, "some text", sys.stderr),
+        call(emitter._printer, "some text", stream=sys.stderr),
+    ]
+
+
+@pytest.mark.parametrize(
+    "mode",
+    [
+        EmitterMode.QUIET,
+        EmitterMode.BRIEF,
+        EmitterMode.VERBOSE,
+        EmitterMode.DEBUG,
+    ],
+)
+def test_trace_in_non_trace_modes(get_initiated_emitter, mode):
+    """Only log the message."""
+    emitter = get_initiated_emitter(mode)
+    emitter.trace("some text")
+    assert emitter.printer_calls == []
+
+
+def test_trace_in_trace_mode(get_initiated_emitter):
+    """Log the message and show it in stderr."""
+    emitter = get_initiated_emitter(EmitterMode.TRACE)
+    emitter.trace("some text")
+
+    assert emitter.printer_calls == [
+        call().show(sys.stderr, "some text", use_timestamp=True),
     ]
 
 
@@ -506,7 +589,6 @@ def test_paused_resumed_ok(get_initiated_emitter, tmp_path):
     with emitter.pause():
         assert emitter.printer_calls == [
             # the pausing message is shown and emitter is stopped
-            call().show(None, "Emitter: Pausing control of the terminal", use_timestamp=True),
             call().stop(),
         ]
         emitter.printer_calls.clear()
@@ -515,7 +597,6 @@ def test_paused_resumed_ok(get_initiated_emitter, tmp_path):
     # a new _Printer is created, with same logpath and the resuming message is shown
     assert emitter.printer_calls == [
         call(str(tmp_path / FAKE_LOG_NAME)),
-        call().show(None, "Emitter: Resuming control of the terminal", use_timestamp=True),
     ]
 
 
@@ -527,7 +608,6 @@ def test_paused_resumed_error(get_initiated_emitter, tmp_path):
         with emitter.pause():
             assert emitter.printer_calls == [
                 # the pausing message is shown and emitter is stopped
-                call().show(None, "Emitter: Pausing control of the terminal", use_timestamp=True),
                 call().stop(),
             ]
             emitter.printer_calls.clear()
@@ -539,7 +619,6 @@ def test_paused_resumed_error(get_initiated_emitter, tmp_path):
     # a new _Printer is created, with same logpath and the resuming message is shown
     assert emitter.printer_calls == [
         call(str(tmp_path / FAKE_LOG_NAME)),
-        call().show(None, "Emitter: Resuming control of the terminal", use_timestamp=True),
     ]
 
 
