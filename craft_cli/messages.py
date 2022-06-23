@@ -722,9 +722,7 @@ class Emitter:
         with intermediate=True (which will include timestamp in verbose/trace mode).
         """
         # XXX Facundo 2022-06-23: the 'intermediate' modifier will be removed in next PRs
-        use_timestamp = bool(
-            intermediate and self._mode in (EmitterMode.DEBUG, EmitterMode.TRACE)
-        )
+        use_timestamp = bool(intermediate and self._mode in (EmitterMode.DEBUG, EmitterMode.TRACE))
         stream = None if self._mode == EmitterMode.QUIET else sys.stdout
         self._printer.show(stream, text, use_timestamp=use_timestamp)  # type: ignore
 
