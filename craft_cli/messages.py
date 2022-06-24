@@ -734,8 +734,8 @@ class Emitter:
         particular information, which in general would be too overwhelming for
         debugging purposes but sometimes needed for particular analysis.
         """
-        # if not in trace mode we're not even logging anything: so instead of calling the
-        # printer with no stream and avoid_logging flag (which would be more consistent
+        # if not in TRACE mode we're not even logging anything: so instead of calling the
+        # _Printer with no stream and the 'avoid_logging' flag (which would be more consistent
         # with the rest of the Emitter methods, in this case we just avoid moving any
         # machinery as much as possible, because potentially there will be huge number
         # of trace calls.
