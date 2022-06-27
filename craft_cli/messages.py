@@ -701,7 +701,7 @@ class Emitter:
         self._log_handler.mode = mode  # type: ignore
 
         if mode in (EmitterMode.VERBOSE, EmitterMode.DEBUG, EmitterMode.TRACE):
-            use_timestamp = mode != EmitterMode.VERBOSE
+            use_timestamp = mode in (EmitterMode.DEBUG, EmitterMode.TRACE)
 
             # send the greeting to the screen before any further messages
             msgs = [
@@ -733,8 +733,10 @@ class Emitter:
         A way to expose system-generated information, about the general process or
         particular information, which in general would be too overwhelming for
         debugging purposes but sometimes needed for particular analysis.
+
+        It only produces information to the screen and into the logs if in TRACE mode.
         """
-        # if not in TRACE mode we're not even logging anything: so instead of calling the
+        # as we're not even logging anything if not in TRACE mode, instead of calling the
         # _Printer with no stream and the 'avoid_logging' flag (which would be more consistent
         # with the rest of the Emitter methods, in this case we just avoid moving any
         # machinery as much as possible, because potentially there will be huge number

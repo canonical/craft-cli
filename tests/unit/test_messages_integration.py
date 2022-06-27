@@ -673,7 +673,7 @@ def test_error_unexpected_verbosely(capsys, mode):
     assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)
 
 
-def test_logging_when_quiet(capsys, logger):
+def test_logging_quiet(capsys, logger):
     """Handle the different logging levels when in quiet mode."""
     emit = Emitter()
     emit.init(EmitterMode.QUIET, "testapp", GREETING)
@@ -694,7 +694,7 @@ def test_logging_when_quiet(capsys, logger):
     assert_outputs(capsys, emit, expected_err=expected_err, expected_log=expected_log)
 
 
-def test_logging_when_brief(capsys, logger):
+def test_logging_brief(capsys, logger):
     """Handle the different logging levels when in brief mode."""
     emit = Emitter()
     emit.init(EmitterMode.BRIEF, "testapp", GREETING)
@@ -722,7 +722,7 @@ def test_logging_when_brief(capsys, logger):
         EmitterMode.TRACE,
     ],
 )
-def test_logging_when_verboseish(capsys, logger, mode):
+def test_logging_verboseish(capsys, logger, mode):
     """Handle the different logging levels when in verboseish modes."""
     emit = Emitter()
     emit.init(mode, "testapp", GREETING)
@@ -741,7 +741,7 @@ def test_logging_when_verboseish(capsys, logger, mode):
     assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)
 
 
-def test_initial_messages_when_quiet_mode(capsys, monkeypatch, tmp_path):
+def test_initial_messages_quiet_mode(capsys, monkeypatch, tmp_path):
     """Check the initial messages are sent when setting the mode to QUIET."""
     # use different greeting and file logpath so we can actually test them
     different_greeting = "different greeting to not be ignored"
@@ -766,7 +766,7 @@ def test_initial_messages_when_quiet_mode(capsys, monkeypatch, tmp_path):
     assert_outputs(capsys, emit, expected_out=expected_out, expected_log=expected_log)
 
 
-def test_initial_messages_when_brief_mode(capsys, monkeypatch, tmp_path):
+def test_initial_messages_brief_mode(capsys, monkeypatch, tmp_path):
     """Check the initial messages are sent when setting the mode to BRIEF."""
     # use different greeting and file logpath so we can actually test them
     different_greeting = "different greeting to not be ignored"
@@ -791,7 +791,7 @@ def test_initial_messages_when_brief_mode(capsys, monkeypatch, tmp_path):
     assert_outputs(capsys, emit, expected_out=expected_out, expected_log=expected_log)
 
 
-def test_initial_messages_when_verbose(capsys, tmp_path, monkeypatch):
+def test_initial_messages_verbose(capsys, tmp_path, monkeypatch):
     """Check the initial messages are sent when setting the mode to VERBOSE."""
     # use different greeting and file logpath so we can actually test them
     different_greeting = "different greeting to not be ignored"
@@ -825,7 +825,7 @@ def test_initial_messages_when_verbose(capsys, tmp_path, monkeypatch):
         EmitterMode.TRACE,
     ],
 )
-def test_initial_messages_when_developer_modes(capsys, tmp_path, monkeypatch, mode):
+def test_initial_messages_developer_modes(capsys, tmp_path, monkeypatch, mode):
     """Check the initial messages are sent when setting developer modes."""
     # use different greeting and file logpath so we can actually test them
     different_greeting = "different greeting to not be ignored"
