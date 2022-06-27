@@ -700,7 +700,9 @@ class Emitter:
         self._mode = mode
         self._log_handler.mode = mode  # type: ignore
 
-        if mode in (EmitterMode.VERBOSE, EmitterMode.TRACE):
+        if mode in (EmitterMode.VERBOSE, EmitterMode.DEBUG, EmitterMode.TRACE):
+            use_timestamp = mode in (EmitterMode.DEBUG, EmitterMode.TRACE)
+
             # send the greeting to the screen before any further messages
             msgs = [
                 self._greeting,
@@ -708,7 +710,7 @@ class Emitter:
             ]
             for msg in msgs:
                 self._printer.show(  # type: ignore
-                    sys.stderr, msg, use_timestamp=True, avoid_logging=True, end_line=True
+                    sys.stderr, msg, use_timestamp=use_timestamp, avoid_logging=True, end_line=True
                 )
 
     @_active_guard()
@@ -719,20 +721,52 @@ class Emitter:
         also be used for important messages during the command's execution,
         with intermediate=True (which will include timestamp in verbose/trace mode).
         """
-        use_timestamp = bool(
-            intermediate and self._mode in (EmitterMode.VERBOSE, EmitterMode.TRACE)
-        )
-        self._printer.show(sys.stdout, text, use_timestamp=use_timestamp)  # type: ignore
+        # XXX Facundo 2022-06-23: the 'intermediate' modifier will be removed in next PRs
+        use_timestamp = bool(intermediate and self._mode in (EmitterMode.DEBUG, EmitterMode.TRACE))
+        stream = None if self._mode == EmitterMode.QUIET else sys.stdout
+        self._printer.show(stream, text, use_timestamp=use_timestamp)  # type: ignore
 
     @_active_guard()
     def trace(self, text: str) -> None:
-        """Trace/debug information.
+        """Trace information.
 
-        This is to record everything that the user may not want to normally see, but it's
-        useful for postmortem analysis.
+        A way to expose system-generated information, about the general process or
+        particular information, which in general would be too overwhelming for
+        debugging purposes but sometimes needed for particular analysis.
+
+        It only produces information to the screen and into the logs if in TRACE mode.
         """
-        stream = sys.stderr if self._mode == EmitterMode.TRACE else None
-        self._printer.show(stream, text, use_timestamp=True)  # type: ignore
+        # as we're not even logging anything if not in TRACE mode, instead of calling the
+        # _Printer with no stream and the 'avoid_logging' flag (which would be more consistent
+        # with the rest of the Emitter methods, in this case we just avoid moving any
+        # machinery as much as possible, because potentially there will be huge number
+        # of trace calls.
+        if self._mode == EmitterMode.TRACE:
+            self._printer.show(sys.stderr, text, use_timestamp=True)  # type: ignore
+
+    def _get_progress_params(self):
+        """Calculate the different parameters for progress information."""
+        if self._mode == EmitterMode.QUIET:
+            # will not be shown in the screen (always logged to the file)
+            stream = None
+            use_timestamp = False
+            ephemeral = True
+        elif self._mode == EmitterMode.BRIEF:
+            # show the indicated message to stderr (ephemeral, unless flag is used) and log it
+            stream = sys.stderr
+            use_timestamp = False
+            ephemeral = True
+        elif self._mode == EmitterMode.VERBOSE:
+            # show the indicated message to stderr (permanent) and log it
+            stream = sys.stderr
+            use_timestamp = False
+            ephemeral = False
+        else:
+            # show to stderr with timestamp (permanent), and log it
+            stream = sys.stderr
+            use_timestamp = True
+            ephemeral = False
+        return stream, use_timestamp, ephemeral
 
     @_active_guard()
     def progress(self, text: str) -> None:
@@ -743,22 +777,9 @@ class Emitter:
         These messages will be truncated to the terminal's width, and overwritten by the next
         line (unless verbose/trace mode).
         """
-        if self._mode == EmitterMode.QUIET:
-            # will not be shown in the screen (always logged to the file)
-            stream = None
-            use_timestamp = False
-            ephemeral = True
-        elif self._mode == EmitterMode.BRIEF:
-            # show the indicated message to stderr (ephemeral) and log it
-            stream = sys.stderr
-            use_timestamp = False
-            ephemeral = True
-        else:
-            # show to stderr with timestamp (permanent), and log it
-            stream = sys.stderr
-            use_timestamp = True
-            ephemeral = False
-
+        # XXX Facundo 2022-06-23: this should grow a 'permanent' modifier; this will
+        # come in next PRs
+        stream, use_timestamp, ephemeral = self._get_progress_params()
         self._printer.show(stream, text, ephemeral=ephemeral, use_timestamp=use_timestamp)  # type: ignore
 
     @_active_guard()
@@ -776,18 +797,24 @@ class Emitter:
             stream = None
         else:
             stream = sys.stderr
+        # XXX Facundo 2022-06-23: sometimes _Progresser should use a timestamp, and this initial
+        # message will be part of its context management; this will come in the next PRs
         self._printer.show(stream, text, ephemeral=True)  # type: ignore
         return _Progresser(self._printer, total, text, stream, delta)  # type: ignore
 
     @_active_guard()
     def open_stream(self, text: str):
         """Open a stream context manager to get messages from subprocesses."""
-        # don't show third party streams if quiet or normal
         if self._mode in (EmitterMode.QUIET, EmitterMode.BRIEF):
+            # don't show third party streams if quiet or normal
             stream = None
+        elif self._mode == EmitterMode.VERBOSE:
+            stream = sys.stderr
         else:
             stream = sys.stderr
-        return _StreamContextManager(self._printer, text, stream)  # type: ignore
+        # XXX Facundo 2022-06-23: sometimes _StreamContextManager should use a timestamp; support
+        # for this will be added in the next PR
+        return _StreamContextManager(self._printer, text, stream=stream)  # type: ignore
 
     @_active_guard()
     @contextmanager
@@ -796,6 +823,9 @@ class Emitter:
 
         Note that no messages will be collected while paused, not even for logging.
         """
+        # XXX Facundo 2022-06-23: this internal message should mutate to a '.debug' call
+        # (when it's available, in the next PRs) so it's properly logged (as in trace it
+        # will not reach the logs unless in TRACE mode).
         self.trace("Emitter: Pausing control of the terminal")
         self._printer.stop()  # type: ignore
         self._stopped = True
@@ -804,6 +834,9 @@ class Emitter:
         finally:
             self._stopped = False
             self._printer = _Printer(self._log_filepath)  # type: ignore
+            # XXX Facundo 2022-06-23: this internal message should mutate to a '.debug' call
+            # (when it's available, in the next PRs) so it's properly logged (as in trace it
+            # will not reach the logs unless in TRACE mode).
             self.trace("Emitter: Resuming control of the terminal")
 
     def _stop(self) -> None:

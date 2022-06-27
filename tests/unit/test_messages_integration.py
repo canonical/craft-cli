@@ -130,7 +130,7 @@ def assert_outputs(capsys, emit, expected_out=None, expected_err=None, expected_
         assert expected_logged_texts == logged_texts
 
 
-def test_00_exposed_api():
+def test_exposed_api():
     """Verify names are properly exposed."""
     # pylint: disable=import-outside-toplevel
     from craft_cli import emit
@@ -146,29 +146,28 @@ def test_00_exposed_api():
     assert test_cs is CraftError
 
 
-@pytest.mark.parametrize("mode", EmitterMode)  # all modes!
-def test_01_expected_cmd_result(capsys, mode):
-    """Show a simple message, the expected command result."""
+def test_message_expected_cmd_result_quiet(capsys):
+    """Do not show the message, but log it."""
     emit = Emitter()
-    emit.init(mode, "testapp", GREETING)
+    emit.init(EmitterMode.QUIET, "testapp", GREETING)
     emit.message("The meaning of life is 42.")
     emit.ended_ok()
 
     expected = [
         Line("The meaning of life is 42."),
     ]
-    assert_outputs(capsys, emit, expected_out=expected, expected_log=expected)
+    assert_outputs(capsys, emit, expected_out=None, expected_log=expected)
 
 
 @pytest.mark.parametrize(
     "mode",
     [
-        EmitterMode.QUIET,
         EmitterMode.BRIEF,
+        EmitterMode.VERBOSE,
     ],
 )
-def test_01_intermediate_message_quiet(capsys, mode):
-    """Show an intermediate message, in more quiet modes."""
+def test_message_expected_cmd_result_quietish(capsys, mode):
+    """Show a simple message, the expected command result."""
     emit = Emitter()
     emit.init(mode, "testapp", GREETING)
     emit.message("The meaning of life is 42.", intermediate=True)
@@ -183,12 +182,12 @@ def test_01_intermediate_message_quiet(capsys, mode):
 @pytest.mark.parametrize(
     "mode",
     [
-        EmitterMode.VERBOSE,
+        EmitterMode.DEBUG,
         EmitterMode.TRACE,
     ],
 )
-def test_01_intermediate_message_verbose(capsys, mode):
-    """Show an intermediate message, in more verbose modes."""
+def test_message_expected_cmd_result_developerish(capsys, mode):
+    """Show a simple message, the expected command result."""
     emit = Emitter()
     emit.init(mode, "testapp", GREETING)
     emit.message("The meaning of life is 42.", intermediate=True)
@@ -200,7 +199,7 @@ def test_01_intermediate_message_verbose(capsys, mode):
     assert_outputs(capsys, emit, expected_out=expected, expected_log=expected)
 
 
-def test_02_progress_message_quiet(capsys):
+def test_progress_quiet(capsys):
     """Show a progress message being in quiet mode."""
     emit = Emitter()
     emit.init(EmitterMode.QUIET, "testapp", GREETING)
@@ -208,12 +207,12 @@ def test_02_progress_message_quiet(capsys):
     emit.ended_ok()
 
     expected = [
-        Line("The meaning of life is 42.", permanent=False),
+        Line("The meaning of life is 42."),
     ]
     assert_outputs(capsys, emit, expected_log=expected)
 
 
-def test_02_progress_message_brief(capsys):
+def test_progress_brief_terminal(capsys):
     """Show a progress message in brief mode."""
     emit = Emitter()
     emit.init(EmitterMode.BRIEF, "testapp", GREETING)
@@ -228,15 +227,31 @@ def test_02_progress_message_brief(capsys):
     assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)
 
 
+def test_progress_verbose(capsys):
+    """Show a progress message in verbose and debug modes."""
+    emit = Emitter()
+    emit.init(EmitterMode.VERBOSE, "testapp", GREETING)
+    emit.progress("The meaning of life is 42.")
+    emit.progress("Another message.")
+    emit.ended_ok()
+
+    # ephemeral ends up being ignored, as in verbose and debug no lines are overridden
+    expected = [
+        Line("The meaning of life is 42.", permanent=True),
+        Line("Another message.", permanent=True),
+    ]
+    assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)
+
+
 @pytest.mark.parametrize(
     "mode",
     [
-        EmitterMode.VERBOSE,
+        EmitterMode.DEBUG,
         EmitterMode.TRACE,
     ],
 )
-def test_02_progress_message_more_verbose(capsys, mode):
-    """Show a progress message in verbore and debug modes."""
+def test_progress_developer_modes(capsys, mode):
+    """Show a progress message in developer modes."""
     emit = Emitter()
     emit.init(mode, "testapp", GREETING)
     emit.progress("The meaning of life is 42.")
@@ -251,7 +266,7 @@ def test_02_progress_message_more_verbose(capsys, mode):
     assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)
 
 
-def test_03_progress_bar_quiet(capsys):
+def test_progressbar_quiet(capsys):
     """Show a progress bar when quiet mode."""
     emit = Emitter()
     emit.init(EmitterMode.QUIET, "testapp", GREETING)
@@ -260,23 +275,92 @@ def test_03_progress_bar_quiet(capsys):
             progress.advance(uploaded)
     emit.ended_ok()
 
-    # nothing to the screen, first line to the log
+    # nothing to the screen, just to the log
     expected_log = [
         Line("Uploading stuff"),
     ]
     assert_outputs(capsys, emit, expected_log=expected_log)
 
 
+def test_progressbar_brief_terminal(capsys, monkeypatch):
+    """Show a progress bar in brief mode."""
+    # fake size so lines to compare are static
+    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 60)
+
+    emit = Emitter()
+
+    # patch `set_mode` so it's not really run and set the mode manually, as we do NOT want
+    # the "Logging execution..." message to be sent to screen because it's too long and will
+    # break the tests. Note we want the fake terminal width to be small so we can "draw" here
+    # in the test the progress bar we want to see.
+    emit.set_mode = lambda mode: None
+    emit.init(EmitterMode.BRIEF, "testapp", GREETING)
+    emit._mode = EmitterMode.BRIEF
+
+    with emit.progress_bar("Uploading stuff", 1788) as progress:
+        for uploaded in [700, 700, 388]:
+            progress.advance(uploaded)
+    emit.progress("And so on")  # just a line so last progress line is not artificially permanent
+    emit.ended_ok()
+
+    expected_screen = [
+        Line("Uploading stuff", permanent=False),
+        Line("Uploading stuff [████████████                    ] 700/1788", permanent=False),
+        Line("Uploading stuff [████████████████████████       ] 1400/1788", permanent=False),
+        Line("Uploading stuff [███████████████████████████████] 1788/1788", permanent=False),
+        Line("And so on", permanent=True),
+    ]
+    expected_log = [
+        Line("Uploading stuff"),
+        Line("And so on"),
+    ]
+    assert_outputs(capsys, emit, expected_err=expected_screen, expected_log=expected_log)
+
+
+def test_progressbar_verbose(capsys, monkeypatch):
+    """Show a progress bar in verbose mode."""
+    # fake size so lines to compare are static
+    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 60)
+
+    emit = Emitter()
+
+    # patch `set_mode` so it's not really run and set the mode manually, as we do NOT want
+    # the "Logging execution..." message to be sent to screen because it's too long and will
+    # break the tests. Note we want the fake terminal width to be small so we can "draw" here
+    # in the test the progress bar we want to see.
+    emit.set_mode = lambda mode: None
+    emit.init(EmitterMode.VERBOSE, "testapp", GREETING)
+    emit._mode = EmitterMode.VERBOSE
+
+    with emit.progress_bar("Uploading stuff", 1788) as progress:
+        for uploaded in [700, 700, 388]:
+            progress.advance(uploaded)
+    emit.progress("And so on")  # just a line so last progress line is not artificially permanent
+    emit.ended_ok()
+
+    expected_screen = [
+        Line("Uploading stuff", permanent=False),
+        Line("Uploading stuff [████████████                    ] 700/1788", permanent=False),
+        Line("Uploading stuff [████████████████████████       ] 1400/1788", permanent=False),
+        Line("Uploading stuff [███████████████████████████████] 1788/1788", permanent=False),
+        Line("And so on", permanent=True),
+    ]
+    expected_log = [
+        Line("Uploading stuff"),
+        Line("And so on"),
+    ]
+    assert_outputs(capsys, emit, expected_err=expected_screen, expected_log=expected_log)
+
+
 @pytest.mark.parametrize(
     "mode",
     [
-        EmitterMode.BRIEF,
-        EmitterMode.VERBOSE,
+        EmitterMode.DEBUG,
         EmitterMode.TRACE,
     ],
 )
-def test_03_progress_bar_other_modes(capsys, mode, monkeypatch):
-    """Show a progress bar in regular modes."""
+def test_progressbar_developer_modes(capsys, mode, monkeypatch):
+    """Show a progress bar in debug and trace modes."""
     # fake size so lines to compare are static
     monkeypatch.setattr(messages, "_get_terminal_width", lambda: 60)
 
@@ -293,15 +377,20 @@ def test_03_progress_bar_other_modes(capsys, mode, monkeypatch):
     with emit.progress_bar("Uploading stuff", 1788) as progress:
         for uploaded in [700, 700, 388]:
             progress.advance(uploaded)
+    emit.progress("And so on")  # just a line so last progress line is not artificially permanent
     emit.ended_ok()
 
     expected_screen = [
         Line("Uploading stuff", permanent=False),
         Line("Uploading stuff [████████████                    ] 700/1788", permanent=False),
         Line("Uploading stuff [████████████████████████       ] 1400/1788", permanent=False),
-        Line("Uploading stuff [███████████████████████████████] 1788/1788", permanent=True),
+        Line("Uploading stuff [███████████████████████████████] 1788/1788", permanent=False),
+        Line("And so on", permanent=True, timestamp=True),
     ]
-    expected_log = expected_screen[:1]  # just the first line, no progress in the logs!
+    expected_log = [
+        Line("Uploading stuff"),
+        Line("And so on"),
+    ]
     assert_outputs(capsys, emit, expected_err=expected_screen, expected_log=expected_log)
 
 
@@ -311,23 +400,20 @@ def test_03_progress_bar_other_modes(capsys, mode, monkeypatch):
         EmitterMode.QUIET,
         EmitterMode.BRIEF,
         EmitterMode.VERBOSE,
+        EmitterMode.DEBUG,
     ],
 )
-def test_04_5_trace_other_modes(capsys, mode, monkeypatch):
-    """Internal trace for other modes."""
+def test_trace_in_quietish_modes(capsys, mode):
+    """The trace method in more quietish modes."""
     emit = Emitter()
     emit.init(mode, "testapp", GREETING)
     emit.trace("The meaning of life is 42.")
     emit.ended_ok()
-
-    expected = [
-        Line("The meaning of life is 42.", timestamp=True),
-    ]
-    assert_outputs(capsys, emit, expected_log=expected)
+    assert_outputs(capsys, emit)  # nothing, not even in the logs!!
 
 
-def test_04_5_trace_in_trace(capsys):
-    """Internal trace when in trace mode."""
+def test_trace_in_trace_mode(capsys):
+    """The trace method in trace mode."""
     emit = Emitter()
     emit.init(EmitterMode.TRACE, "testapp", GREETING)
     emit.trace("The meaning of life is 42.")
@@ -346,7 +432,7 @@ def test_04_5_trace_in_trace(capsys):
         EmitterMode.BRIEF,
     ],
 )
-def test_04_third_party_output_other_modes(capsys, tmp_path, mode):
+def test_third_party_output_quietish_modes(capsys, tmp_path, mode):
     """Manage the streams produced for sub-executions, more quiet modes."""
     # something to execute
     script = tmp_path / "script.py"
@@ -373,15 +459,42 @@ def test_04_third_party_output_other_modes(capsys, tmp_path, mode):
     assert_outputs(capsys, emit, expected_log=expected)
 
 
+def test_third_party_output_verbose(capsys, tmp_path):
+    """Manage the streams produced for sub-executions, verbose mode."""
+    # something to execute
+    script = tmp_path / "script.py"
+    script.write_text(
+        textwrap.dedent(
+            """
+        import sys
+        print("foobar out", flush=True)
+        print("foobar err", file=sys.stderr, flush=True)
+    """
+        )
+    )
+    emit = Emitter()
+    emit.init(EmitterMode.VERBOSE, "testapp", GREETING)
+    with emit.open_stream("Testing stream") as stream:
+        subprocess.run([sys.executable, script], stdout=stream, stderr=stream, check=True)
+    emit.ended_ok()
+
+    expected = [
+        Line("Testing stream", timestamp=True),
+        Line(":: foobar out", timestamp=True),
+        Line(":: foobar err", timestamp=True),
+    ]
+    assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)
+
+
 @pytest.mark.parametrize(
     "mode",
     [
-        EmitterMode.VERBOSE,
+        EmitterMode.DEBUG,
         EmitterMode.TRACE,
     ],
 )
-def test_04_third_party_output_verbose(capsys, tmp_path, mode):
-    """Manage the streams produced for sub-executions, debug and verbose mode."""
+def test_third_party_output_developer_modes(capsys, tmp_path, mode):
+    """Manage the streams produced for sub-executions, developer modes."""
     # something to execute
     script = tmp_path / "script.py"
     script.write_text(
@@ -414,7 +527,7 @@ def test_04_third_party_output_verbose(capsys, tmp_path, mode):
         EmitterMode.BRIEF,
     ],
 )
-def test_05_06_simple_errors_quietly(capsys, mode):
+def test_simple_errors_quietly(capsys, mode):
     """Error because of application or external rules, quiet and brief mode."""
     emit = Emitter()
     emit.init(mode, "testapp", GREETING)
@@ -434,10 +547,11 @@ def test_05_06_simple_errors_quietly(capsys, mode):
     "mode",
     [
         EmitterMode.VERBOSE,
+        EmitterMode.DEBUG,
         EmitterMode.TRACE,
     ],
 )
-def test_05_06_simple_errors_verbosely(capsys, mode):
+def test_simple_errors_verbosely(capsys, mode):
     """Error because of application or external rules, more verbose modes."""
     emit = Emitter()
     emit.init(mode, "testapp", GREETING)
@@ -460,7 +574,7 @@ def test_05_06_simple_errors_verbosely(capsys, mode):
         EmitterMode.BRIEF,
     ],
 )
-def test_07_error_api_quietly(capsys, mode):
+def test_error_api_quietly(capsys, mode):
     """Somewhat expected API error, quiet and brief mode."""
     emit = Emitter()
     emit.init(mode, "testapp", GREETING)
@@ -481,10 +595,11 @@ def test_07_error_api_quietly(capsys, mode):
     "mode",
     [
         EmitterMode.VERBOSE,
+        EmitterMode.DEBUG,
         EmitterMode.TRACE,
     ],
 )
-def test_07_error_api_verbosely(capsys, mode):
+def test_error_api_verbosely(capsys, mode):
     """Somewhat expected API error, more verbose modes."""
     emit = Emitter()
     emit.init(mode, "testapp", GREETING)
@@ -507,7 +622,7 @@ def test_07_error_api_verbosely(capsys, mode):
         EmitterMode.BRIEF,
     ],
 )
-def test_08_09_error_unexpected_quietly(capsys, mode):
+def test_error_unexpected_quietly(capsys, mode):
     """Unexpected error from a 3rd party or application crash, quiet and brief mode."""
     emit = Emitter()
     emit.init(mode, "testapp", GREETING)
@@ -533,10 +648,11 @@ def test_08_09_error_unexpected_quietly(capsys, mode):
     "mode",
     [
         EmitterMode.VERBOSE,
+        EmitterMode.DEBUG,
         EmitterMode.TRACE,
     ],
 )
-def test_08_09_error_unexpected_verbosely(capsys, mode):
+def test_error_unexpected_verbosely(capsys, mode):
     """Unexpected error from a 3rd party or application crash, more verbose modes."""
     emit = Emitter()
     emit.init(mode, "testapp", GREETING)
@@ -557,7 +673,7 @@ def test_08_09_error_unexpected_verbosely(capsys, mode):
     assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)
 
 
-def test_logging_when_quiet(capsys, logger):
+def test_logging_quiet(capsys, logger):
     """Handle the different logging levels when in quiet mode."""
     emit = Emitter()
     emit.init(EmitterMode.QUIET, "testapp", GREETING)
@@ -578,7 +694,7 @@ def test_logging_when_quiet(capsys, logger):
     assert_outputs(capsys, emit, expected_err=expected_err, expected_log=expected_log)
 
 
-def test_logging_when_brief(capsys, logger):
+def test_logging_brief(capsys, logger):
     """Handle the different logging levels when in brief mode."""
     emit = Emitter()
     emit.init(EmitterMode.BRIEF, "testapp", GREETING)
@@ -606,7 +722,7 @@ def test_logging_when_brief(capsys, logger):
         EmitterMode.TRACE,
     ],
 )
-def test_logging_when_verboseish(capsys, logger, mode):
+def test_logging_verboseish(capsys, logger, mode):
     """Handle the different logging levels when in verboseish modes."""
     emit = Emitter()
     emit.init(mode, "testapp", GREETING)
@@ -625,15 +741,8 @@ def test_logging_when_verboseish(capsys, logger, mode):
     assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)
 
 
-@pytest.mark.parametrize(
-    "mode",
-    [
-        EmitterMode.QUIET,
-        EmitterMode.BRIEF,
-    ],
-)
-def test_initial_messages_when_quietish(capsys, mode, monkeypatch, tmp_path):
-    """Check the initial messages are sent when setting the mode to more quiet modes."""
+def test_initial_messages_quiet_mode(capsys, monkeypatch, tmp_path):
+    """Check the initial messages are sent when setting the mode to QUIET."""
     # use different greeting and file logpath so we can actually test them
     different_greeting = "different greeting to not be ignored"
     different_logpath = str(tmp_path / "otherfile.log")
@@ -641,25 +750,48 @@ def test_initial_messages_when_quietish(capsys, mode, monkeypatch, tmp_path):
 
     emit = Emitter()
     emit.init(EmitterMode.BRIEF, "testapp", different_greeting)
-    emit.trace("initial trace")
-    emit.set_mode(mode)
-    emit.trace("second trace")
-    emit.message("final message")
+    emit.message("initial message")
+    emit.set_mode(EmitterMode.QUIET)
+    emit.message("second message")
     emit.ended_ok()
 
     expected_out = [
-        Line("final message"),
+        Line("initial message"),
     ]
     expected_log = [
         Line(different_greeting),
-        Line("initial trace"),
-        Line("second trace"),
-        Line("final message"),
+        Line("initial message"),
+        Line("second message"),
     ]
     assert_outputs(capsys, emit, expected_out=expected_out, expected_log=expected_log)
 
 
-def test_initial_messages_when_verbose(capsys, tmp_path, monkeypatch):
+def test_initial_messages_brief_mode(capsys, monkeypatch, tmp_path):
+    """Check the initial messages are sent when setting the mode to BRIEF."""
+    # use different greeting and file logpath so we can actually test them
+    different_greeting = "different greeting to not be ignored"
+    different_logpath = str(tmp_path / "otherfile.log")
+    monkeypatch.setattr(messages, "_get_log_filepath", lambda appname: different_logpath)
+
+    emit = Emitter()
+    emit.init(EmitterMode.QUIET, "testapp", different_greeting)
+    emit.message("initial message")
+    emit.set_mode(EmitterMode.BRIEF)
+    emit.message("second message")
+    emit.ended_ok()
+
+    expected_out = [
+        Line("second message"),
+    ]
+    expected_log = [
+        Line(different_greeting),
+        Line("initial message"),
+        Line("second message"),
+    ]
+    assert_outputs(capsys, emit, expected_out=expected_out, expected_log=expected_log)
+
+
+def test_initial_messages_verbose(capsys, tmp_path, monkeypatch):
     """Check the initial messages are sent when setting the mode to VERBOSE."""
     # use different greeting and file logpath so we can actually test them
     different_greeting = "different greeting to not be ignored"
@@ -667,71 +799,57 @@ def test_initial_messages_when_verbose(capsys, tmp_path, monkeypatch):
     monkeypatch.setattr(messages, "_get_log_filepath", lambda appname: different_logpath)
 
     emit = Emitter()
-    emit.init(EmitterMode.BRIEF, "testapp", different_greeting)
-    emit.trace("initial trace")
+    emit.init(EmitterMode.QUIET, "testapp", different_greeting)
+    emit.progress("initial message")
     emit.set_mode(EmitterMode.VERBOSE)
-    emit.trace("second trace")
-    emit.message("final message")
+    emit.progress("second message")
     emit.ended_ok()
 
-    expected_out = [
-        Line("final message"),
-    ]
     expected_err = [
-        Line(different_greeting, timestamp=True),
-        Line(f"Logging execution to {different_logpath!r}", timestamp=True),
+        Line(different_greeting),
+        Line(f"Logging execution to {different_logpath!r}"),
+        Line("second message"),
     ]
     expected_log = [
         Line(different_greeting),
-        Line("initial trace"),
-        Line("second trace"),
-        Line("final message"),
+        Line("initial message"),
+        Line("second message"),
     ]
-    assert_outputs(
-        capsys,
-        emit,
-        expected_out=expected_out,
-        expected_err=expected_err,
-        expected_log=expected_log,
-    )
+    assert_outputs(capsys, emit, expected_err=expected_err, expected_log=expected_log)
 
 
-def test_initial_messages_when_trace(capsys, tmp_path, monkeypatch):
-    """Check the initial messages are sent when setting the mode to TRACE."""
+@pytest.mark.parametrize(
+    "mode",
+    [
+        EmitterMode.DEBUG,
+        EmitterMode.TRACE,
+    ],
+)
+def test_initial_messages_developer_modes(capsys, tmp_path, monkeypatch, mode):
+    """Check the initial messages are sent when setting developer modes."""
     # use different greeting and file logpath so we can actually test them
     different_greeting = "different greeting to not be ignored"
     different_logpath = str(tmp_path / "otherfile.log")
     monkeypatch.setattr(messages, "_get_log_filepath", lambda appname: different_logpath)
 
     emit = Emitter()
-    emit.init(EmitterMode.BRIEF, "testapp", different_greeting)
-    emit.trace("initial trace")
-    emit.set_mode(EmitterMode.TRACE)
-    emit.trace("second trace")
-    emit.message("final message")
+    emit.init(EmitterMode.QUIET, "testapp", different_greeting)
+    emit.progress("initial message")
+    emit.set_mode(mode)
+    emit.progress("second message")
     emit.ended_ok()
 
-    expected_out = [
-        Line("final message"),
-    ]
     expected_err = [
         Line(different_greeting, timestamp=True),
         Line(f"Logging execution to {str(different_logpath)!r}", timestamp=True),
-        Line("second trace", timestamp=True),
+        Line("second message", timestamp=True),
     ]
     expected_log = [
         Line(different_greeting),
-        Line("initial trace"),
-        Line("second trace"),
-        Line("final message"),
+        Line("initial message"),
+        Line("second message"),
     ]
-    assert_outputs(
-        capsys,
-        emit,
-        expected_out=expected_out,
-        expected_err=expected_err,
-        expected_log=expected_log,
-    )
+    assert_outputs(capsys, emit, expected_err=expected_err, expected_log=expected_log)
 
 
 def test_logging_after_closing(capsys, logger):

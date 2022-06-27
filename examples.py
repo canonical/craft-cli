@@ -1,5 +1,6 @@
 #!/bin/env python3
 
+import itertools
 import logging
 import os
 import subprocess
@@ -259,6 +260,74 @@ def example_21():
 def example_22():
     """Run an app that uses emitter in a subprocess, pausing the external control, trace mode."""
     _run_subprocess_with_emitter(EmitterMode.TRACE)
+
+
+def example_23():
+    """Capture output from an app that uses emitter."""
+    emit.set_mode(EmitterMode.TRACE)
+
+    example_test_sub_app = textwrap.dedent(
+        """
+        import time
+
+        from craft_cli import emit, EmitterMode
+
+        emit.init(EmitterMode.BRIEF, "subapp", "An example sub application.")
+        emit.progress("Sub app: starting")
+        time.sleep(6)
+        emit.progress("Sub app: Lot of work")
+        time.sleep(1)
+        emit.message("Sub app: Done")
+        emit.ended_ok()
+    """
+    )
+    temp_fh, temp_name = tempfile.mkstemp()
+    with open(temp_fh, "wt", encoding="utf8") as fh:
+        fh.write(example_test_sub_app)
+
+    emit.progress("Running subprocess...")
+    cmd = [sys.executable, temp_name]
+    proc = subprocess.run(cmd, env={"PYTHONPATH": os.getcwd()}, capture_output=True, text=True)
+    os.unlink(temp_name)
+    emit.message("Captured output:")
+    for line in filter(None, itertools.chain(proc.stderr.split("\n"), proc.stdout.split("\n"))):
+        emit.message(f":: {line}")
+
+
+def example_24():
+    """Show a progress bar in verbose mode."""
+    emit.set_mode(EmitterMode.VERBOSE)
+
+    emit.message("We need to know!", intermediate=True)
+    emit.progress("Deciding to build a computer or upload it...")
+    time.sleep(1.5)
+
+    with emit.progress_bar("Uploading computer: planetary model", 1788) as progress:
+        for uploaded in [500, 500, 500, 288]:
+            progress.advance(uploaded)
+            time.sleep(1.5)
+
+    emit.progress("Asking question...")
+    time.sleep(1.5)
+    emit.message("The meaning of life is 42.")
+
+
+def example_25():
+    """Show a progress bar in debug mode."""
+    emit.set_mode(EmitterMode.DEBUG)
+
+    emit.message("We need to know!", intermediate=True)
+    emit.progress("Deciding to build a computer or upload it...")
+    time.sleep(1.5)
+
+    with emit.progress_bar("Uploading computer: planetary model", 1788) as progress:
+        for uploaded in [500, 500, 500, 288]:
+            progress.advance(uploaded)
+            time.sleep(1.5)
+
+    emit.progress("Asking question...")
+    time.sleep(1.5)
+    emit.message("The meaning of life is 42.")
 
 
 # -- end of test cases
