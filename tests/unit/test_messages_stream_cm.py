@@ -44,7 +44,9 @@ def thread_guard(tmp_path):
 
 def test_streamcm_init_silent(recording_printer):
     """Check the context manager bootstrapping with no stream."""
-    scm = _StreamContextManager(recording_printer, "initial text", None)
+    scm = _StreamContextManager(
+        recording_printer, "initial text", stream=None, use_timestamp=False
+    )
 
     # no initial message
     assert not recording_printer.written_lines
@@ -59,7 +61,33 @@ def test_streamcm_init_silent(recording_printer):
 @pytest.mark.parametrize("stream", [sys.stdout, sys.stderr])
 def test_streamcm_init_with_stream(recording_printer, stream):
     """Check the context manager bootstrapping with a stream."""
-    scm = _StreamContextManager(recording_printer, "initial text", stream)
+    scm = _StreamContextManager(
+        recording_printer, "initial text", stream=stream, use_timestamp=False
+    )
+
+    # initial message
+    (msg,) = recording_printer.written_lines  # pylint: disable=unbalanced-tuple-unpacking
+    assert msg.stream == stream
+    assert msg.text == "initial text"
+    assert msg.use_timestamp is False
+    assert msg.end_line is True
+    assert msg.ephemeral is False
+    assert msg.bar_progress is None
+    assert msg.bar_total is None
+
+    # check it used the pipe reader correctly
+    assert isinstance(scm.pipe_reader, _PipeReaderThread)
+    assert scm.pipe_reader.printer == recording_printer
+    assert scm.pipe_reader.stream == stream
+    assert not scm.pipe_reader.is_alive()
+
+
+@pytest.mark.parametrize("stream", [sys.stdout, sys.stderr])
+def test_streamcm_init_with_stream_and_timestamp(recording_printer, stream):
+    """Check the context manager bootstrapping with a stream and a timestamp."""
+    scm = _StreamContextManager(
+        recording_printer, "initial text", stream=stream, use_timestamp=True
+    )
 
     # initial message
     (msg,) = recording_printer.written_lines  # pylint: disable=unbalanced-tuple-unpacking
@@ -80,7 +108,9 @@ def test_streamcm_init_with_stream(recording_printer, stream):
 
 def test_streamcm_usage_lifecycle(recording_printer):
     """Enters and exits the context manager correctly."""
-    scm = _StreamContextManager(recording_printer, "initial text", None)
+    scm = _StreamContextManager(
+        recording_printer, "initial text", stream=None, use_timestamp=False
+    )
 
     with scm as context_manager:
         # the pipe reader is working
@@ -94,7 +124,9 @@ def test_streamcm_usage_lifecycle(recording_printer):
 def test_streamcm_dont_consume_exceptions(recording_printer):
     """It lets the exceptions go through."""
     with pytest.raises(ValueError):
-        with _StreamContextManager(recording_printer, "initial text", None):
+        with _StreamContextManager(
+            recording_printer, "initial text", stream=None, use_timestamp=False
+        ):
             raise ValueError()
 
 
@@ -104,7 +136,25 @@ def test_streamcm_dont_consume_exceptions(recording_printer):
 @pytest.mark.parametrize("stream", [sys.stdout, sys.stderr])
 def test_pipereader_simple(recording_printer, stream):
     """Basic pipe reader usage."""
-    prt = _PipeReaderThread(recording_printer, stream)
+    prt = _PipeReaderThread(recording_printer, stream, use_timestamp=False)
+    prt.start()
+    os.write(prt.write_pipe, b"123\n")
+    prt.stop()
+
+    (msg,) = recording_printer.written_lines  # pylint: disable=unbalanced-tuple-unpacking
+    assert msg.stream == stream
+    assert msg.text == ":: 123"  # unicode, with the prefix, and without the newline
+    assert msg.use_timestamp is False
+    assert msg.end_line is True
+    assert msg.ephemeral is False
+    assert msg.bar_progress is None
+    assert msg.bar_total is None
+
+
+@pytest.mark.parametrize("stream", [sys.stdout, sys.stderr])
+def test_pipereader_with_timestamp(recording_printer, stream):
+    """Basic pipe reader usage with a timestamp."""
+    prt = _PipeReaderThread(recording_printer, stream, use_timestamp=True)
     prt.start()
     os.write(prt.write_pipe, b"123\n")
     prt.stop()
@@ -122,7 +172,7 @@ def test_pipereader_simple(recording_printer, stream):
 def test_pipereader_chunk_assembler(recording_printer, monkeypatch):
     """Converts ok arbitrary chunks to lines."""
     monkeypatch.setattr(messages, "_PIPE_READER_CHUNK_SIZE", 5)
-    prt = _PipeReaderThread(recording_printer, sys.stdout)
+    prt = _PipeReaderThread(recording_printer, sys.stdout, use_timestamp=False)
     prt.start()
 
     # write different chunks, sleeping in the middle not for timing, but to let the

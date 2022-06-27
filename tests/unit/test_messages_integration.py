@@ -452,9 +452,9 @@ def test_third_party_output_quietish_modes(capsys, tmp_path, mode):
     emit.ended_ok()
 
     expected = [
-        Line("Testing stream", timestamp=True),
-        Line(":: foobar out", timestamp=True),
-        Line(":: foobar err", timestamp=True),
+        Line("Testing stream"),
+        Line(":: foobar out"),
+        Line(":: foobar err"),
     ]
     assert_outputs(capsys, emit, expected_log=expected)
 
@@ -479,9 +479,9 @@ def test_third_party_output_verbose(capsys, tmp_path):
     emit.ended_ok()
 
     expected = [
-        Line("Testing stream", timestamp=True),
-        Line(":: foobar out", timestamp=True),
-        Line(":: foobar err", timestamp=True),
+        Line("Testing stream"),
+        Line(":: foobar out"),
+        Line(":: foobar err"),
     ]
     assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)
 
