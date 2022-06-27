@@ -513,6 +513,85 @@ def test_openstream_in_developer_modes(get_initiated_emitter, mode):
     [
         EmitterMode.QUIET,
         EmitterMode.BRIEF,
+    ],
+)
+def test_verbose_in_quietish_modes(get_initiated_emitter, mode):
+    """Only log the message."""
+    emitter = get_initiated_emitter(mode)
+    emitter.verbose("some text")
+
+    assert emitter.printer_calls == [
+        call().show(None, "some text", use_timestamp=False),
+    ]
+
+
+def test_verbose_in_verbose_mode(get_initiated_emitter):
+    """Log the message and show it in stderr."""
+    emitter = get_initiated_emitter(EmitterMode.VERBOSE)
+    emitter.verbose("some text")
+
+    assert emitter.printer_calls == [
+        call().show(sys.stderr, "some text", use_timestamp=False),
+    ]
+
+
+@pytest.mark.parametrize(
+    "mode",
+    [
+        EmitterMode.DEBUG,
+        EmitterMode.TRACE,
+    ],
+)
+def test_verbose_in_developer_modes(get_initiated_emitter, mode):
+    """Only log the message."""
+    emitter = get_initiated_emitter(mode)
+    emitter.verbose("some text")
+
+    assert emitter.printer_calls == [
+        call().show(sys.stderr, "some text", use_timestamp=True),
+    ]
+
+
+@pytest.mark.parametrize(
+    "mode",
+    [
+        EmitterMode.QUIET,
+        EmitterMode.BRIEF,
+        EmitterMode.VERBOSE,
+    ],
+)
+def test_debug_in_more_quietish_modes(get_initiated_emitter, mode):
+    """Only log the message."""
+    emitter = get_initiated_emitter(mode)
+    emitter.debug("some text")
+
+    assert emitter.printer_calls == [
+        call().show(None, "some text", use_timestamp=True),
+    ]
+
+
+@pytest.mark.parametrize(
+    "mode",
+    [
+        EmitterMode.DEBUG,
+        EmitterMode.TRACE,
+    ],
+)
+def test_debug_in_developer_modes(get_initiated_emitter, mode):
+    """Only log the message."""
+    emitter = get_initiated_emitter(mode)
+    emitter.debug("some text")
+
+    assert emitter.printer_calls == [
+        call().show(sys.stderr, "some text", use_timestamp=True),
+    ]
+
+
+@pytest.mark.parametrize(
+    "mode",
+    [
+        EmitterMode.QUIET,
+        EmitterMode.BRIEF,
         EmitterMode.VERBOSE,
         EmitterMode.DEBUG,
     ],
@@ -589,6 +668,7 @@ def test_paused_resumed_ok(get_initiated_emitter, tmp_path):
     with emitter.pause():
         assert emitter.printer_calls == [
             # the pausing message is shown and emitter is stopped
+            call().show(None, "Emitter: Pausing control of the terminal", use_timestamp=True),
             call().stop(),
         ]
         emitter.printer_calls.clear()
@@ -597,6 +677,7 @@ def test_paused_resumed_ok(get_initiated_emitter, tmp_path):
     # a new _Printer is created, with same logpath and the resuming message is shown
     assert emitter.printer_calls == [
         call(str(tmp_path / FAKE_LOG_NAME)),
+        call().show(None, "Emitter: Resuming control of the terminal", use_timestamp=True),
     ]
 
 
@@ -608,6 +689,7 @@ def test_paused_resumed_error(get_initiated_emitter, tmp_path):
         with emitter.pause():
             assert emitter.printer_calls == [
                 # the pausing message is shown and emitter is stopped
+                call().show(None, "Emitter: Pausing control of the terminal", use_timestamp=True),
                 call().stop(),
             ]
             emitter.printer_calls.clear()
@@ -619,6 +701,7 @@ def test_paused_resumed_error(get_initiated_emitter, tmp_path):
     # a new _Printer is created, with same logpath and the resuming message is shown
     assert emitter.printer_calls == [
         call(str(tmp_path / FAKE_LOG_NAME)),
+        call().show(None, "Emitter: Resuming control of the terminal", use_timestamp=True),
     ]
 
 

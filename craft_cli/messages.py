@@ -730,6 +730,38 @@ class Emitter:
         self._printer.show(stream, text, use_timestamp=use_timestamp)  # type: ignore
 
     @_active_guard()
+    def verbose(self, text: str) -> None:
+        """Verbose information.
+
+        Useful to provide more information to the user that shouldn't be exposed
+        when in brief mode for clarity and simplicity.
+        """
+        if self._mode in (EmitterMode.QUIET, EmitterMode.BRIEF):
+            stream = None
+            use_timestamp = False
+        elif self._mode == EmitterMode.VERBOSE:
+            stream = sys.stderr
+            use_timestamp = False
+        else:
+            stream = sys.stderr
+            use_timestamp = True
+        self._printer.show(stream, text, use_timestamp=use_timestamp)  # type: ignore
+
+    @_active_guard()
+    def debug(self, text: str) -> None:
+        """Debug information.
+
+        To record everything that the user may not want to normally see but useful
+        for the app developers to understand why things are failing or performing
+        forensics on the produced logs.
+        """
+        if self._mode in (EmitterMode.QUIET, EmitterMode.BRIEF, EmitterMode.VERBOSE):
+            stream = None
+        else:
+            stream = sys.stderr
+        self._printer.show(stream, text, use_timestamp=True)  # type: ignore
+
+    @_active_guard()
     def trace(self, text: str) -> None:
         """Trace information.
 
@@ -830,7 +862,7 @@ class Emitter:
         # XXX Facundo 2022-06-23: this internal message should mutate to a '.debug' call
         # (when it's available, in the next PRs) so it's properly logged (as in trace it
         # will not reach the logs unless in TRACE mode).
-        self.trace("Emitter: Pausing control of the terminal")
+        self.debug("Emitter: Pausing control of the terminal")
         self._printer.stop()  # type: ignore
         self._stopped = True
         try:
@@ -841,7 +873,7 @@ class Emitter:
             # XXX Facundo 2022-06-23: this internal message should mutate to a '.debug' call
             # (when it's available, in the next PRs) so it's properly logged (as in trace it
             # will not reach the logs unless in TRACE mode).
-            self.trace("Emitter: Resuming control of the terminal")
+            self.debug("Emitter: Resuming control of the terminal")
 
     def _stop(self) -> None:
         """Do all the stopping."""
