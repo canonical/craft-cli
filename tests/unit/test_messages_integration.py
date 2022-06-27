@@ -399,6 +399,100 @@ def test_progressbar_developer_modes(capsys, mode, monkeypatch):
     [
         EmitterMode.QUIET,
         EmitterMode.BRIEF,
+    ],
+)
+def test_verbose_in_quietish_modes(capsys, mode):
+    """The verbose method in more quietish modes."""
+    emit = Emitter()
+    emit.init(mode, "testapp", GREETING)
+    emit.verbose("The meaning of life is 42.")
+    emit.ended_ok()
+
+    expected = [
+        Line("The meaning of life is 42."),
+    ]
+    assert_outputs(capsys, emit, expected_log=expected)
+
+
+def test_verbose_in_verbose_mode(capsys):
+    """The verbose method in the verbose mode."""
+    emit = Emitter()
+    emit.init(EmitterMode.VERBOSE, "testapp", GREETING)
+    emit.verbose("The meaning of life is 42.")
+    emit.ended_ok()
+
+    expected = [
+        Line("The meaning of life is 42.", timestamp=False),
+    ]
+    assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)
+
+
+@pytest.mark.parametrize(
+    "mode",
+    [
+        EmitterMode.DEBUG,
+        EmitterMode.TRACE,
+    ],
+)
+def test_verbose_in_developer_modes(capsys, mode):
+    """The verbose method in developer modes."""
+    emit = Emitter()
+    emit.init(mode, "testapp", GREETING)
+    emit.verbose("The meaning of life is 42.")
+    emit.ended_ok()
+
+    expected = [
+        Line("The meaning of life is 42.", timestamp=True),
+    ]
+    assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)
+
+
+@pytest.mark.parametrize(
+    "mode",
+    [
+        EmitterMode.QUIET,
+        EmitterMode.BRIEF,
+        EmitterMode.VERBOSE,
+    ],
+)
+def test_debug_in_quietish_modes(capsys, mode):
+    """The debug method in more quietish modes."""
+    emit = Emitter()
+    emit.init(mode, "testapp", GREETING)
+    emit.debug("The meaning of life is 42.")
+    emit.ended_ok()
+
+    expected = [
+        Line("The meaning of life is 42."),
+    ]
+    assert_outputs(capsys, emit, expected_log=expected)
+
+
+@pytest.mark.parametrize(
+    "mode",
+    [
+        EmitterMode.DEBUG,
+        EmitterMode.TRACE,
+    ],
+)
+def test_debug_in_developer_modes(capsys, mode):
+    """The debug method in developer modes."""
+    emit = Emitter()
+    emit.init(mode, "testapp", GREETING)
+    emit.debug("The meaning of life is 42.")
+    emit.ended_ok()
+
+    expected = [
+        Line("The meaning of life is 42.", timestamp=True),
+    ]
+    assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)
+
+
+@pytest.mark.parametrize(
+    "mode",
+    [
+        EmitterMode.QUIET,
+        EmitterMode.BRIEF,
         EmitterMode.VERBOSE,
         EmitterMode.DEBUG,
     ],

@@ -55,13 +55,17 @@ def example_04():
 
 
 def example_05():
-    """Show a debug message when it makes sense."""
-    # note this will show the greeting twice, as it's setting the mode twice (which
-    # won't happen IRL)
+    """Show a verbose/debug/trace messages when it makes sense."""
+    # set _mode directly to avoid the greeting and log messages that appear when using set_mode()
     for mode in EmitterMode:
-        emit.set_mode(mode)
-        time.sleep(0.1)
-        emit.trace(f"Debug message when mode={mode}")
+        emit._mode = mode
+        emit.verbose(f"Verbose message when mode={mode}")
+    for mode in EmitterMode:
+        emit._mode = mode
+        emit.debug(f"Debug message when mode={mode}")
+    for mode in EmitterMode:
+        emit._mode = mode
+        emit.trace(f"Trace message when mode={mode}")
 
 
 def example_06():
