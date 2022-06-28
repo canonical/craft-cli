@@ -101,11 +101,9 @@ Regular messages
 
 The ``message`` method is for the final output of the running command.
 
-If there is important information that needs to be shown to the user in the middle of the execution (and not overwritten by other messages) this method can be also used but passing ``intermediate=True``:
-
 ::
 
-    def message(self, text: str, intermediate: bool = False) -> None:
+    def message(self, text: str) -> None:
 
 E.g.::
 
@@ -119,9 +117,11 @@ The ``progress`` method is to present all the messages that provide information 
 
 Messages shown this way are ephemeral in ``QUIET`` or ``BRIEF`` modes (overwritten by the next line) and will be truncated to the terminal's width in that case.
 
+If a progress message is important enough that it should not be overwritten by the next ones, use ``permanent=True``.
+
 ::
 
-    def progress(self, text: str) -> None:
+    def progress(self, text: str, permanent: bool = False) -> None:
 
 E.g.::
 
@@ -152,10 +152,41 @@ E.g.::
                     break
 
 
-Trace/debug messages
-~~~~~~~~~~~~~~~~~~~~
+Verbose messages
+~~~~~~~~~~~~~~~~
 
-The ``trace`` method is to present all the messages that may used by the *developers* to do any debugging on the application behaviour and/or logs forensics.
+Verbose messages are useful to provide more information to the user that shouldn't be exposed when in brief mode for clarity and simplicity.
+
+::
+
+    def verbose(self, text: str) -> None:
+
+E.g.::
+
+    emit.verbose("Deleted the temporary file.")
+
+
+
+Debug messages
+~~~~~~~~~~~~~~
+
+The ``debug`` method is to record everything that the user may not want to normally see but useful for the app developers to understand why things are failing or performing forensics on the produced logs.
+
+::
+
+    def debug(self, text: str) -> None:
+
+E.g.::
+
+    emit.debug(f"Hash calculated correctly: {hash_result}")
+
+
+Trace messages
+~~~~~~~~~~~~~~
+
+The ``trace`` method is a way to expose system-generated information, about the general process or particular information, which in general would be too overwhelming for debugging purposes but sometimes needed for particular analysis.
+
+It only produces information to the screen and into the logs if the Emitters is set to TRACE mode.
 
 ::
 
@@ -163,7 +194,7 @@ The ``trace`` method is to present all the messages that may used by the *develo
 
 E.g.::
 
-    emit.trace(f"Hash calculated correctly: {hash_result}")
+    emit.trace(f"Headers of the server response: {response.headers}")
 
 
 Get messages from subprocesses
@@ -233,3 +264,186 @@ After that, is just a matter of running the file specifying which example to use
     ./examples.py 18
 
 We encourage you to adapt/improve/hack the examples in the file to play with different combinations of message types to learn and "feel" how the output would be in the different cases.
+
+
+Understanding which/how messages are shown/logged
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This is how texts are exposed to the screen for the different situations according to the selected verbosity level by the user running the application.
+
+The last column of the table though is not about the screen: it indicates if the information will be present in the log created automatically by Craft CLI.
+
+.. list-table::
+   :header-rows: 1
+
+   * -
+     - QUIET
+     - BRIEF
+     - VERBOSE
+     - DEBUG
+     - TRACE
+     - also to logfile
+   * - ``.message(...)``
+     - --
+     - | stdout
+       | permanent
+       | plain
+     - | stdout
+       | permanent
+       | plain
+     - | stdout
+       | permanent
+       | plain
+     - | stdout
+       | permanent
+       | plain
+     - yes
+   * - ``.progress(...)``
+     - --
+     - | stderr
+       | transient (*)
+       | plain
+     - | stderr
+       | permanent
+       | plain
+     - | stderr
+       | permanent
+       | timestamp
+     - | stderr
+       | permanent
+       | timestamp
+     - yes
+   * - | ``.progress(..., permanent=True)``
+     - --
+     - | stderr
+       | permanent
+       | plain
+     - | stderr
+       | permanent
+       | plain
+     - | stderr
+       | permanent
+       | timestamp
+     - | stderr
+       | permanent
+       | timestamp
+     - yes
+   * - ``.progress_bar(...)``
+     - --
+     - | stderr
+       | transient (*)
+       | plain
+     - | stderr
+       | permanent
+       | plain
+     - | stderr
+       | permanent
+       | timestamp
+     - | stderr
+       | permanent
+       | timestamp
+     - | first line only, 
+       | without progress
+   * - ``.open_stream(...)``
+     - --
+     - --
+     - | stderr
+       | permanent
+       | plain
+     - | stderr
+       | permanent
+       | timestamp
+     - | stderr
+       | permanent
+       | timestamp
+     - yes
+   * - ``.verbose(...)``
+     - --
+     - --
+     - | stderr
+       | permanent
+       | plain
+     - | stderr
+       | permanent
+       | timestamp
+     - | stderr
+       | permanent
+       | timestamp
+     - yes
+   * - ``.debug(...)``
+     - --
+     - --
+     - --
+     - | stderr
+       | permanent
+       | timestamp
+     - | stderr
+       | permanent
+       | timestamp
+     - yes
+   * - ``.trace(...)``
+     - --
+     - --
+     - --
+     - --
+     - | stderr
+       | permanent
+       | timestamp
+     - | only when 
+       | level=trace
+   * - | **captured logs**
+       | (level > ``logging.DEBUG``)
+     - --
+     - --
+     - | stderr
+       | permanent
+       | plain
+     - | stderr
+       | permanent
+       | timestamp
+     - | stderr
+       | permanent
+       | timestamp
+     - yes
+   * - | **captured logs**
+       | (level == ``logging.DEBUG``)
+     - --
+     - --
+     - --
+     - | stderr
+       | permanent
+       | timestamp
+     - | stderr
+       | permanent
+       | timestamp
+     - yes
+   * - | **captured logs**
+       | (level < ``logging.DEBUG``)
+     - --
+     - --
+     - --
+     - --
+     - | stderr
+       | permanent
+       | timestamp
+     - | only when 
+       | level=trace
+   * - **error ending**
+     - | stderr
+       | permanent
+       | plain
+     - | stderr
+       | permanent
+       | plain
+     - | stderr
+       | permanent
+       | plain
+     - | stderr
+       | permanent
+       | plain
+     - | stderr
+       | permanent
+       | plain
+     - yes
+
+(*) when redirected to a file it doesn't make sense to have "transient" messages, so 'progress' messages will always end in a newline, and 'progress_bar' will just send its message line but without the progress indication.
