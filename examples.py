@@ -39,7 +39,7 @@ def example_03():
 
 
 def example_04():
-    """Show a progress bar."""
+    """Show a progress bar in brief mode."""
     emit.message("We need to know!")
     emit.progress("Deciding to build a computer or upload it...")
     time.sleep(1.5)
@@ -80,7 +80,7 @@ def example_06():
     msg = ""
     for i in range(30):
         msg += "progress permanent blah {} ".format(i)
-    emit.message(msg, intermediate=True)
+    emit.progress(msg, permanent=True)
 
     time.sleep(5)
 
@@ -102,11 +102,11 @@ def example_07():
 def example_08():
     """Show some progress that are permanent, mixed with ephemeral, then the result."""
     emit.message("We need to know!")
-    emit.message("Building computer...", intermediate=True)
+    emit.progress("Building computer...", permanent=True)
     time.sleep(1)
     emit.progress("Assembling stuff...")
     time.sleep(1)
-    emit.message("Asking question...", intermediate=True)
+    emit.progress("Asking question...", permanent=True)
     time.sleep(1)
     emit.message("The meaning of life is 42.")
 
@@ -156,7 +156,7 @@ def example_14():
 
 
 def example_15():
-    """Specific combination of long message with other progress, in verbose."""
+    """Specific combination of long message with final message in TRACE."""
     emit.set_mode(EmitterMode.TRACE)
     emit.progress("Asking question...")
     time.sleep(3)
@@ -186,7 +186,7 @@ def example_17():
         raise ValueError("pumba")
 
     emit.set_mode(EmitterMode.VERBOSE)
-    emit.message("Start to work", intermediate=True)
+    emit.progress("Start to work", permanent=True)
     try:
         f()
     except ValueError as exc:
@@ -302,7 +302,7 @@ def example_24():
     """Show a progress bar in verbose mode."""
     emit.set_mode(EmitterMode.VERBOSE)
 
-    emit.message("We need to know!", intermediate=True)
+    emit.progress("We need to know!", permanent=True)
     emit.progress("Deciding to build a computer or upload it...")
     time.sleep(1.5)
 
@@ -320,7 +320,7 @@ def example_25():
     """Show a progress bar in debug mode."""
     emit.set_mode(EmitterMode.DEBUG)
 
-    emit.message("We need to know!", intermediate=True)
+    emit.progress("We need to know!", permanent=True)
     emit.progress("Deciding to build a computer or upload it...")
     time.sleep(1.5)
 

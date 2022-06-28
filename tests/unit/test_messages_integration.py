@@ -164,50 +164,33 @@ def test_message_expected_cmd_result_quiet(capsys):
     [
         EmitterMode.BRIEF,
         EmitterMode.VERBOSE,
-    ],
-)
-def test_message_expected_cmd_result_quietish(capsys, mode):
-    """Show a simple message, the expected command result."""
-    emit = Emitter()
-    emit.init(mode, "testapp", GREETING)
-    emit.message("The meaning of life is 42.", intermediate=True)
-    emit.ended_ok()
-
-    expected = [
-        Line("The meaning of life is 42."),
-    ]
-    assert_outputs(capsys, emit, expected_out=expected, expected_log=expected)
-
-
-@pytest.mark.parametrize(
-    "mode",
-    [
         EmitterMode.DEBUG,
         EmitterMode.TRACE,
     ],
 )
-def test_message_expected_cmd_result_developerish(capsys, mode):
+def test_message_expected_cmd_result_not_quiet(capsys, mode):
     """Show a simple message, the expected command result."""
     emit = Emitter()
     emit.init(mode, "testapp", GREETING)
-    emit.message("The meaning of life is 42.", intermediate=True)
-    emit.ended_ok()
-
-    expected = [
-        Line("The meaning of life is 42.", timestamp=True),
-    ]
-    assert_outputs(capsys, emit, expected_out=expected, expected_log=expected)
-
-
-def test_progress_quiet(capsys):
-    """Show a progress message being in quiet mode."""
-    emit = Emitter()
-    emit.init(EmitterMode.QUIET, "testapp", GREETING)
-    emit.progress("The meaning of life is 42.")
+    emit.message("The meaning of life is 42.")
     emit.ended_ok()
 
     expected = [
         Line("The meaning of life is 42."),
+    ]
+    assert_outputs(capsys, emit, expected_out=expected, expected_log=expected)
+
+
+@pytest.mark.parametrize("permanent", [True, False])
+def test_progress_quiet(capsys, permanent):
+    """Show a progress message being in quiet mode."""
+    emit = Emitter()
+    emit.init(EmitterMode.QUIET, "testapp", GREETING)
+    emit.progress("The meaning of life is 42.", permanent=permanent)
+    emit.ended_ok()
+
+    expected = [
+        Line("The meaning of life is 42.", permanent=False),
     ]
     assert_outputs(capsys, emit, expected_log=expected)
 
@@ -227,12 +210,28 @@ def test_progress_brief_terminal(capsys):
     assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)
 
 
-def test_progress_verbose(capsys):
+def test_progress_brief_permanent(capsys, monkeypatch):
+    """Show a progress message with permanent flag in brief mode."""
+    emit = Emitter()
+    emit.init(EmitterMode.BRIEF, "testapp", GREETING)
+    emit.progress("The meaning of life is 42.", permanent=True)
+    emit.progress("Another message.", permanent=True)
+    emit.ended_ok()
+
+    expected = [
+        Line("The meaning of life is 42.", permanent=True),
+        Line("Another message.", permanent=True),
+    ]
+    assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)
+
+
+@pytest.mark.parametrize("permanent", [True, False])
+def test_progress_verbose(capsys, permanent):
     """Show a progress message in verbose and debug modes."""
     emit = Emitter()
     emit.init(EmitterMode.VERBOSE, "testapp", GREETING)
-    emit.progress("The meaning of life is 42.")
-    emit.progress("Another message.")
+    emit.progress("The meaning of life is 42.", permanent=permanent)
+    emit.progress("Another message.", permanent=permanent)
     emit.ended_ok()
 
     # ephemeral ends up being ignored, as in verbose and debug no lines are overridden
@@ -250,12 +249,13 @@ def test_progress_verbose(capsys):
         EmitterMode.TRACE,
     ],
 )
-def test_progress_developer_modes(capsys, mode):
+@pytest.mark.parametrize("permanent", [True, False])
+def test_progress_developer_modes(capsys, mode, permanent):
     """Show a progress message in developer modes."""
     emit = Emitter()
     emit.init(mode, "testapp", GREETING)
-    emit.progress("The meaning of life is 42.")
-    emit.progress("Another message.")
+    emit.progress("The meaning of life is 42.", permanent=permanent)
+    emit.progress("Another message.", permanent=permanent)
     emit.ended_ok()
 
     # ephemeral ends up being ignored, as in verbose and debug no lines are overridden

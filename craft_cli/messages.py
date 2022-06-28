@@ -717,17 +717,13 @@ class Emitter:
                 )
 
     @_active_guard()
-    def message(self, text: str, intermediate: bool = False) -> None:
+    def message(self, text: str) -> None:
         """Show an important message to the user.
 
-        Normally used as the final message, to show the result of a command, but it can
-        also be used for important messages during the command's execution,
-        with intermediate=True (which will include timestamp in verbose/trace mode).
+        Normally used as the final message, to show the result of a command.
         """
-        # XXX Facundo 2022-06-23: the 'intermediate' modifier will be removed in next PRs
-        use_timestamp = bool(intermediate and self._mode in (EmitterMode.DEBUG, EmitterMode.TRACE))
         stream = None if self._mode == EmitterMode.QUIET else sys.stdout
-        self._printer.show(stream, text, use_timestamp=use_timestamp)  # type: ignore
+        self._printer.show(stream, text)  # type: ignore
 
     @_active_guard()
     def verbose(self, text: str) -> None:
@@ -779,7 +775,7 @@ class Emitter:
         if self._mode == EmitterMode.TRACE:
             self._printer.show(sys.stderr, text, use_timestamp=True)  # type: ignore
 
-    def _get_progress_params(self):
+    def _get_progress_params(self, permanent: bool):
         """Calculate the different parameters for progress information."""
         if self._mode == EmitterMode.QUIET:
             # will not be shown in the screen (always logged to the file)
@@ -790,7 +786,7 @@ class Emitter:
             # show the indicated message to stderr (ephemeral, unless flag is used) and log it
             stream = sys.stderr
             use_timestamp = False
-            ephemeral = True
+            ephemeral = not permanent
         elif self._mode == EmitterMode.VERBOSE:
             # show the indicated message to stderr (permanent) and log it
             stream = sys.stderr
@@ -804,17 +800,18 @@ class Emitter:
         return stream, use_timestamp, ephemeral
 
     @_active_guard()
-    def progress(self, text: str) -> None:
+    def progress(self, text: str, permanent: bool = False) -> None:
         """Progress information for a multi-step command.
 
         This is normally used to present several separated text messages.
 
+        If a progress message is important enough that it should not be overwritten by the
+        next ones, use 'permanent=True'.
+
         These messages will be truncated to the terminal's width, and overwritten by the next
         line (unless verbose/trace mode).
         """
-        # XXX Facundo 2022-06-23: this should grow a 'permanent' modifier; this will
-        # come in next PRs
-        stream, use_timestamp, ephemeral = self._get_progress_params()
+        stream, use_timestamp, ephemeral = self._get_progress_params(permanent)
         self._printer.show(stream, text, ephemeral=ephemeral, use_timestamp=use_timestamp)  # type: ignore
 
     @_active_guard()

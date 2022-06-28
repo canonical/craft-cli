@@ -307,7 +307,7 @@ def test_message_final_quiet(get_initiated_emitter):
     emitter.message("some text")
 
     assert emitter.printer_calls == [
-        call().show(None, "some text", use_timestamp=False),
+        call().show(None, "some text"),
     ]
 
 
@@ -326,7 +326,7 @@ def test_message_final_not_quiet(get_initiated_emitter, mode):
     emitter.message("some text")
 
     assert emitter.printer_calls == [
-        call().show(sys.stdout, "some text", use_timestamp=False),
+        call().show(sys.stdout, "some text"),
     ]
 
 
@@ -371,6 +371,50 @@ def test_progress_in_developer_modes(get_initiated_emitter, mode):
     """Send to stderr (permanent, with timestamp) and log it."""
     emitter = get_initiated_emitter(mode)
     emitter.progress("some text")
+
+    assert emitter.printer_calls == [
+        call().show(sys.stderr, "some text", use_timestamp=True, ephemeral=False),
+    ]
+
+
+def test_progress_permanent_in_quiet_mode(get_initiated_emitter):
+    """Only log the message."""
+    emitter = get_initiated_emitter(EmitterMode.QUIET)
+    emitter.progress("some text", permanent=True)
+
+    assert emitter.printer_calls == [
+        call().show(None, "some text", use_timestamp=False, ephemeral=True),
+    ]
+
+
+@pytest.mark.parametrize(
+    "mode",
+    [
+        EmitterMode.BRIEF,
+        EmitterMode.VERBOSE,
+    ],
+)
+def test_progress_permanent_in_brief_verbose_modes(get_initiated_emitter, mode):
+    """Send to stderr (ephermeral) and log it."""
+    emitter = get_initiated_emitter(mode)
+    emitter.progress("some text", permanent=True)
+
+    assert emitter.printer_calls == [
+        call().show(sys.stderr, "some text", use_timestamp=False, ephemeral=False),
+    ]
+
+
+@pytest.mark.parametrize(
+    "mode",
+    [
+        EmitterMode.DEBUG,
+        EmitterMode.TRACE,
+    ],
+)
+def test_progress_permanent_in_developer_modes(get_initiated_emitter, mode):
+    """Send to stderr (permanent, with timestamp) and log it."""
+    emitter = get_initiated_emitter(mode)
+    emitter.progress("some text", permanent=True)
 
     assert emitter.printer_calls == [
         call().show(sys.stderr, "some text", use_timestamp=True, ephemeral=False),
