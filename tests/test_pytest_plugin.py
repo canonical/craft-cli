@@ -44,7 +44,7 @@ def test_initemitter_isolated_tempdir(tmp_path):
 # -- tests for the `emitter` fixture
 
 
-def test_emitter_record_message_simple_plain(emitter):
+def test_emitter_record_message_plain(emitter):
     """Can verify calls to `message`."""
     messages.emit.trace("something else we don't care")
     messages.emit.message("foobar")
@@ -54,19 +54,7 @@ def test_emitter_record_message_simple_plain(emitter):
         emitter.assert_message("foo")
 
 
-def test_emitter_record_message_intermediate_plain(emitter):
-    """Can verify calls to `message`."""
-    messages.emit.trace("something else we don't care")
-    messages.emit.message("foobar", intermediate=True)
-
-    emitter.assert_message("foobar", intermediate=True)
-    with pytest.raises(AssertionError):
-        emitter.assert_message("foobar")
-    with pytest.raises(AssertionError):
-        emitter.assert_message("foo")
-
-
-def test_emitter_record_progress_plain(emitter):
+def test_emitter_record_progress_simple_plain(emitter):
     """Can verify calls to `progress`."""
     messages.emit.trace("something else we don't care")
     messages.emit.progress("foobar")
@@ -74,6 +62,38 @@ def test_emitter_record_progress_plain(emitter):
     emitter.assert_progress("foobar")
     with pytest.raises(AssertionError):
         emitter.assert_progress("foo")
+
+
+def test_emitter_record_progress_permanent_plain(emitter):
+    """Can verify calls to `progress`."""
+    messages.emit.trace("something else we don't care")
+    messages.emit.progress("foobar", permanent=True)
+
+    emitter.assert_progress("foobar", permanent=True)
+    with pytest.raises(AssertionError):
+        emitter.assert_progress("foo", permanent=True)
+    with pytest.raises(AssertionError):
+        emitter.assert_progress("foobar")
+
+
+def test_emitter_record_verbose_plain(emitter):
+    """Can verify calls to `verbose`."""
+    messages.emit.progress("something else we don't care")
+    messages.emit.verbose("foobar")
+
+    emitter.assert_verbose("foobar")
+    with pytest.raises(AssertionError):
+        emitter.assert_verbose("foo")
+
+
+def test_emitter_record_debug_plain(emitter):
+    """Can verify calls to `debug`."""
+    messages.emit.progress("something else we don't care")
+    messages.emit.debug("foobar")
+
+    emitter.assert_debug("foobar")
+    with pytest.raises(AssertionError):
+        emitter.assert_debug("foo")
 
 
 def test_emitter_record_trace_plain(emitter):
@@ -86,22 +106,34 @@ def test_emitter_record_trace_plain(emitter):
         emitter.assert_trace("foo")
 
 
-def test_emitter_record_message_simple_regex(emitter):
+def test_emitter_record_message_regex(emitter):
     """Can verify calls to `message` using a regex."""
     messages.emit.message("foobar")
     emitter.assert_message("[fx]oo.*", regex=True)
 
 
-def test_emitter_record_message_intermediate_regex(emitter):
-    """Can verify calls to `message` using a regex."""
-    messages.emit.message("foobar", intermediate=True)
-    emitter.assert_message("[fx]oo.*", intermediate=True, regex=True)
-
-
-def test_emitter_record_progress_regex(emitter):
+def test_emitter_record_progress_simple_regex(emitter):
     """Can verify calls to `progress` using a regex."""
     messages.emit.progress("foobar")
     emitter.assert_progress("[fx]oo.*", regex=True)
+
+
+def test_emitter_record_progress_permanent_regex(emitter):
+    """Can verify calls to `progress` using a regex."""
+    messages.emit.progress("foobar", permanent=True)
+    emitter.assert_progress("[fx]oo.*", permanent=True, regex=True)
+
+
+def test_emitter_record_verbose_regex(emitter):
+    """Can verify calls to `verbose` using a regex."""
+    messages.emit.verbose("foobar")
+    emitter.assert_verbose("[fx]oo.*", regex=True)
+
+
+def test_emitter_record_debug_regex(emitter):
+    """Can verify calls to `debug` using a regex."""
+    messages.emit.debug("foobar")
+    emitter.assert_debug("[fx]oo.*", regex=True)
 
 
 def test_emitter_record_trace_regex(emitter):

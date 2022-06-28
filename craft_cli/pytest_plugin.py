@@ -98,28 +98,46 @@ class RecordingEmitter:
                 return stored_call.args[1]
         raise AssertionError(f"Expected call {expected_call} not found in {self.interactions}")
 
-    def assert_message(self, expected_text, intermediate=None, regex=False):
+    def assert_message(self, expected_text, regex=False):
         """Check the 'message' method was properly used.
-
-        It verifies that the method was called at least once with the expected text (with
-        the given 'intermediate' flag).
-
-        If 'regex' is True, the expected text will be used as a regular expression.
-        """
-        if intermediate is None:
-            result = self._check(expected_text, "message", regex)
-        else:
-            result = self._check(expected_text, "message", regex, intermediate=intermediate)
-        return result
-
-    def assert_progress(self, expected_text, regex=False):
-        """Check the 'progress' method was properly used.
 
         It verifies that the method was called at least once with the expected text.
 
         If 'regex' is True, the expected text will be used as a regular expression.
         """
-        return self._check(expected_text, "progress", regex)
+        return self._check(expected_text, "message", regex)
+
+    def assert_progress(self, expected_text, permanent=None, regex=False):
+        """Check the 'progress' method was properly used.
+
+        It verifies that the method was called at least once with the expected text (with
+        the given 'permanent' flag).
+
+        If 'regex' is True, the expected text will be used as a regular expression.
+        """
+        if permanent is None:
+            result = self._check(expected_text, "progress", regex)
+        else:
+            result = self._check(expected_text, "progress", regex, permanent=permanent)
+        return result
+
+    def assert_verbose(self, expected_text, regex=False):
+        """Check the 'verbose' method was properly used.
+
+        It verifies that the method was called at least once with the expected text.
+
+        If 'regex' is True, the expected text will be used as a regular expression.
+        """
+        return self._check(expected_text, "verbose", regex)
+
+    def assert_debug(self, expected_text, regex=False):
+        """Check the 'debug' method was properly used.
+
+        It verifies that the method was called at least once with the expected text.
+
+        If 'regex' is True, the expected text will be used as a regular expression.
+        """
+        return self._check(expected_text, "debug", regex)
 
     def assert_trace(self, expected_text, regex=False):
         """Check the 'trace' method was properly used.
@@ -179,7 +197,7 @@ class _RecordingProgresser:
 def emitter(monkeypatch):
     """Provide a helper to test everything that was shown using the Emitter."""
     recording_emitter = RecordingEmitter()
-    for method_name in ("message", "progress", "trace"):
+    for method_name in ("message", "progress", "verbose", "debug", "trace"):
         monkeypatch.setattr(
             messages.emit,
             method_name,
