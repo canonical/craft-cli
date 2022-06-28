@@ -155,7 +155,7 @@ E.g.::
 Verbose messages
 ~~~~~~~~~~~~~~~~
 
-Useful to provide more information to the user that shouldn't be exposed when in brief mode for clarity and simplicity.
+Verbose messages are useful to provide more information to the user that shouldn't be exposed when in brief mode for clarity and simplicity.
 
 ::
 
