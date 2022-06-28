@@ -580,14 +580,6 @@ class _StreamContextManager:
 class _Handler(logging.Handler):
     """A logging handler that emits messages through the core Printer."""
 
-    # a table to map which logging messages show to the screen according to the selected mode
-    mode_to_log_map = {
-        EmitterMode.QUIET: logging.WARNING,
-        EmitterMode.BRIEF: logging.INFO,
-        EmitterMode.VERBOSE: logging.DEBUG,
-        EmitterMode.TRACE: logging.DEBUG,
-    }
-
     def __init__(self, printer: _Printer):
         super().__init__()
         self.printer = printer
@@ -599,9 +591,24 @@ class _Handler(logging.Handler):
 
     def emit(self, record: logging.LogRecord) -> None:
         """Send the message in the LogRecord to the printer."""
-        use_timestamp = self.mode in (EmitterMode.VERBOSE, EmitterMode.TRACE)
-        threshold = self.mode_to_log_map[self.mode]
-        stream = sys.stderr if record.levelno >= threshold else None
+        # under DEBUG level only in trace mode, the rest is not even logged
+        if record.levelno < logging.DEBUG and self.mode != EmitterMode.TRACE:
+            return
+
+        if self.mode in (EmitterMode.QUIET, EmitterMode.BRIEF):
+            # no stream in more quietish modes
+            stream = None
+        elif self.mode == EmitterMode.VERBOSE:
+            # in verbose, only info, warning, error, etc
+            stream = sys.stderr if record.levelno > logging.DEBUG else None
+        elif self.mode == EmitterMode.DEBUG:
+            # in debug mode, also include debug log level
+            stream = sys.stderr if record.levelno >= logging.DEBUG else None
+        else:
+            # in trace, everything
+            stream = sys.stderr
+
+        use_timestamp = self.mode in (EmitterMode.DEBUG, EmitterMode.TRACE)
         self.printer.show(stream, record.getMessage(), use_timestamp=use_timestamp)
 
 
