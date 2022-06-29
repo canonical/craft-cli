@@ -891,7 +891,7 @@ class Emitter:
 
     def _report_error(self, error: errors.CraftError) -> None:
         """Report the different message lines from a CraftError."""
-        if self._mode in (EmitterMode.QUIET, EmitterMode.BRIEF):
+        if self._mode in (EmitterMode.QUIET, EmitterMode.BRIEF, EmitterMode.VERBOSE):
             use_timestamp = False
             full_stream = None
         else:

@@ -761,9 +761,9 @@ def test_paused_cant_show(get_initiated_emitter, tmp_path):
 # -- tests for error reporting
 
 
-@pytest.mark.parametrize("mode", [EmitterMode.QUIET, EmitterMode.BRIEF])
-def test_reporterror_simple_message_only_quietish(mode, get_initiated_emitter):
-    """Report just a simple message, in silent modes."""
+@pytest.mark.parametrize("mode", [EmitterMode.QUIET, EmitterMode.BRIEF, EmitterMode.VERBOSE])
+def test_reporterror_simple_message_final_user_modes(mode, get_initiated_emitter):
+    """Report just a simple message, in final user modes."""
     emitter = get_initiated_emitter(mode)
     error = CraftError("test message")
     emitter.error(error)
@@ -776,9 +776,9 @@ def test_reporterror_simple_message_only_quietish(mode, get_initiated_emitter):
     ]
 
 
-@pytest.mark.parametrize("mode", [EmitterMode.VERBOSE, EmitterMode.TRACE])
-def test_reporterror_simple_message_only_verboseish(mode, get_initiated_emitter):
-    """Report just a simple message, in more verbose modes."""
+@pytest.mark.parametrize("mode", [EmitterMode.DEBUG, EmitterMode.TRACE])
+def test_reporterror_simple_message_developer_modes(mode, get_initiated_emitter):
+    """Report just a simple message, in developer intended modes."""
     emitter = get_initiated_emitter(mode)
     error = CraftError("test message")
     emitter.error(error)
@@ -791,9 +791,9 @@ def test_reporterror_simple_message_only_verboseish(mode, get_initiated_emitter)
     ]
 
 
-@pytest.mark.parametrize("mode", [EmitterMode.QUIET, EmitterMode.BRIEF])
-def test_reporterror_detailed_info_quietish(mode, get_initiated_emitter):
-    """Report an error having detailed information, in silent modes."""
+@pytest.mark.parametrize("mode", [EmitterMode.QUIET, EmitterMode.BRIEF, EmitterMode.VERBOSE])
+def test_reporterror_detailed_info_final_user_modes(mode, get_initiated_emitter):
+    """Report an error having detailed information, in final user modes."""
     emitter = get_initiated_emitter(mode)
     error = CraftError("test message", details="boom")
     emitter.error(error)
@@ -807,9 +807,9 @@ def test_reporterror_detailed_info_quietish(mode, get_initiated_emitter):
     ]
 
 
-@pytest.mark.parametrize("mode", [EmitterMode.VERBOSE, EmitterMode.TRACE])
-def test_reporterror_detailed_info_verboseish(mode, get_initiated_emitter):
-    """Report an error having detailed information, in more verbose modes."""
+@pytest.mark.parametrize("mode", [EmitterMode.DEBUG, EmitterMode.TRACE])
+def test_reporterror_detailed_info_developer_modes(mode, get_initiated_emitter):
+    """Report an error having detailed information, in developer intended modes."""
     emitter = get_initiated_emitter(mode)
     error = CraftError("test message", details="boom")
     emitter.error(error)
@@ -823,9 +823,9 @@ def test_reporterror_detailed_info_verboseish(mode, get_initiated_emitter):
     ]
 
 
-@pytest.mark.parametrize("mode", [EmitterMode.QUIET, EmitterMode.BRIEF])
-def test_reporterror_chained_exception_quietish(mode, get_initiated_emitter):
-    """Report an error that was originated after other exception, in silent modes."""
+@pytest.mark.parametrize("mode", [EmitterMode.QUIET, EmitterMode.BRIEF, EmitterMode.VERBOSE])
+def test_reporterror_chained_exception_final_user_modes(mode, get_initiated_emitter):
+    """Report an error that was originated after other exception, in final user modes."""
     emitter = get_initiated_emitter(mode)
     try:
         try:
@@ -853,9 +853,9 @@ def test_reporterror_chained_exception_quietish(mode, get_initiated_emitter):
     tblines_mock.assert_called_with(orig_exception)  # type: ignore  # pylint: disable=used-before-assignment
 
 
-@pytest.mark.parametrize("mode", [EmitterMode.VERBOSE, EmitterMode.TRACE])
-def test_reporterror_chained_exception_verboseish(mode, get_initiated_emitter):
-    """Report an error that was originated after other exception, in more verbose modes."""
+@pytest.mark.parametrize("mode", [EmitterMode.DEBUG, EmitterMode.TRACE])
+def test_reporterror_chained_exception_developer_modes(mode, get_initiated_emitter):
+    """Report an error that was originated after other exception, in developer intended modes."""
     emitter = get_initiated_emitter(mode)
     try:
         try:
@@ -883,9 +883,9 @@ def test_reporterror_chained_exception_verboseish(mode, get_initiated_emitter):
     tblines_mock.assert_called_with(orig_exception)  # type: ignore  # pylint: disable=used-before-assignment
 
 
-@pytest.mark.parametrize("mode", [EmitterMode.QUIET, EmitterMode.BRIEF])
-def test_reporterror_with_resolution_quietish(mode, get_initiated_emitter):
-    """Report an error with a recommended resolution, in silent modes."""
+@pytest.mark.parametrize("mode", [EmitterMode.QUIET, EmitterMode.BRIEF, EmitterMode.VERBOSE])
+def test_reporterror_with_resolution_final_user_modes(mode, get_initiated_emitter):
+    """Report an error with a recommended resolution, in final user modes."""
     emitter = get_initiated_emitter(mode)
     error = CraftError("test message", resolution="run")
     emitter.error(error)
@@ -899,9 +899,9 @@ def test_reporterror_with_resolution_quietish(mode, get_initiated_emitter):
     ]
 
 
-@pytest.mark.parametrize("mode", [EmitterMode.VERBOSE, EmitterMode.TRACE])
-def test_reporterror_with_resolution_verboseish(mode, get_initiated_emitter):
-    """Report an error with a recommended resolution, in more verbose modes."""
+@pytest.mark.parametrize("mode", [EmitterMode.DEBUG, EmitterMode.TRACE])
+def test_reporterror_with_resolution_developer_modes(mode, get_initiated_emitter):
+    """Report an error with a recommended resolution, in developer intended modes."""
     emitter = get_initiated_emitter(mode)
     error = CraftError("test message", resolution="run")
     emitter.error(error)
@@ -915,9 +915,9 @@ def test_reporterror_with_resolution_verboseish(mode, get_initiated_emitter):
     ]
 
 
-@pytest.mark.parametrize("mode", [EmitterMode.QUIET, EmitterMode.BRIEF])
-def test_reporterror_with_docs_quietish(mode, get_initiated_emitter):
-    """Report including a docs url, in silent modes."""
+@pytest.mark.parametrize("mode", [EmitterMode.QUIET, EmitterMode.BRIEF, EmitterMode.VERBOSE])
+def test_reporterror_with_docs_final_user_modes(mode, get_initiated_emitter):
+    """Report including a docs url, in final user modes."""
     emitter = get_initiated_emitter(mode)
     error = CraftError("test message", docs_url="https://charmhub.io/docs/whatever")
     emitter.error(error)
@@ -932,9 +932,9 @@ def test_reporterror_with_docs_quietish(mode, get_initiated_emitter):
     ]
 
 
-@pytest.mark.parametrize("mode", [EmitterMode.VERBOSE, EmitterMode.TRACE])
-def test_reporterror_with_docs_verboseish(mode, get_initiated_emitter):
-    """Report including a docs url, in more verbose modes."""
+@pytest.mark.parametrize("mode", [EmitterMode.DEBUG, EmitterMode.TRACE])
+def test_reporterror_with_docs_developer_modes(mode, get_initiated_emitter):
+    """Report including a docs url, in developer intended modes."""
     emitter = get_initiated_emitter(mode)
     error = CraftError("test message", docs_url="https://charmhub.io/docs/whatever")
     emitter.error(error)
