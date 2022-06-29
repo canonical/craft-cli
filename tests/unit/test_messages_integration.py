@@ -767,63 +767,64 @@ def test_error_unexpected_verbosely(capsys, mode):
     assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)
 
 
-def test_logging_quiet(capsys, logger):
-    """Handle the different logging levels when in quiet mode."""
-    emit = Emitter()
-    emit.init(EmitterMode.QUIET, "testapp", GREETING)
-    logger.error("--error-- %s", "with args")
-    logger.warning("--warning--")
-    logger.info("--info--")
-    logger.debug("--debug--")
-    emit.ended_ok()
-
-    expected_err = [
-        Line("--error-- with args"),
-        Line("--warning--"),
-    ]
-    expected_log = expected_err + [
-        Line("--info--"),
-        Line("--debug--"),
-    ]
-    assert_outputs(capsys, emit, expected_err=expected_err, expected_log=expected_log)
-
-
-def test_logging_brief(capsys, logger):
-    """Handle the different logging levels when in brief mode."""
-    emit = Emitter()
-    emit.init(EmitterMode.BRIEF, "testapp", GREETING)
-    logger.error("--error-- %s", "with args")
-    logger.warning("--warning--")
-    logger.info("--info--")
-    logger.debug("--debug--")
-    emit.ended_ok()
-
-    expected_err = [
-        Line("--error-- with args"),
-        Line("--warning--"),
-        Line("--info--"),
-    ]
-    expected_log = expected_err + [
-        Line("--debug--"),
-    ]
-    assert_outputs(capsys, emit, expected_err=expected_err, expected_log=expected_log)
-
-
 @pytest.mark.parametrize(
     "mode",
     [
-        EmitterMode.VERBOSE,
-        EmitterMode.TRACE,
+        EmitterMode.QUIET,
+        EmitterMode.BRIEF,
     ],
 )
-def test_logging_verboseish(capsys, logger, mode):
-    """Handle the different logging levels when in verboseish modes."""
+def test_logging_in_quietish_modes(capsys, logger, mode):
+    """Handle the different logging levels when in quiet and brief modes."""
     emit = Emitter()
     emit.init(mode, "testapp", GREETING)
     logger.error("--error-- %s", "with args")
     logger.warning("--warning--")
     logger.info("--info--")
     logger.debug("--debug--")
+    logger.log(5, "--custom low level--")
+    emit.ended_ok()
+
+    expected = [
+        Line("--error-- with args"),
+        Line("--warning--"),
+        Line("--info--"),
+        Line("--debug--"),
+    ]
+    assert_outputs(capsys, emit, expected_log=expected)
+
+
+def test_logging_in_verbose_mode(capsys, logger):
+    """Handle the different logging levels when in verbose mode."""
+    emit = Emitter()
+    emit.init(EmitterMode.VERBOSE, "testapp", GREETING)
+    logger.error("--error-- %s", "with args")
+    logger.warning("--warning--")
+    logger.info("--info--")
+    logger.debug("--debug--")
+    logger.log(5, "--custom low level--")
+    emit.ended_ok()
+
+    expected_err = [
+        Line("--error-- with args"),
+        Line("--warning--"),
+        Line("--info--"),
+    ]
+    expected_log = expected_err + [
+        Line("--debug--"),
+    ]
+    assert_outputs(capsys, emit, expected_err=expected_err, expected_log=expected_log)
+
+
+def test_logging_in_debug_mode(capsys, logger):
+    """Handle the different logging levels when in debug mode."""
+    emit = Emitter()
+    emit.init(EmitterMode.DEBUG, "testapp", GREETING)
+    logger.error("--error-- %s", "with args")
+    logger.warning("--warning--")
+    logger.info("--info--")
+    logger.debug("--debug--")
+    logger.log(5, "--custom low level--")
     emit.ended_ok()
 
     expected = [
@@ -831,6 +832,27 @@ def test_logging_verboseish(capsys, logger, mode):
         Line("--warning--", timestamp=True),
         Line("--info--", timestamp=True),
         Line("--debug--", timestamp=True),
+    ]
+    assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)
+
+
+def test_logging_in_trace_mode(capsys, logger):
+    """Handle the different logging levels when in trace mode."""
+    emit = Emitter()
+    emit.init(EmitterMode.TRACE, "testapp", GREETING)
+    logger.error("--error-- %s", "with args")
+    logger.warning("--warning--")
+    logger.info("--info--")
+    logger.debug("--debug--")
+    logger.log(5, "--custom low level--")
+    emit.ended_ok()
+
+    expected = [
+        Line("--error-- with args", timestamp=True),
+        Line("--warning--", timestamp=True),
+        Line("--info--", timestamp=True),
+        Line("--debug--", timestamp=True),
+        Line("--custom low level--", timestamp=True),
     ]
     assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)
 
@@ -955,6 +977,6 @@ def test_logging_after_closing(capsys, logger):
     logger.info("info 2")
 
     expected = [
-        Line("info 1", timestamp=True),
+        Line("info 1"),
     ]
     assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)

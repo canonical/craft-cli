@@ -381,7 +381,7 @@ def test_handler_init(handler):
 
 def test_handler_emit_full_message(handler):
     """Check how the text is retrieved from the logging system."""
-    handler.mode = EmitterMode.QUIET
+    handler.mode = EmitterMode.VERBOSE
     logging.getLogger().error("test message %s", 23)
 
     assert handler.printer.mock_calls == [
@@ -398,10 +398,11 @@ def test_handler_emit_quiet(handler):
     logger.warning("test warning")
     logger.info("test info")
     logger.debug("test debug")
+    logger.log(5, "test custom sub-debug")
 
     assert handler.printer.mock_calls == [
-        call.show(sys.stderr, "test error", use_timestamp=False),
-        call.show(sys.stderr, "test warning", use_timestamp=False),
+        call.show(None, "test error", use_timestamp=False),
+        call.show(None, "test warning", use_timestamp=False),
         call.show(None, "test info", use_timestamp=False),
         call.show(None, "test debug", use_timestamp=False),
     ]
@@ -416,6 +417,26 @@ def test_handler_emit_brief(handler):
     logger.warning("test warning")
     logger.info("test info")
     logger.debug("test debug")
+    logger.log(5, "test custom sub-debug")
+
+    assert handler.printer.mock_calls == [
+        call.show(None, "test error", use_timestamp=False),
+        call.show(None, "test warning", use_timestamp=False),
+        call.show(None, "test info", use_timestamp=False),
+        call.show(None, "test debug", use_timestamp=False),
+    ]
+
+
+def test_handler_emit_verbose(handler):
+    """Check emit behaviour in VERBOSE mode."""
+    handler.mode = EmitterMode.VERBOSE
+
+    logger = logging.getLogger()
+    logger.error("test error")
+    logger.warning("test warning")
+    logger.info("test info")
+    logger.debug("test debug")
+    logger.log(5, "test custom sub-debug")
 
     assert handler.printer.mock_calls == [
         call.show(sys.stderr, "test error", use_timestamp=False),
@@ -425,22 +446,42 @@ def test_handler_emit_brief(handler):
     ]
 
 
-@pytest.mark.parametrize("mode", [EmitterMode.VERBOSE, EmitterMode.TRACE])
-def test_handler_emit_verboseish(handler, mode):
-    """Check emit behaviour in more verbose modes."""
-    handler.mode = mode
+def test_handler_emit_debug(handler):
+    """Check emit behaviour in DEBUG mode."""
+    handler.mode = EmitterMode.DEBUG
 
     logger = logging.getLogger()
     logger.error("test error")
     logger.warning("test warning")
     logger.info("test info")
     logger.debug("test debug")
+    logger.log(5, "test custom sub-debug")
 
     assert handler.printer.mock_calls == [
         call.show(sys.stderr, "test error", use_timestamp=True),
         call.show(sys.stderr, "test warning", use_timestamp=True),
         call.show(sys.stderr, "test info", use_timestamp=True),
         call.show(sys.stderr, "test debug", use_timestamp=True),
+    ]
+
+
+def test_handler_emit_trace(handler):
+    """Check emit behaviour in TRACE mode."""
+    handler.mode = EmitterMode.TRACE
+
+    logger = logging.getLogger()
+    logger.error("test error")
+    logger.warning("test warning")
+    logger.info("test info")
+    logger.debug("test debug")
+    logger.log(5, "test custom sub-debug")
+
+    assert handler.printer.mock_calls == [
+        call.show(sys.stderr, "test error", use_timestamp=True),
+        call.show(sys.stderr, "test warning", use_timestamp=True),
+        call.show(sys.stderr, "test info", use_timestamp=True),
+        call.show(sys.stderr, "test debug", use_timestamp=True),
+        call.show(sys.stderr, "test custom sub-debug", use_timestamp=True),
     ]
 
 

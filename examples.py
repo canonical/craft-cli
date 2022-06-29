@@ -149,10 +149,11 @@ def example_14():
 
     for mode in EmitterMode:
         emit.set_mode(mode)
-        emit.message(f"====== mode: {mode}")
-        logger.error("Some logging in ERROR")
-        logger.info("Some logging in INFO")
-        logger.debug("Some logging in TRACE")
+        emit.progress(f"Mode set to {mode}", permanent=True)
+        logger.error("   some logging in ERROR")
+        logger.info("   some logging in INFO")
+        logger.debug("   some logging in DEBUG")
+        logger.log(5, "   some logging in custom level 5")
 
 
 def example_15():
