@@ -322,7 +322,7 @@ def test_writeline_spintext_length_just_exceeded(capsys, monkeypatch, log_filepa
 
 
 def test_writebar_simple(capsys, monkeypatch, log_filepath):
-    """Complete verification of _write_line for a simple case."""
+    """Complete verification of _write_bar for a simple case."""
     monkeypatch.setattr(messages, "_get_terminal_width", lambda: 40)
     printer = _Printer(log_filepath)
 
@@ -337,6 +337,32 @@ def test_writebar_simple(capsys, monkeypatch, log_filepath):
     # without a finishing newline
     assert len(out) == 39
     assert out == "test text [██████████          ] 50/100"
+
+
+def test_writebar_timestamp(capsys, monkeypatch, log_filepath):
+    """A timestamp was indicated to use."""
+    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 60)
+    printer = _Printer(log_filepath)
+
+    fake_now = datetime(2009, 9, 1, 12, 13, 15, 123456)
+    msg = _MessageInfo(
+        sys.stdout,
+        "test text",
+        bar_progress=50,
+        bar_total=100,
+        use_timestamp=True,
+        created_at=fake_now,
+    )
+    printer._write_bar(msg)
+    assert printer.unfinished_stream == sys.stdout
+
+    out, err = capsys.readouterr()
+    assert not err
+
+    # output completes the terminal width (leaving space for the cursor), and
+    # without a finishing newline
+    assert len(out) == 59
+    assert out == "2009-09-01 12:13:15.123 test text [████████        ] 50/100"
 
 
 def test_writebar_simple_empty(capsys, monkeypatch, log_filepath):
@@ -606,7 +632,9 @@ def test_progress_bar_valid_streams(stream, recording_printer):
     recording_printer.spinner.prv_msg = _MessageInfo(sys.stdout, "test text")
 
     before = datetime.now()
-    recording_printer.progress_bar(stream, "test text", 20, 100)
+    recording_printer.progress_bar(
+        stream, "test text", progress=20, total=100, use_timestamp=False
+    )
 
     # check message written
     (msg,) = recording_printer.written_bars  # pylint: disable=unbalanced-tuple-unpacking
@@ -651,7 +679,7 @@ def test_spin(isatty, monkeypatch, recording_printer):
 
 def test_progress_bar_no_stream(recording_printer):
     """No stream no message."""
-    recording_printer.progress_bar(None, "test text", 20, 100)
+    recording_printer.progress_bar(None, "test text", progress=20, total=100, use_timestamp=False)
     assert not recording_printer.written_lines
     assert not recording_printer.written_bars
     assert not recording_printer.logged

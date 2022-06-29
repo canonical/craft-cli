@@ -426,12 +426,12 @@ def test_progressbar_in_quiet_mode(get_initiated_emitter):
     emitter = get_initiated_emitter(EmitterMode.QUIET)
     progresser = emitter.progress_bar("some text", 5000)
 
-    assert emitter.printer_calls == [
-        call().show(None, "some text", ephemeral=True),
-    ]
+    assert emitter.printer_calls == []
     assert progresser.total == 5000
     assert progresser.text == "some text"
     assert progresser.stream is None
+    assert progresser.use_timestamp is False
+    assert progresser.ephemeral_context is True
 
 
 def test_progressbar_in_brief_mode(get_initiated_emitter):
@@ -439,13 +439,13 @@ def test_progressbar_in_brief_mode(get_initiated_emitter):
     emitter = get_initiated_emitter(EmitterMode.BRIEF)
     progresser = emitter.progress_bar("some text", 5000)
 
-    assert emitter.printer_calls == [
-        call().show(sys.stderr, "some text", ephemeral=True),
-    ]
+    assert emitter.printer_calls == []
     assert progresser.total == 5000
     assert progresser.text == "some text"
     assert progresser.stream == sys.stderr
     assert progresser.delta is True
+    assert progresser.use_timestamp is False
+    assert progresser.ephemeral_context is True
 
 
 def test_progressbar_in_verbose_mode(get_initiated_emitter):
@@ -453,13 +453,13 @@ def test_progressbar_in_verbose_mode(get_initiated_emitter):
     emitter = get_initiated_emitter(EmitterMode.VERBOSE)
     progresser = emitter.progress_bar("some text", 5000)
 
-    assert emitter.printer_calls == [
-        call().show(sys.stderr, "some text", ephemeral=True),
-    ]
+    assert emitter.printer_calls == []
     assert progresser.total == 5000
     assert progresser.text == "some text"
     assert progresser.stream == sys.stderr
     assert progresser.delta is True
+    assert progresser.use_timestamp is False
+    assert progresser.ephemeral_context is False
 
 
 @pytest.mark.parametrize(
@@ -474,13 +474,13 @@ def test_progressbar_in_developer_modes(get_initiated_emitter, mode):
     emitter = get_initiated_emitter(mode)
     progresser = emitter.progress_bar("some text", 5000)
 
-    assert emitter.printer_calls == [
-        call().show(sys.stderr, "some text", ephemeral=True),
-    ]
+    assert emitter.printer_calls == []
     assert progresser.total == 5000
     assert progresser.text == "some text"
     assert progresser.stream == sys.stderr
     assert progresser.delta is True
+    assert progresser.use_timestamp is True
+    assert progresser.ephemeral_context is False
 
 
 def test_progressbar_with_delta_false(get_initiated_emitter):
