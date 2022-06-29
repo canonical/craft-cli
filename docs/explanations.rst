@@ -428,22 +428,70 @@ The last column of the table though is not about the screen: it indicates if the
        | timestamp
      - | only when 
        | level=trace
-   * - **error ending**
-     - | stderr
-       | permanent
-       | plain
-     - | stderr
-       | permanent
-       | plain
-     - | stderr
-       | permanent
-       | plain
-     - | stderr
-       | permanent
-       | plain
-     - | stderr
-       | permanent
-       | plain
-     - yes
 
 (*) when redirected to a file it doesn't make sense to have "transient" messages, so 'progress' messages will always end in a newline, and 'progress_bar' will just send its message line but without the progress indication.
+
+When the application ends in error it should call the ``emit.error()`` method passing a ``CraftError`` instance. According to the verbosity level some information will be exposed or not. The following table details what happens in each case: which ``CraftError`` attribute is exposed and how the information is shown (similar to the other table above):
+
+.. list-table::
+   :header-rows: 1
+
+   * -
+     - QUIET
+     - BRIEF
+     - VERBOSE
+     - DEBUG
+     - TRACE
+     - also to logfile
+   * - the error message
+     - yes
+     - yes
+     - yes
+     - yes
+     - yes
+     - yes
+   * - full tracebacks
+     - no
+     - no
+     - no
+     - yes
+     - yes
+     - yes
+   * - ``.details``
+     - no
+     - no
+     - no
+     - yes
+     - yes
+     - yes
+   * - ``.resolution``
+     - yes
+     - yes
+     - yes
+     - yes
+     - yes
+     - yes
+   * - ``.docs_url``
+     - yes
+     - yes
+     - yes
+     - yes
+     - yes
+     - yes
+   * - how is it shown
+     - | stderr
+       | permanent
+       | plain
+     - | stderr
+       | permanent
+       | plain
+     - | stderr
+       | permanent
+       | plain
+     - | stderr
+       | permanent
+       | timestamp
+     - | stderr
+       | permanent
+       | timestamp
+     - yes

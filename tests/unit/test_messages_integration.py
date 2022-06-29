@@ -619,10 +619,11 @@ def test_third_party_output_developer_modes(capsys, tmp_path, mode):
     [
         EmitterMode.QUIET,
         EmitterMode.BRIEF,
+        EmitterMode.VERBOSE,
     ],
 )
 def test_simple_errors_quietly(capsys, mode):
-    """Error because of application or external rules, quiet and brief mode."""
+    """Error because of application or external rules, final user modes."""
     emit = Emitter()
     emit.init(mode, "testapp", GREETING)
     error = CraftError(
@@ -640,13 +641,12 @@ def test_simple_errors_quietly(capsys, mode):
 @pytest.mark.parametrize(
     "mode",
     [
-        EmitterMode.VERBOSE,
         EmitterMode.DEBUG,
         EmitterMode.TRACE,
     ],
 )
-def test_simple_errors_verbosely(capsys, mode):
-    """Error because of application or external rules, more verbose modes."""
+def test_simple_errors_debugish(capsys, mode):
+    """Error because of application or external rules, more debugish modes."""
     emit = Emitter()
     emit.init(mode, "testapp", GREETING)
     error = CraftError(
@@ -666,10 +666,11 @@ def test_simple_errors_verbosely(capsys, mode):
     [
         EmitterMode.QUIET,
         EmitterMode.BRIEF,
+        EmitterMode.VERBOSE,
     ],
 )
 def test_error_api_quietly(capsys, mode):
-    """Somewhat expected API error, quiet and brief mode."""
+    """Somewhat expected API error, final user modes."""
     emit = Emitter()
     emit.init(mode, "testapp", GREETING)
     full_error = {"message": "Invalid channel.", "code": "BAD-CHANNEL"}
@@ -688,13 +689,12 @@ def test_error_api_quietly(capsys, mode):
 @pytest.mark.parametrize(
     "mode",
     [
-        EmitterMode.VERBOSE,
         EmitterMode.DEBUG,
         EmitterMode.TRACE,
     ],
 )
-def test_error_api_verbosely(capsys, mode):
-    """Somewhat expected API error, more verbose modes."""
+def test_error_api_debugish(capsys, mode):
+    """Somewhat expected API error, more debugish modes."""
     emit = Emitter()
     emit.init(mode, "testapp", GREETING)
     full_error = {"message": "Invalid channel.", "code": "BAD-CHANNEL"}
@@ -714,10 +714,11 @@ def test_error_api_verbosely(capsys, mode):
     [
         EmitterMode.QUIET,
         EmitterMode.BRIEF,
+        EmitterMode.VERBOSE,
     ],
 )
 def test_error_unexpected_quietly(capsys, mode):
-    """Unexpected error from a 3rd party or application crash, quiet and brief mode."""
+    """Unexpected error from a 3rd party or application crash, final user modes."""
     emit = Emitter()
     emit.init(mode, "testapp", GREETING)
     try:
@@ -741,13 +742,12 @@ def test_error_unexpected_quietly(capsys, mode):
 @pytest.mark.parametrize(
     "mode",
     [
-        EmitterMode.VERBOSE,
         EmitterMode.DEBUG,
         EmitterMode.TRACE,
     ],
 )
-def test_error_unexpected_verbosely(capsys, mode):
-    """Unexpected error from a 3rd party or application crash, more verbose modes."""
+def test_error_unexpected_debugish(capsys, mode):
+    """Unexpected error from a 3rd party or application crash, more debugish modes."""
     emit = Emitter()
     emit.init(mode, "testapp", GREETING)
     try:
