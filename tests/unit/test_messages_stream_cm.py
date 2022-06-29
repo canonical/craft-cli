@@ -49,7 +49,7 @@ def test_streamcm_init_silent(recording_printer):
     )
 
     # no initial message
-    assert not recording_printer.written_lines
+    assert not recording_printer.written_terminal_lines
 
     # check it used the pipe reader correctly
     assert isinstance(scm.pipe_reader, _PipeReaderThread)
@@ -66,7 +66,7 @@ def test_streamcm_init_with_stream(recording_printer, stream):
     )
 
     # initial message
-    (msg,) = recording_printer.written_lines  # pylint: disable=unbalanced-tuple-unpacking
+    (msg,) = recording_printer.written_terminal_lines  # pylint: disable=unbalanced-tuple-unpacking
     assert msg.stream == stream
     assert msg.text == "initial text"
     assert msg.use_timestamp is False
@@ -90,7 +90,7 @@ def test_streamcm_init_with_stream_and_timestamp(recording_printer, stream):
     )
 
     # initial message
-    (msg,) = recording_printer.written_lines  # pylint: disable=unbalanced-tuple-unpacking
+    (msg,) = recording_printer.written_terminal_lines  # pylint: disable=unbalanced-tuple-unpacking
     assert msg.stream == stream
     assert msg.text == "initial text"
     assert msg.use_timestamp is True
@@ -141,7 +141,7 @@ def test_pipereader_simple(recording_printer, stream):
     os.write(prt.write_pipe, b"123\n")
     prt.stop()
 
-    (msg,) = recording_printer.written_lines  # pylint: disable=unbalanced-tuple-unpacking
+    (msg,) = recording_printer.written_terminal_lines  # pylint: disable=unbalanced-tuple-unpacking
     assert msg.stream == stream
     assert msg.text == ":: 123"  # unicode, with the prefix, and without the newline
     assert msg.use_timestamp is False
@@ -159,7 +159,7 @@ def test_pipereader_with_timestamp(recording_printer, stream):
     os.write(prt.write_pipe, b"123\n")
     prt.stop()
 
-    (msg,) = recording_printer.written_lines  # pylint: disable=unbalanced-tuple-unpacking
+    (msg,) = recording_printer.written_terminal_lines  # pylint: disable=unbalanced-tuple-unpacking
     assert msg.stream == stream
     assert msg.text == ":: 123"  # unicode, with the prefix, and without the newline
     assert msg.use_timestamp is True
@@ -192,6 +192,6 @@ def test_pipereader_chunk_assembler(recording_printer, monkeypatch):
 
     prt.stop()
 
-    msg1, msg2 = recording_printer.written_lines
+    msg1, msg2 = recording_printer.written_terminal_lines
     assert msg1.text == ":: ------abcde---"
     assert msg2.text == ":: otherline---"
