@@ -277,7 +277,8 @@ def test_progressbar_quiet(capsys):
 
     # nothing to the screen, just to the log
     expected_log = [
-        Line("Uploading stuff"),
+        Line("Uploading stuff (--->)"),
+        Line("Uploading stuff (<---)"),
     ]
     assert_outputs(capsys, emit, expected_log=expected_log)
 
@@ -304,14 +305,16 @@ def test_progressbar_brief_terminal(capsys, monkeypatch):
     emit.ended_ok()
 
     expected_screen = [
-        Line("Uploading stuff", permanent=False),
+        Line("Uploading stuff (--->)", permanent=False),
         Line("Uploading stuff [████████████                    ] 700/1788", permanent=False),
         Line("Uploading stuff [████████████████████████       ] 1400/1788", permanent=False),
         Line("Uploading stuff [███████████████████████████████] 1788/1788", permanent=False),
+        Line("Uploading stuff (<---)", permanent=False),
         Line("And so on", permanent=True),
     ]
     expected_log = [
-        Line("Uploading stuff"),
+        Line("Uploading stuff (--->)"),
+        Line("Uploading stuff (<---)"),
         Line("And so on"),
     ]
     assert_outputs(capsys, emit, expected_err=expected_screen, expected_log=expected_log)
@@ -339,14 +342,16 @@ def test_progressbar_verbose(capsys, monkeypatch):
     emit.ended_ok()
 
     expected_screen = [
-        Line("Uploading stuff", permanent=False),
+        Line("Uploading stuff (--->)", permanent=True),  # this starting line will endure
         Line("Uploading stuff [████████████                    ] 700/1788", permanent=False),
         Line("Uploading stuff [████████████████████████       ] 1400/1788", permanent=False),
         Line("Uploading stuff [███████████████████████████████] 1788/1788", permanent=False),
+        Line("Uploading stuff (<---)", permanent=True),  # this closing line will endure
         Line("And so on", permanent=True),
     ]
     expected_log = [
-        Line("Uploading stuff"),
+        Line("Uploading stuff (--->)"),
+        Line("Uploading stuff (<---)"),
         Line("And so on"),
     ]
     assert_outputs(capsys, emit, expected_err=expected_screen, expected_log=expected_log)
@@ -381,14 +386,16 @@ def test_progressbar_developer_modes(capsys, mode, monkeypatch):
     emit.ended_ok()
 
     expected_screen = [
-        Line("Uploading stuff", permanent=False),
-        Line("Uploading stuff [████████████                    ] 700/1788", permanent=False),
-        Line("Uploading stuff [████████████████████████       ] 1400/1788", permanent=False),
-        Line("Uploading stuff [███████████████████████████████] 1788/1788", permanent=False),
+        Line("Uploading stuff (--->)", permanent=True, timestamp=True),  # this line will endure
+        Line("Uploading stuff [███     ] 700/1788", permanent=False, timestamp=True),
+        Line("Uploading stuff [█████  ] 1400/1788", permanent=False, timestamp=True),
+        Line("Uploading stuff [███████] 1788/1788", permanent=False, timestamp=True),
+        Line("Uploading stuff (<---)", permanent=True, timestamp=True),  # this line will endure
         Line("And so on", permanent=True, timestamp=True),
     ]
     expected_log = [
-        Line("Uploading stuff"),
+        Line("Uploading stuff (--->)"),
+        Line("Uploading stuff (<---)"),
         Line("And so on"),
     ]
     assert_outputs(capsys, emit, expected_err=expected_screen, expected_log=expected_log)
