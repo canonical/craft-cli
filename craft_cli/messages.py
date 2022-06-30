@@ -239,7 +239,7 @@ class _Printer:
         if not TESTMODE:
             self.spinner.start()
 
-    def _write_line(self, message: _MessageInfo, *, spintext: str = "") -> None:
+    def _write_line_terminal(self, message: _MessageInfo, *, spintext: str = "") -> None:
         """Write a simple line message to the screen."""
         # prepare the text with (maybe) the timestamp
         if message.use_timestamp:
@@ -287,7 +287,7 @@ class _Printer:
         else:
             self.unfinished_stream = message.stream
 
-    def _write_bar(self, message: _MessageInfo) -> None:
+    def _write_bar_terminal(self, message: _MessageInfo) -> None:
         """Write a progress bar to the screen."""
         # prepare the text with (maybe) the timestamp
         if message.use_timestamp:
@@ -338,12 +338,12 @@ class _Printer:
         if msg.bar_progress is None:
             # regular message, send it to the spinner and write it
             self.spinner.supervise(msg)
-            self._write_line(msg)
+            self._write_line_terminal(msg)
         else:
             # progress bar, send None to the spinner (as it's not a "spinnable" message)
             # and write it
             self.spinner.supervise(None)
-            self._write_bar(msg)
+            self._write_bar_terminal(msg)
         self.prv_msg = msg
 
     def _log(self, message: _MessageInfo) -> None:
@@ -353,9 +353,9 @@ class _Printer:
         self.log.write(f"{timestamp_str} {message.text}\n")
 
     def spin(self, message: _MessageInfo, spintext: str) -> None:
-        """Write a line message including a spin text."""
+        """Write a line message including a spin text, only to a terminal."""
         if _stream_is_terminal(message.stream):
-            self._write_line(message, spintext=spintext)
+            self._write_line_terminal(message, spintext=spintext)
 
     def show(
         self,
