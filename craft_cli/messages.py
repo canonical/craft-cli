@@ -349,7 +349,7 @@ class _Printer:
         if msg.stream is None:
             return
 
-        # the writing functions depend of the final output: if the stream is captured or it's
+        # the writing functions depend on the final output: if the stream is captured or it's
         # a real terminal
         if _stream_is_terminal(msg.stream):
             write_line = self._write_line_terminal
