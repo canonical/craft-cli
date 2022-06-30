@@ -146,7 +146,7 @@ def test_getlogpath_supports_missing_file_to_unlink(test_log_dir, monkeypatch):
 
     def mitm(self, *a, **k):
         if self.name.startswith("testapp") and self.name.endswith(".log"):
-            # it's trying to remove the log file, let's remove it us first
+            # it's trying to remove the log file, let's remove it first
             orig_method(self)
         orig_method(self, *a, **k)
 
