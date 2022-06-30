@@ -126,7 +126,9 @@ def _get_log_filepath(appname: str) -> pathlib.Path:
     limit = _MAX_LOG_FILES - 1
     if len(present_files) > limit:
         for fpath in sorted(present_files)[:-limit]:
-            fpath.unlink()
+            # ignore if it's not there anymore, which can happen if this code is exercised in
+            # parallel or when tearing down instances
+            fpath.unlink(missing_ok=True)
 
     return basedir / filename
 
