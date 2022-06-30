@@ -1,5 +1,5 @@
 #
-# Copyright 2021 Canonical Ltd.
+# Copyright 2021-2022 Canonical Ltd.
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -37,6 +37,12 @@ def thread_guard(tmp_path):
     for thread in threading.enumerate():
         if isinstance(thread, _PipeReaderThread):
             thread.stop()
+
+
+@pytest.fixture(autouse=True)
+def force_terminal_behaviour(monkeypatch):
+    """Fixture to force the "terminal" behaviour."""
+    monkeypatch.setattr(messages, "_stream_is_terminal", lambda stream: True)
 
 
 # -- tests for the stream context manager

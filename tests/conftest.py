@@ -42,6 +42,8 @@ class RecordingPrinter(_Printer):
         super().__init__(*args, **kwargs)
         self.written_terminal_lines = []
         self.written_terminal_bars = []
+        self.written_captured_lines = []
+        self.written_captured_bars = []
         self.logged = []
         self.spinner = RecordingSpinner(self)
         self.spinner.start()
@@ -56,6 +58,14 @@ class RecordingPrinter(_Printer):
     def _write_bar_terminal(self, message):
         """Overwrite the real one to avoid it and record the message."""
         self.written_terminal_bars.append(message)
+
+    def _write_line_captured(self, message):
+        """Overwrite the real one to avoid it and record the message."""
+        self.written_captured_lines.append(message)
+
+    def _write_bar_captured(self, message):
+        """Overwrite the real one to avoid it and record the message."""
+        self.written_captured_bars.append(message)
 
     def _log(self, message):
         """Overwrite the real one to avoid it and record the message."""
