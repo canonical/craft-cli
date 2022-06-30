@@ -318,6 +318,47 @@ def test_writelineterminal_spintext_length_just_exceeded(capsys, monkeypatch, lo
     assert out == "\r0x1x2x3x4x… * 3.15s"
 
 
+# -- tests for the writing line (captured version) function
+
+
+@pytest.mark.parametrize(
+    "test_text",
+    [
+        "test text",
+        "012345678901234567890123456789",
+        "a very long, long text -" * 20,
+    ],
+)
+def test_writelinecaptured_simple_complete(capsys, monkeypatch, log_filepath, test_text):
+    """Complete verification of _write_line_captured several text cases."""
+    printer = _Printer(log_filepath)
+
+    msg = _MessageInfo(sys.stdout, test_text)
+    printer._write_line_captured(msg)
+    assert printer.unfinished_stream is None
+
+    out, err = capsys.readouterr()
+    assert not err
+
+    # output is just the text with the finishing newline
+    assert out == test_text + "\n"
+
+
+def test_writelinecaptured_with_timestamp(capsys, monkeypatch, log_filepath):
+    """A timestamp was indicated to use."""
+    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 40)
+    printer = _Printer(log_filepath)
+
+    fake_now = datetime(2009, 9, 1, 12, 13, 15, 123456)
+    msg = _MessageInfo(sys.stdout, "test text", use_timestamp=True, created_at=fake_now)
+    printer._write_line_captured(msg)
+
+    out, _ = capsys.readouterr()
+
+    # output is just the timestamp and the text with the finishing newline
+    assert out == "2009-09-01 12:13:15.123 test text\n"
+
+
 # -- tests for the writing bar (terminal version) function
 
 
@@ -508,6 +549,22 @@ def test_writebarterminal_having_previous_message_ephemeral(capsys, monkeypatch,
     assert not err
 
 
+# -- tests for the writing bar (captured version) function
+
+
+def test_writebarcaptured_simple(capsys, monkeypatch, log_filepath):
+    """Complete verification of _write_bar_captured for a simple case."""
+    printer = _Printer(log_filepath)
+
+    msg = _MessageInfo(sys.stdout, "test text", bar_progress=50, bar_total=100)
+    printer._write_bar_captured(msg)
+    assert printer.unfinished_stream is None
+
+    out, err = capsys.readouterr()
+    assert not err
+    assert not out
+
+
 # -- tests for the logging handling
 
 
@@ -556,9 +613,11 @@ def test_show_defaults_no_stream(recording_printer):
     assert msg.bar_progress is None
     assert msg.bar_total is None
 
-    # no stream, the message si not sent to screen
+    # no stream, the message si not sent
     assert not recording_printer.written_terminal_lines
     assert not recording_printer.written_terminal_bars
+    assert not recording_printer.written_captured_lines
+    assert not recording_printer.written_captured_bars
 
     # check nothing was stored (as was not sent to the screen)
     assert recording_printer.prv_msg is None
@@ -567,16 +626,17 @@ def test_show_defaults_no_stream(recording_printer):
     assert not recording_printer.spinner.supervised
 
 
-@pytest.mark.parametrize("isatty", [True, False])
 @pytest.mark.parametrize("stream", [sys.stdout, sys.stderr])
-def test_show_defaults(stream, isatty, monkeypatch, recording_printer):
-    """Write a message with all defaults (for the different valid streams)."""
-    monkeypatch.setattr(stream, "isatty", lambda: isatty)
+def test_show_defaults_terminal(stream, monkeypatch, recording_printer):
+    """Write a message with all defaults (for the different valid streams), having a terminal."""
+    monkeypatch.setattr(stream, "isatty", lambda: True)
     before = datetime.now()
     recording_printer.show(stream, "test text")
 
     # check message written
     assert not recording_printer.written_terminal_bars
+    assert not recording_printer.written_captured_bars
+    assert not recording_printer.written_captured_lines
     (msg,) = recording_printer.written_terminal_lines  # pylint: disable=unbalanced-tuple-unpacking
     assert msg.stream == stream
     assert msg.text == "test text"
@@ -598,36 +658,73 @@ def test_show_defaults(stream, isatty, monkeypatch, recording_printer):
     assert recording_printer.spinner.supervised == [msg]
 
 
-def test_show_use_timestamp(recording_printer):
+@pytest.mark.parametrize("stream", [sys.stdout, sys.stderr])
+def test_show_defaults_captured(stream, monkeypatch, recording_printer):
+    """Write a message with all defaults (for the different valid streams), captured output."""
+    monkeypatch.setattr(stream, "isatty", lambda: False)
+    before = datetime.now()
+    recording_printer.show(stream, "test text")
+
+    # check message written
+    assert not recording_printer.written_terminal_bars
+    assert not recording_printer.written_captured_bars
+    assert not recording_printer.written_terminal_lines
+    (msg,) = recording_printer.written_captured_lines  # pylint: disable=unbalanced-tuple-unpacking
+    assert msg.stream == stream
+    assert msg.text == "test text"
+    assert msg.use_timestamp is False
+    assert msg.end_line is False
+    assert msg.ephemeral is False
+    assert before <= msg.created_at <= datetime.now()
+    assert msg.bar_progress is None
+    assert msg.bar_total is None
+
+    # check it was properly stored for the future
+    assert recording_printer.prv_msg is msg  # verify it's the same (not rebuilt) for timestamp
+
+    # check it was also logged
+    (logged,) = recording_printer.logged
+    assert msg is logged
+
+    # the spinner now has the shown message to supervise
+    assert recording_printer.spinner.supervised == [msg]
+
+
+def test_show_use_timestamp(recording_printer, monkeypatch):
     """Control on message's use_timestamp flag."""
+    monkeypatch.setattr(sys.stdout, "isatty", lambda: True)
     recording_printer.show(sys.stdout, "test text", use_timestamp=True)
     (msg,) = recording_printer.written_terminal_lines  # pylint: disable=unbalanced-tuple-unpacking
     assert msg.use_timestamp is True
 
 
-def test_show_end_line(recording_printer):
+def test_show_end_line(recording_printer, monkeypatch):
     """Control on message's end_line flag."""
+    monkeypatch.setattr(sys.stdout, "isatty", lambda: True)
     recording_printer.show(sys.stdout, "test text", end_line=True)
     (msg,) = recording_printer.written_terminal_lines  # pylint: disable=unbalanced-tuple-unpacking
     assert msg.end_line is True
 
 
-def test_show_avoid_logging(recording_printer):
+def test_show_avoid_logging(recording_printer, monkeypatch):
     """Control if some message should avoid being logged."""
     recording_printer.show(sys.stdout, "test text", avoid_logging=True)
     assert not recording_printer.logged
 
 
-def test_show_ephemeral(recording_printer):
+def test_show_ephemeral(recording_printer, monkeypatch):
     """Control if some message is ephemeral."""
+    monkeypatch.setattr(sys.stdout, "isatty", lambda: True)
     recording_printer.show(sys.stdout, "test text", ephemeral=True)
     (msg,) = recording_printer.written_terminal_lines  # pylint: disable=unbalanced-tuple-unpacking
     assert msg.ephemeral is True
 
 
 @pytest.mark.parametrize("stream", [sys.stdout, sys.stderr])
-def test_progress_bar_valid_streams_terminal(stream, recording_printer):
+def test_progress_bar_valid_streams_terminal(stream, recording_printer, monkeypatch):
     """Write a progress bar for the different valid streams, having a terminal."""
+    monkeypatch.setattr(stream, "isatty", lambda: True)
+
     # set a message in the spinner, to check that writing a progress bar will remove it
     recording_printer.spinner.prv_msg = _MessageInfo(sys.stdout, "test text")
 
@@ -637,6 +734,10 @@ def test_progress_bar_valid_streams_terminal(stream, recording_printer):
     )
 
     # check message written
+    assert not recording_printer.written_terminal_lines
+    assert not recording_printer.written_captured_lines
+    assert not recording_printer.written_captured_bars
+    assert not recording_printer.logged
     (msg,) = recording_printer.written_terminal_bars  # pylint: disable=unbalanced-tuple-unpacking
     assert msg.stream == stream
     assert msg.text == "test text"
@@ -647,9 +748,40 @@ def test_progress_bar_valid_streams_terminal(stream, recording_printer):
     assert msg.ephemeral is True
     assert before <= msg.created_at <= datetime.now()
 
-    # only write_bar was used
+    # check it was properly stored for the future
+    assert recording_printer.prv_msg is msg  # verify it's the same (not rebuilt) for timestamp
+
+    # the spinner message was removed
+    assert recording_printer.spinner.supervised == [None]
+
+
+@pytest.mark.parametrize("stream", [sys.stdout, sys.stderr])
+def test_progress_bar_valid_streams_captured(stream, recording_printer, monkeypatch):
+    """Write a progress bar for the different valid streams, captured output."""
+    monkeypatch.setattr(stream, "isatty", lambda: False)
+
+    # set a message in the spinner, to check that writing a progress bar will remove it
+    recording_printer.spinner.prv_msg = _MessageInfo(sys.stdout, "test text")
+
+    before = datetime.now()
+    recording_printer.progress_bar(
+        stream, "test text", progress=20, total=100, use_timestamp=False
+    )
+
+    # check message written
     assert not recording_printer.written_terminal_lines
+    assert not recording_printer.written_captured_lines
+    assert not recording_printer.written_terminal_bars
     assert not recording_printer.logged
+    (msg,) = recording_printer.written_captured_bars  # pylint: disable=unbalanced-tuple-unpacking
+    assert msg.stream == stream
+    assert msg.text == "test text"
+    assert msg.bar_progress == 20
+    assert msg.bar_total == 100
+    assert msg.use_timestamp is False
+    assert msg.end_line is False
+    assert msg.ephemeral is True
+    assert before <= msg.created_at <= datetime.now()
 
     # check it was properly stored for the future
     assert recording_printer.prv_msg is msg  # verify it's the same (not rebuilt) for timestamp
@@ -682,6 +814,8 @@ def test_progress_bar_no_stream(recording_printer):
     recording_printer.progress_bar(None, "test text", progress=20, total=100, use_timestamp=False)
     assert not recording_printer.written_terminal_lines
     assert not recording_printer.written_terminal_bars
+    assert not recording_printer.written_captured_lines
+    assert not recording_printer.written_captured_bars
     assert not recording_printer.logged
     assert recording_printer.prv_msg is None
 
@@ -695,6 +829,8 @@ def test_show_when_stopped(recording_printer):
     assert not recording_printer.logged
     assert not recording_printer.written_terminal_lines
     assert not recording_printer.written_terminal_bars
+    assert not recording_printer.written_captured_lines
+    assert not recording_printer.written_captured_bars
     assert recording_printer.prv_msg is None
     assert not recording_printer.spinner.supervised
 
