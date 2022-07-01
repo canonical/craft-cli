@@ -18,6 +18,7 @@
 
 import datetime
 import logging
+import pathlib
 import re
 import sys
 import time
@@ -128,6 +129,31 @@ def test_getlogpath_exceeds_rotation_limit(test_log_dir, monkeypatch):
     new_fpath.touch()
     present_logs = sorted((test_log_dir / "testapp").iterdir())
     assert present_logs == previous_fpaths[1:] + [new_fpath]
+
+
+def test_getlogpath_supports_missing_file_to_unlink(test_log_dir, monkeypatch):
+    """It's ok if the file to unlink was previously removed."""
+    monkeypatch.setattr(messages, "_MAX_LOG_FILES", 3)
+    previous_fpaths = []
+    for _ in range(3):
+        fpath = _get_log_filepath("testapp")
+        fpath.touch()
+        previous_fpaths.append(fpath)
+        time.sleep(0.01)  # sleep a little so different log files have different timestamps
+
+    # hook a MITM function to remove the file before it was unlinked
+    orig_method = pathlib.Path.unlink
+
+    def mitm(self, *a, **k):
+        if self.name.startswith("testapp") and self.name.endswith(".log"):
+            # it's trying to remove the log file, let's remove it first
+            orig_method(self)
+        orig_method(self, *a, **k)
+
+    monkeypatch.setattr(pathlib.Path, "unlink", mitm)
+
+    # exercise the code
+    _get_log_filepath("testapp")
 
 
 def test_getlogpath_ignore_other_files(test_log_dir, monkeypatch):
