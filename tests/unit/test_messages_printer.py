@@ -70,6 +70,49 @@ def test_terminal_width():
     assert messages._get_terminal_width() == shutil.get_terminal_size().columns
 
 
+def test_streamisterminal_no_isatty_method():
+    """The stream does not have an isatty method."""
+    stream = object()
+    assert not hasattr(stream, "isatty")
+    result = messages._stream_is_terminal(stream)
+    assert result is False
+
+
+def test_streamisterminal_tty_not():
+    """The stream is not a terminal."""
+
+    class FakeStream:
+        def isatty(self):
+            return False
+
+    result = messages._stream_is_terminal(FakeStream())
+    assert result is False
+
+
+def test_streamisterminal_tty_yes_usable(monkeypatch):
+    """The stream is a terminal of use."""
+    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 40)
+
+    class FakeStream:
+        def isatty(self):
+            return True
+
+    result = messages._stream_is_terminal(FakeStream())
+    assert result is True
+
+
+def test_streamisterminal_tty_yes_unusable(monkeypatch):
+    """The stream is a terminal that cannot really be used (no columns!)."""
+    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 0)
+
+    class FakeStream:
+        def isatty(self):
+            return True
+
+    result = messages._stream_is_terminal(FakeStream())
+    assert result is False
+
+
 # -- tests for the writing line (terminal version) function
 
 

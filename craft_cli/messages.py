@@ -55,7 +55,8 @@ from craft_cli import errors
 
 @lru_cache
 def _stream_is_terminal(stream: Union[TextIO, None]) -> bool:
-    return getattr(stream, "isatty", lambda: False)()
+    is_a_terminal = getattr(stream, "isatty", lambda: False)()
+    return is_a_terminal and _get_terminal_width() > 0
 
 
 @dataclass
