@@ -72,13 +72,16 @@ paste, but please pay attention to details!
     mkdir /tmp/testrelease
     cp dist/craft-cli-X.Y.Z.tar.gz /tmp/testrelease/
     cd /tmp/testrelease/
-    deactivate  # to be sure nothing is picked from the virtualenv
+    deactivate  # to be sure nothing is picked from a previous virtualenv
     tar -xf craft-cli-X.Y.Z.tar.gz
-    PYTHONPATH=craft-cli-X.Y.Z python3 -c "
+    python3 -m venv env
+    env/bin/pip install file:///tmp/testrelease/craft-cli-X.Y.Z
+    PYTHONPATH=craft-cli-X.Y.Z env/bin/python -c "
         from craft_cli import EmitterMode, emit
-        emit.init(EmitterMode.NORMAL, 'explorator', 'Greetings earthlings')
+        emit.init(EmitterMode.BRIEF, 'explorator', 'Greetings earthlings')
         emit.message('The meaning of life is 42.')
         "
+    deactivate
     cd -
 
 
