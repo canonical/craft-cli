@@ -31,6 +31,8 @@ from tests.factory import create_command
 
 # --- Tests for the Dispatcher
 
+emit.init(EmitterMode.DEBUG, "testappname", "greeter")
+
 
 def test_dispatcher_help_init():
     """Init the help infrastructure properly."""
