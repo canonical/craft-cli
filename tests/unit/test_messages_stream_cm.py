@@ -201,3 +201,15 @@ def test_pipereader_chunk_assembler(recording_printer, monkeypatch):
     msg1, msg2 = recording_printer.written_terminal_lines
     assert msg1.text == ":: ------abcde---"
     assert msg2.text == ":: otherline---"
+
+
+def test_no_fail_if_big_number_is_used(recording_printer):
+    """Ensures that all the resources are freed on exit."""
+    # The limit is 1024 both in Linux and BSD, but each object opens two FDs
+    for counter in range(514):
+        print(counter, end="\r")  # just to use the variable
+        prt = _PipeReaderThread(recording_printer, sys.stdout, use_timestamp=False)
+        prt.start()
+        prt.stop()
+
+    assert True
