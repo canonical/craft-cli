@@ -566,14 +566,17 @@ class _PipeReaderThread(threading.Thread):
 
     def _run_posix(self) -> None:
         """Run the thread, handling pipes in the POSIX way."""
+        poller = select.poll()
+        poller.register(self.read_pipe, select.POLLIN)
         while True:
-            rlist, _, _ = select.select([self.read_pipe], [], [], 0.1)
-            if rlist:
+            rlist = poller.poll(0.1)
+            if len(rlist) != 0:
                 data = os.read(self.read_pipe, _PIPE_READER_CHUNK_SIZE)
                 self._write(data)
             elif self.stop_flag:
                 # only quit when nothing left to read
                 break
+        poller.unregister(self.read_pipe)
 
     def _run_windows(self) -> None:
         """Run the thread, handling pipes in the Windows way."""
