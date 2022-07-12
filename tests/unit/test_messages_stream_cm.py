@@ -220,7 +220,9 @@ def test_ensure_pipes_are_closed(recording_printer):
     prt = _PipeReaderThread(recording_printer, sys.stdout, use_timestamp=False)
     prt.start()
     prt.stop()
-    with pytest.raises(Exception):
+    with pytest.raises(OSError) as err:
         os.fstat(prt.read_pipe)
-    with pytest.raises(Exception):
+    assert err.value.errno == 9
+    with pytest.raises(OSError) as err:
         os.fstat(prt.write_pipe)
+    assert err.value.errno == 9
