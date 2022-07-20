@@ -22,7 +22,7 @@ import pytest
 from craft_cli import dispatcher as dispatcher_mod
 from craft_cli.dispatcher import CommandGroup, Dispatcher, GlobalArgument
 from craft_cli.errors import ArgumentParsingError, ProvideHelpException
-from craft_cli.helptexts import HIDDEN, HelpBuilder
+from craft_cli.helptexts import HIDDEN, HelpBuilder, process_overview_for_markdown
 from tests.factory import create_command
 
 # -- building "usage" help
@@ -334,6 +334,128 @@ def test_command_help_text_loneranger():
     """
     )
     assert text == expected
+
+
+# -- tests for the markdown overview processing
+
+
+def test_markdownoverview_single_line():
+    """Simplest text."""
+    overview = textwrap.dedent(
+        """
+        Lorem ipsum.
+    """
+    )
+    result = process_overview_for_markdown(overview)
+    expected = textwrap.dedent(
+        """\
+        Lorem ipsum.
+    """
+    )
+    assert result == expected
+
+
+def test_markdownoverview_single_paragraph():
+    """Just one paragraph."""
+    overview = textwrap.dedent(
+        """
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit,
+        sed do eiusmod tempor incididunt ut labore et dolore
+        magna aliqua.
+    """
+    )
+    result = process_overview_for_markdown(overview)
+    expected = textwrap.dedent(
+        """\
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+    """
+    )
+    assert result == expected
+
+
+def test_markdownoverview_several_paragraphs():
+    """Multi paragraph situation with several extra lines around."""
+    overview = textwrap.dedent(
+        """
+
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit,
+        sed do eiusmod tempor incididunt ut labore et dolore
+        magna aliqua.
+
+        Ut enim ad minim veniam, quis nostrud exercitation.
+
+        Duis aute irure dolor in reprehenderit in voluptate velit
+        esse cillum dolore eu fugiat nulla pariatur.
+
+
+
+    """
+    )
+    result = process_overview_for_markdown(overview)
+    expected = textwrap.dedent(
+        """\
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+
+        Ut enim ad minim veniam, quis nostrud exercitation.
+
+        Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+    """
+    )
+    assert result == expected
+
+
+def test_markdownoverview_code_blocks():
+    """Including blocks that should be monospaced."""
+    overview = textwrap.dedent(
+        """
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit,
+        sed do eiusmod tempor incididunt ut labore et dolore
+        magna aliqua.
+
+            foo
+            bar
+            baz
+
+        Ut enim ad minim veniam, quis nostrud exercitation.
+
+            duis     aute   irure dolor in
+            reprehenderit   in   voluptate
+
+        Some Python code:
+
+            if answer != "42:
+                raise DouglasAdamsError()
+
+
+    """
+    )
+    result = process_overview_for_markdown(overview)
+    expected = textwrap.dedent(
+        """\
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+
+        ```text
+        foo
+        bar
+        baz
+        ```
+
+        Ut enim ad minim veniam, quis nostrud exercitation.
+
+        ```text
+        duis     aute   irure dolor in
+        reprehenderit   in   voluptate
+        ```
+
+        Some Python code:
+
+        ```text
+        if answer != "42:
+            raise DouglasAdamsError()
+        ```
+    """
+    )
+    assert result == expected
 
 
 # -- real execution outputs
