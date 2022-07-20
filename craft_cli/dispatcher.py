@@ -22,7 +22,7 @@ from typing import Any, Dict, List, Optional, Tuple, Type
 
 from craft_cli import EmitterMode, emit
 from craft_cli.errors import ArgumentParsingError, ProvideHelpException
-from craft_cli.helptexts import HelpBuilder
+from craft_cli.helptexts import HelpBuilder, OutputFormat
 
 CommandGroup = namedtuple("CommandGroup", "name commands")
 """Definition of a command group.
@@ -240,33 +240,60 @@ class Dispatcher:  # pylint: disable=too-many-instance-attributes
             help_text = self._help_builder.get_full_help(options)
         return help_text
 
-    def _get_requested_help(self, parameters):
+    def _build_usage_exc(self, text):
+        """Buiold an ArgumentParsingError exception with the usage message from the given text."""
+        raise ArgumentParsingError(self._help_builder.get_usage_message(text))
+
+    def _get_requested_help(
+        self, parameters
+    ):  # pylint: disable=too-many-locals disable=too-many-branches
         """Produce the requested help depending on the rest of the command line params."""
         if len(parameters) == 0:
             # provide a general text when help was requested without parameters
             return self._get_general_help(detailed=False)
-        if len(parameters) > 1:
-            # too many parameters: provide a specific guiding error
-            msg = (
-                "Too many parameters when requesting help; "
-                "pass a command, '--all', or leave it empty"
-            )
-            text = self._help_builder.get_usage_message(msg)
-            raise ArgumentParsingError(text)
+
+        argument_definitions = [
+            GlobalArgument("all", "flag", None, "--all", ""),
+            GlobalArgument("format", "option", None, "--format", ""),
+        ]
+        options, filtered_params = self._parse_options(argument_definitions, parameters)
 
         # special parameter to get detailed help
-        (param,) = parameters
-        if param == "--all":
+        option_format = options["format"]
+        if options["all"] and not option_format:
             # provide a detailed general help when this specific option was included
+            if filtered_params:
+                raise self._build_usage_exc("The --all option is only allowed alone")
             return self._get_general_help(detailed=True)
 
-        # at this point the parameter should be a command
+        if option_format and not filtered_params:
+            msg = "The --format option is allowed only when requesting help for a specific command"
+            raise self._build_usage_exc(msg)
+
         try:
-            cmd_class = self.commands[param]
+            output_format = OutputFormat[option_format] if option_format else OutputFormat.plain
         except KeyError:
-            msg = f"command {param!r} not found to provide help for"
-            text = self._help_builder.get_usage_message(msg)
-            raise ArgumentParsingError(text)  # pylint: disable=raise-missing-from
+            allowed = (repr(of.name) for of in OutputFormat)
+            msg = f"Invalid value for --format; allowed are: {', '.join(sorted(allowed))}"
+            raise self._build_usage_exc(msg)  # pylint: disable=raise-missing-from
+
+        if len(filtered_params) == 1:
+            # at this point the remaining parameter should be a command
+            cmdname = filtered_params[0]
+        else:
+            # too many parameters: provide a specific guiding error; note it cannot be empty at
+            # this point in the code
+            msg = (
+                "Too many parameters when requesting help; "
+                "pass a command (optionally with --format), '--all', or leave it empty"
+            )
+            raise self._build_usage_exc(msg)
+
+        try:
+            cmd_class = self.commands[cmdname]
+        except KeyError:
+            msg = f"command {cmdname!r} not found to provide help for"
+            raise self._build_usage_exc(msg)  # pylint: disable=raise-missing-from
 
         # instantiate the command and fill its arguments
         command = cmd_class(None)
@@ -288,7 +315,7 @@ class Dispatcher:  # pylint: disable=too-many-instance-attributes
                     dest = action.metavar
                 options.append((dest, help_text))
 
-        help_text = self._help_builder.get_command_help(command, options)
+        help_text = self._help_builder.get_command_help(command, options, output_format)
         return help_text
 
     def _build_no_command_error(self, missing_command: str) -> str:
@@ -307,24 +334,13 @@ class Dispatcher:  # pylint: disable=too-many-instance-attributes
         msg = f"no such command {missing_command!r}{extra_similar}"
         return self._help_builder.get_usage_message(msg)
 
-    def pre_parse_args(
-        self, sysargs: List[str]
-    ):  # pylint: disable=too-many-branches disable=too-many-statements
-        """Pre-parse sys args.
-
-        Several steps:
-
-        - extract the global options and detects the possible command and its args
-
-        - validate global options and apply them
-
-        - validate that command is correct (NOT loading and parsing its arguments)
-        """
+    def _parse_options(self, defined_arguments, sysargs):  # pylint: disable=too-many-branches
+        """Parse arguments."""
         # get all arguments (default to what's specified) and those per options, to filter sysargs
         global_args: Dict[str, Any] = {}
         arg_per_option = {}
         options_with_equal = []
-        for arg in self.global_arguments:
+        for arg in defined_arguments:
             if arg.short_option is not None:
                 arg_per_option[arg.short_option] = arg
             arg_per_option[arg.long_option] = arg
@@ -334,7 +350,7 @@ class Dispatcher:  # pylint: disable=too-many-instance-attributes
                 global_args[arg.name] = None
                 options_with_equal.append(arg.long_option + "=")
             else:
-                raise ValueError("Bad global args structure.")
+                raise ValueError("Bad args structure.")
 
         filtered_sysargs = []
         sysargs_it = iter(sysargs)
@@ -347,21 +363,34 @@ class Dispatcher:  # pylint: disable=too-many-instance-attributes
                     try:
                         global_args[arg.name] = next(sysargs_it)
                     except StopIteration:
-                        raise ArgumentParsingError(  # pylint: disable=raise-missing-from
-                            f"The {arg.name!r} option expects one argument."
-                        )
+                        msg = f"The {arg.name!r} option expects one argument."
+                        raise self._build_usage_exc(msg)  # pylint: disable=raise-missing-from
             elif sysarg.startswith(tuple(options_with_equal)):
                 option, value = sysarg.split("=", 1)
                 arg = arg_per_option[option]
                 if not value:
-                    raise ArgumentParsingError(f"The {arg.name!r} option expects one argument.")
+                    raise self._build_usage_exc(f"The {arg.name!r} option expects one argument.")
                 global_args[arg.name] = value
             else:
                 filtered_sysargs.append(sysarg)
+        return global_args, filtered_sysargs
+
+    def pre_parse_args(self, sysargs: List[str]):
+        """Pre-parse sys args.
+
+        Several steps:
+
+        - extract the global options and detects the possible command and its args
+
+        - validate global options and apply them
+
+        - validate that command is correct (NOT loading and parsing its arguments)
+        """
+        global_args, filtered_sysargs = self._parse_options(self.global_arguments, sysargs)
 
         # control and use quiet/verbose/verbosity options
         if sum(1 for key in ("quiet", "verbose", "verbosity") if global_args[key]) > 1:
-            raise ArgumentParsingError(
+            raise self._build_usage_exc(
                 "The 'verbose', 'quiet' and 'verbosity' options are mutually exclusive."
             )
         if global_args["quiet"]:
@@ -372,7 +401,7 @@ class Dispatcher:  # pylint: disable=too-many-instance-attributes
             try:
                 verbosity_level = EmitterMode[global_args["verbosity"].upper()]
             except KeyError:
-                raise ArgumentParsingError(  # pylint: disable=raise-missing-from
+                raise self._build_usage_exc(  # pylint: disable=raise-missing-from
                     "Bad verbosity level; valid values are "
                     "'quiet', 'brief', 'verbose', 'debug' and 'trace'."
                 )
