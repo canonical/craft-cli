@@ -14,6 +14,7 @@
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import argparse
+import textwrap
 from unittest.mock import patch
 
 import pytest
@@ -285,8 +286,13 @@ def test_dispatcher_generic_setup_verbosity_levels_wrong():
     dispatcher = Dispatcher("appname", groups)
     with pytest.raises(ArgumentParsingError) as err:
         dispatcher.pre_parse_args(["--verbosity", "yelling", "somecommand"])
-    assert str(err.value) == (
-        "Bad verbosity level; valid values are 'quiet', 'brief', 'verbose', 'debug' and 'trace'."
+    assert str(err.value) == textwrap.dedent(
+        """\
+        Usage: appname [options] command [args]...
+        Try 'appname -h' for help.
+
+        Error: Bad verbosity level; valid values are 'quiet', 'brief', 'verbose', 'debug' and 'trace'.
+    """
     )
 
 
@@ -324,8 +330,13 @@ def test_dispatcher_generic_setup_mutually_exclusive(options):
     dispatcher = Dispatcher("appname", groups)
     with pytest.raises(ArgumentParsingError) as err:
         dispatcher.pre_parse_args(options)
-    assert str(err.value) == (
-        "The 'verbose', 'quiet' and 'verbosity' options are mutually exclusive."
+    assert str(err.value) == textwrap.dedent(
+        """\
+        Usage: appname [options] command [args]...
+        Try 'appname -h' for help.
+
+        Error: The 'verbose', 'quiet' and 'verbosity' options are mutually exclusive.
+    """
     )
 
 
@@ -367,7 +378,14 @@ def test_dispatcher_generic_setup_paramglobal_without_param_simple(options):
     dispatcher = Dispatcher("appname", groups, extra_global_args=[extra])
     with pytest.raises(ArgumentParsingError) as err:
         dispatcher.pre_parse_args(options)
-    assert str(err.value) == "The 'globalparam' option expects one argument."
+    assert str(err.value) == textwrap.dedent(
+        """\
+        Usage: appname [options] command [args]...
+        Try 'appname -h' for help.
+
+        Error: The 'globalparam' option expects one argument.
+    """
+    )
 
 
 @pytest.mark.parametrize(
