@@ -241,7 +241,7 @@ class Dispatcher:  # pylint: disable=too-many-instance-attributes
         return help_text
 
     def _build_usage_exc(self, text):
-        """Buiold an ArgumentParsingError exception with the usage message from the given text."""
+        """Build an ArgumentParsingError exception with the usage message from the given text."""
         raise ArgumentParsingError(self._help_builder.get_usage_message(text))
 
     def _get_requested_help(self, parameters):
