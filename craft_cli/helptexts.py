@@ -70,6 +70,46 @@ def _build_item(title: str, text: str, title_space: int) -> List[str]:
     return result
 
 
+def process_overview_for_markdown(text: str) -> str:
+    """Process a regular overview to be rendered with markdown.
+
+    In detail:
+
+    - Join all lines for the same paragraph (as wrapping is responsibility of the renderer)
+
+    - Dedent and wrap with triple-backtick all indented blocks
+
+    Paragraphs are separated by empty lines
+    """
+    lines = [x.rstrip() for x in text.strip().split("\n")]
+
+    # group all the lines in different blocks, each holding what would be a
+    # paragraph (detected by the empty line that separates them)
+    blocks: List[List[str]] = [[]]
+    for line in lines:
+        if line:
+            blocks[-1].append(line)
+        else:
+            blocks.append([])
+
+    # convert each of the block/paragraph into their markdown representation
+    result: List[str] = []
+    for block in blocks:
+        if block and block[0] and block[0][0] == " ":
+            # it is indented! dedent and wrap with backticks
+            dedented = textwrap.dedent("\n".join(block))
+            text = f"```text\n{dedented}\n```"
+        else:
+            # regular text
+            text = " ".join(block)
+
+        # include the processed text and an empty line; this empty line will be a separation
+        # between paragraphs or the final newline at the end of the whole text
+        result.extend((text, ""))
+
+    return "\n".join(result)
+
+
 class HelpBuilder:
     """Produce the different help texts."""
 
