@@ -963,3 +963,79 @@ def test_tool_exec_help_when_globalarg_without_short_form(monkeypatch):
         "-q, --quiet",
         "-v, --verbose",
     ]
+
+
+# -- the 'help' parsing rules
+
+
+def test_helprequested_no_parameters():
+    """No extra parameters, just general help."""
+    parameters = []
+    dispatcher = Dispatcher("testapp", [])
+    with patch("craft_cli.dispatcher.Dispatcher._get_general_help") as mock:
+        dispatcher._get_requested_help(parameters)
+    mock.assert_called_once_with(detailed=False)
+
+
+def test_helprequested_too_many_parameters():
+    """Too many parameters when asking for help."""
+    parameters = ["foo", "bar"]
+    dispatcher = Dispatcher("testapp", [])
+    with pytest.raises(ArgumentParsingError) as raised:
+        dispatcher._get_requested_help(parameters)
+    expected = textwrap.dedent(
+        """\
+        Usage: testapp [options] command [args]...
+        Try 'testapp -h' for help.
+
+        Error: Too many parameters when requesting help; pass a command, '--all', or leave it empty
+    """
+    )
+    assert str(raised.value) == expected
+
+
+def test_helprequested_detailed_ok():
+    """Detailed help requested."""
+    parameters = ["--all"]
+    dispatcher = Dispatcher("testapp", [])
+    with patch("craft_cli.dispatcher.Dispatcher._get_general_help") as mock:
+        dispatcher._get_requested_help(parameters)
+    mock.assert_called_once_with(detailed=True)
+
+
+@pytest.mark.parametrize(
+    "parameters",
+    [
+        ["--all", "extra"],
+        ["extra", "--all"],
+    ],
+)
+def test_helprequested_detailed_extra(parameters):
+    """Detailed help requested but with extra stuff."""
+    dispatcher = Dispatcher("testapp", [])
+    with pytest.raises(ArgumentParsingError) as raised:
+        dispatcher._get_requested_help(parameters)
+    expected = textwrap.dedent(
+        """\
+        Usage: testapp [options] command [args]...
+        Try 'testapp -h' for help.
+
+        Error: The --all option is only allowed alone
+    """
+    )
+    assert str(raised.value) == expected
+
+
+def test_helprequested_specific_command():
+    """Requested help for a command."""
+    cmd = create_command("somecmd", "This command does that.")
+    command_groups = [CommandGroup("group", [cmd])]
+    dispatcher = Dispatcher("testapp", command_groups)
+
+    parameters = ["somecmd"]
+    with patch("craft_cli.helptexts.HelpBuilder.get_command_help") as mock:
+        with patch("craft_cli.dispatcher.Dispatcher._get_global_options", return_value=[]):
+            dispatcher._get_requested_help(parameters)
+    args = mock.call_args[0]
+    assert isinstance(args[0], cmd)
+    assert args[1] == []
