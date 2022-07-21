@@ -98,6 +98,9 @@ def process_overview_for_markdown(text: str) -> str:
     Paragraphs are separated by empty lines
     """
     lines = [x.rstrip() for x in text.strip().split("\n")]
+
+    # group all the lines in different blocks, each holding what would be a
+    # paragraph (detected by the empty line that separates them)
     blocks: List[List[str]] = [[]]
     for line in lines:
         if line:
@@ -105,6 +108,7 @@ def process_overview_for_markdown(text: str) -> str:
         else:
             blocks.append([])
 
+    # convert each of the block/paragraph into their markdown representation
     result: List[str] = []
     for block in blocks:
         if block and block[0] and block[0][0] == " ":
