@@ -244,30 +244,42 @@ class Dispatcher:  # pylint: disable=too-many-instance-attributes
         """Build an ArgumentParsingError exception with the usage message from the given text."""
         raise ArgumentParsingError(self._help_builder.get_usage_message(text))
 
-    def _get_requested_help(self, parameters):
+    def _get_requested_help(
+        self, parameters
+    ):  # pylint: disable=too-many-locals disable=too-many-branches
         """Produce the requested help depending on the rest of the command line params."""
         if len(parameters) == 0:
             # provide a general text when help was requested without parameters
             return self._get_general_help(detailed=False)
-        if len(parameters) > 1:
-            # too many parameters: provide a specific guiding error
+
+        argument_definitions = [
+            GlobalArgument("all", "flag", None, "--all", ""),
+        ]
+        options, filtered_params = self._parse_options(argument_definitions, parameters)
+
+        # special parameter to get detailed help
+        if options["all"]:
+            # provide a detailed general help when this specific option was included
+            if filtered_params:
+                raise self._build_usage_exc("The --all option is only allowed alone")
+            return self._get_general_help(detailed=True)
+
+        if len(filtered_params) == 1:
+            # at this point the remaining parameter should be a command
+            cmdname = filtered_params[0]
+        else:
+            # too many parameters: provide a specific guiding error; note it cannot be empty at
+            # this point in the code
             msg = (
                 "Too many parameters when requesting help; "
                 "pass a command, '--all', or leave it empty"
             )
             raise self._build_usage_exc(msg)
 
-        # special parameter to get detailed help
-        (param,) = parameters
-        if param == "--all":
-            # provide a detailed general help when this specific option was included
-            return self._get_general_help(detailed=True)
-
-        # at this point the parameter should be a command
         try:
-            cmd_class = self.commands[param]
+            cmd_class = self.commands[cmdname]
         except KeyError:
-            msg = f"command {param!r} not found to provide help for"
+            msg = f"command {cmdname!r} not found to provide help for"
             raise self._build_usage_exc(msg)  # pylint: disable=raise-missing-from
 
         # instantiate the command and fill its arguments
