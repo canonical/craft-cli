@@ -22,7 +22,7 @@ from typing import Any, Dict, List, Optional, Tuple, Type
 
 from craft_cli import EmitterMode, emit
 from craft_cli.errors import ArgumentParsingError, ProvideHelpException
-from craft_cli.helptexts import HelpBuilder
+from craft_cli.helptexts import HelpBuilder, OutputFormat
 
 CommandGroup = namedtuple("CommandGroup", "name commands")
 """Definition of a command group.
@@ -254,15 +254,28 @@ class Dispatcher:  # pylint: disable=too-many-instance-attributes
 
         argument_definitions = [
             GlobalArgument("all", "flag", None, "--all", ""),
+            GlobalArgument("format", "option", None, "--format", ""),
         ]
         options, filtered_params = self._parse_options(argument_definitions, parameters)
 
         # special parameter to get detailed help
-        if options["all"]:
+        option_format = options["format"]
+        if options["all"] and not option_format:
             # provide a detailed general help when this specific option was included
             if filtered_params:
                 raise self._build_usage_exc("The --all option is only allowed alone")
             return self._get_general_help(detailed=True)
+
+        if option_format and not filtered_params:
+            msg = "The --format option is allowed only when requesting help for a specific command"
+            raise self._build_usage_exc(msg)
+
+        try:
+            output_format = OutputFormat[option_format] if option_format else OutputFormat.plain
+        except KeyError:
+            allowed = (repr(of.name) for of in OutputFormat)
+            msg = f"Invalid value for --format; allowed are: {', '.join(sorted(allowed))}"
+            raise self._build_usage_exc(msg)  # pylint: disable=raise-missing-from
 
         if len(filtered_params) == 1:
             # at this point the remaining parameter should be a command
@@ -272,7 +285,7 @@ class Dispatcher:  # pylint: disable=too-many-instance-attributes
             # this point in the code
             msg = (
                 "Too many parameters when requesting help; "
-                "pass a command, '--all', or leave it empty"
+                "pass a command (optionally with --format), '--all', or leave it empty"
             )
             raise self._build_usage_exc(msg)
 
@@ -302,7 +315,7 @@ class Dispatcher:  # pylint: disable=too-many-instance-attributes
                     dest = action.metavar
                 options.append((dest, help_text))
 
-        help_text = self._help_builder.get_command_help(command, options)
+        help_text = self._help_builder.get_command_help(command, options, output_format)
         return help_text
 
     def _build_no_command_error(self, missing_command: str) -> str:

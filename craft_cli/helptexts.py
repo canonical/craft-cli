@@ -16,6 +16,7 @@
 """Provide all help texts."""
 
 import argparse
+import enum
 import textwrap
 from operator import attrgetter
 from typing import TYPE_CHECKING, List, Tuple
@@ -47,11 +48,16 @@ Error: {error_message}
 """
 
 
-def _build_item(title: str, text: str, title_space: int) -> List[str]:
-    """Show an item in the help, generically a title and a text aligned.
+# the used formats, defaults to first one
+OutputFormat = enum.Enum("OutputFormat", "plain markdown")
 
-    The title starts in column 4 with an extra ':'. The text starts in
-    4 plus the title space; if too wide it's wrapped.
+
+def _build_item_plain(title: str, text: str, title_space: int) -> List[str]:
+    """Prepare an item for the help in plain format, generically a title and a text aligned.
+
+    This is how the plain mode is built:
+    - the title starts in column 4 with an extra ':', aligned to the right
+    - the text starts in 4 plus the title space; if too wide it's wrapped.
     """
     # wrap the general text to the desired max width (discounting the space for the title,
     # the first 4 spaces, the two spaces to separate title/text, and the ':'
@@ -68,6 +74,16 @@ def _build_item(title: str, text: str, title_space: int) -> List[str]:
         result.append(" " * (title_space + not_title_space) + line)
 
     return result
+
+
+def _build_item_markdown(title: str, text: str) -> List[str]:
+    """Prepare an item for the help in markdown format, generically a title and a text aligned.
+
+    It's itemized, with the title in monospaced. The wrapping if text is too long is handled
+    by the rendered.
+    """
+    result = f"- `{title}`: {text}"
+    return [result]
 
 
 def process_overview_for_markdown(text: str) -> str:
@@ -177,12 +193,12 @@ class HelpBuilder:
         global_lines = ["Global options:"]
         for title, text in global_options:
             if text is not HIDDEN:
-                global_lines.extend(_build_item(title, text, max_title_len))
+                global_lines.extend(_build_item_plain(title, text, max_title_len))
         textblocks.append("\n".join(global_lines))
 
         common_lines = ["Starter commands:"]
         for cmd in sorted(common_commands, key=attrgetter("name")):
-            common_lines.extend(_build_item(cmd.name, cmd.help_msg, max_title_len))
+            common_lines.extend(_build_item_plain(cmd.name, cmd.help_msg, max_title_len))
         textblocks.append("\n".join(common_lines))
 
         grouped_lines = ["Commands can be classified as follows:"]
@@ -190,7 +206,9 @@ class HelpBuilder:
             command_names = ", ".join(
                 sorted(cmd.name for cmd in command_group.commands if not cmd.hidden)
             )
-            grouped_lines.extend(_build_item(command_group.name, command_names, max_title_len))
+            grouped_lines.extend(
+                _build_item_plain(command_group.name, command_names, max_title_len)
+            )
         textblocks.append("\n".join(grouped_lines))
 
         textblocks.append(
@@ -239,7 +257,7 @@ class HelpBuilder:
         global_lines = ["Global options:"]
         for title, text in global_options:
             if text is not HIDDEN:
-                global_lines.extend(_build_item(title, text, max_title_len))
+                global_lines.extend(_build_item_plain(title, text, max_title_len))
         textblocks.append("\n".join(global_lines))
 
         textblocks.append("Commands can be classified as follows:")
@@ -249,7 +267,7 @@ class HelpBuilder:
             for cmd in command_group.commands:
                 if cmd.hidden:
                     continue
-                group_lines.extend(_build_item(cmd.name, cmd.help_msg, max_title_len))
+                group_lines.extend(_build_item_plain(cmd.name, cmd.help_msg, max_title_len))
             textblocks.append("\n".join(group_lines))
 
         textblocks.append(
@@ -264,15 +282,8 @@ class HelpBuilder:
         text = "\n\n".join(block.strip() for block in textblocks) + "\n"
         return text
 
-    def get_command_help(  # pylint: disable=too-many-locals
-        self, command: "BaseCommand", arguments: List[Tuple[str, str]]
-    ) -> str:
-        """Produce the text for each command's help.
-
-        - command: the instantiated command for which help is prepared
-
-        - arguments: all command options and parameters, with the (name, description) structure;
-            note that any argument with description being `HIDDEN` will be ignored.
+    def _build_plain_command_help(self, usage, overview, options, other_command_names):
+        """Build the command help in its plain version.
 
         The help text has the following structure:
 
@@ -284,6 +295,97 @@ class HelpBuilder:
         """
         textblocks = []
 
+        textblocks.append(
+            textwrap.dedent(
+                f"""\
+                Usage:
+                    {usage}
+            """
+            )
+        )
+
+        overview = textwrap.indent(overview, "    ")
+        textblocks.append(f"Summary:{overview}")
+
+        # column alignment is dictated by longest options title
+        max_title_len = max(len(title) for title, text in options)
+
+        # command options
+        option_lines = ["Options:"]
+        for title, text in options:
+            option_lines.extend(_build_item_plain(title, text, max_title_len))
+        textblocks.append("\n".join(option_lines))
+
+        if other_command_names:
+            see_also_block = ["See also:"]
+            see_also_block.extend(("    " + name) for name in sorted(other_command_names))
+            textblocks.append("\n".join(see_also_block))
+
+        # footer
+        textblocks.append(
+            f"""
+            For a summary of all commands, run '{self.appname} help --all'.
+        """
+        )
+
+        return textblocks
+
+    def _build_markdown_command_help(self, usage, overview, options, other_command_names):
+        """Build the command help in its markdown version.
+
+        The help text has the following structure:
+
+        - usage
+        - summary
+        - options
+        - other related commands
+        - footer
+        """
+        textblocks = []
+
+        textblocks.append(
+            textwrap.dedent(
+                f"""\
+            ## Usage:
+            ```text
+            {usage}
+            ```
+        """
+            )
+        )
+
+        overview = process_overview_for_markdown(overview)
+        textblocks.append(f"## Summary:\n\n{overview}")
+
+        option_lines = ["## Options:"]
+        for title, text in options:
+            option_lines.extend(_build_item_markdown(title, text))
+        textblocks.append("\n".join(option_lines))
+
+        if other_command_names:
+            see_also_block = ["## See also:"]
+            see_also_block.extend(f"- `{name}`" for name in sorted(other_command_names))
+            textblocks.append("\n".join(see_also_block))
+
+        return textblocks
+
+    def get_command_help(
+        self,
+        command: "BaseCommand",
+        arguments: List[Tuple[str, str]],
+        output_format: OutputFormat,
+    ) -> str:
+        """Produce the text for each command's help in any output format.
+
+        - command: the instantiated command for which help is prepared
+
+        - arguments: all command options and parameters, with the (name, description) structure;
+            note that any argument with description being `HIDDEN` will be ignored
+
+        - output_format: the selected output format
+
+        The help text structure depends of the output format.
+        """
         # separate all arguments into the parameters and optional ones, just checking
         # if first char is a dash
         parameters = []
@@ -296,30 +398,10 @@ class HelpBuilder:
             else:
                 parameters.append(name)
 
-        joined_params = " ".join(f"<{parameter}>" for parameter in parameters)
-        textblocks.append(
-            textwrap.dedent(
-                f"""\
-            Usage:
-                {self.appname} {command.name} [options] {joined_params}
-        """
-            )
-        )
+        usage = f"{self.appname} {command.name} [options]"
+        if parameters:
+            usage += " " + " ".join(f"<{parameter}>" for parameter in parameters)
 
-        assert command.overview is not None  # for typing purposes
-        indented_overview = textwrap.indent(command.overview, "    ")
-        textblocks.append(f"Summary:{indented_overview}")
-
-        # column alignment is dictated by longest options title
-        max_title_len = max(len(title) for title, text in options)
-
-        # command options
-        option_lines = ["Options:"]
-        for title, text in options:
-            option_lines.extend(_build_item(title, text, max_title_len))
-        textblocks.append("\n".join(option_lines))
-
-        # recommend other commands of the same group
         for command_group in self.command_groups:
             if any(isinstance(command, command_class) for command_class in command_group.commands):
                 break
@@ -330,17 +412,12 @@ class HelpBuilder:
             for c in command_group.commands  # pylint: disable=undefined-loop-variable
             if not isinstance(command, c)
         ]
-        if other_command_names:
-            see_also_block = ["See also:"]
-            see_also_block.extend(("    " + name) for name in sorted(other_command_names))
-            textblocks.append("\n".join(see_also_block))
 
-        # footer
-        textblocks.append(
-            f"""
-            For a summary of all commands, run '{self.appname} help --all'.
-        """
-        )
+        if output_format == OutputFormat.markdown:
+            builder = self._build_markdown_command_help
+        else:
+            builder = self._build_plain_command_help
+        textblocks = builder(usage, command.overview, options, other_command_names)
 
         # join all stripped blocks, leaving ONE empty blank line between
         text = "\n\n".join(block.strip() for block in textblocks) + "\n"

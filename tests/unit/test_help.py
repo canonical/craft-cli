@@ -22,7 +22,7 @@ import pytest
 from craft_cli import dispatcher as dispatcher_mod
 from craft_cli.dispatcher import CommandGroup, Dispatcher, GlobalArgument
 from craft_cli.errors import ArgumentParsingError, ProvideHelpException
-from craft_cli.helptexts import HIDDEN, HelpBuilder, process_overview_for_markdown
+from craft_cli.helptexts import HIDDEN, HelpBuilder, OutputFormat, process_overview_for_markdown
 from tests.factory import create_command
 
 # -- building "usage" help
@@ -194,7 +194,8 @@ def test_detailed_help_text():
     assert text == expected
 
 
-def test_command_help_text_no_parameters():
+@pytest.mark.parametrize("output_format", list(OutputFormat))
+def test_command_help_text_no_parameters(output_format):
     """All different parts for a specific command help that doesn't have parameters."""
     overview = textwrap.dedent(
         """
@@ -220,9 +221,9 @@ def test_command_help_text_no_parameters():
     ]
 
     help_builder = HelpBuilder("testapp", "general summary", command_groups)
-    text = help_builder.get_command_help(cmd1(None), options)
+    text = help_builder.get_command_help(cmd1(None), options, output_format)
 
-    expected = textwrap.dedent(
+    expected_plain = textwrap.dedent(
         """\
         Usage:
             testapp somecommand [options]
@@ -245,10 +246,35 @@ def test_command_help_text_no_parameters():
         For a summary of all commands, run 'testapp help --all'.
     """
     )
-    assert text == expected
+    expected_markdown = textwrap.dedent(
+        """\
+        ## Usage:
+        ```text
+        testapp somecommand [options]
+        ```
+
+        ## Summary:
+
+        Quite some long text.
+
+        Multiline!
+
+        ## Options:
+        - `-h, --help`: Show this help message and exit.
+        - `-q, --quiet`: Only show warnings and errors, not progress.
+        - `--name`: The name of the charm.
+        - `--revision`: The revision to release (defaults to latest).
+
+        ## See also:
+        - `other-cmd-2`
+        - `other-cmd-4`
+    """
+    )
+    assert text == (expected_plain if output_format == OutputFormat.plain else expected_markdown)
 
 
-def test_command_help_text_with_parameters():
+@pytest.mark.parametrize("output_format", list(OutputFormat))
+def test_command_help_text_with_parameters(output_format):
     """All different parts for a specific command help that has parameters."""
     overview = textwrap.dedent(
         """
@@ -272,9 +298,9 @@ def test_command_help_text_with_parameters():
     ]
 
     help_builder = HelpBuilder("testapp", "general summary", command_groups)
-    text = help_builder.get_command_help(cmd1(None), options)
+    text = help_builder.get_command_help(cmd1(None), options, output_format)
 
-    expected = textwrap.dedent(
+    expected_plain = textwrap.dedent(
         """\
         Usage:
             testapp somecommand [options] <name> <extraparam>
@@ -293,10 +319,128 @@ def test_command_help_text_with_parameters():
         For a summary of all commands, run 'testapp help --all'.
     """
     )
-    assert text == expected
+    expected_markdown = textwrap.dedent(
+        """\
+        ## Usage:
+        ```text
+        testapp somecommand [options] <name> <extraparam>
+        ```
+
+        ## Summary:
+
+        Quite some long text.
+
+        ## Options:
+        - `-h, --help`: Show this help message and exit.
+        - `--revision`: The revision to release (defaults to latest).
+        - `--other-option`: Other option.
+
+        ## See also:
+        - `other-cmd-2`
+    """
+    )
+    assert text == (expected_plain if output_format == OutputFormat.plain else expected_markdown)
 
 
-def test_command_help_text_loneranger():
+@pytest.mark.parametrize("output_format", list(OutputFormat))
+def test_command_help_text_complex_overview(output_format):
+    """The overviews are processed in different ways."""
+    overview = textwrap.dedent(
+        """
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit,
+        sed do eiusmod tempor incididunt ut labore et dolore
+        magna aliqua.
+
+             somecommand --example
+
+        Ut enim ad minim veniam, quis nostrud exercitation ullamco:
+
+             Result   In   Columns
+             yes      yes        3
+             no       yes       12
+
+        Duis aute irure dolor in reprehenderit in voluptate velit
+        esse cillum dolore eu fugiat nulla pariatur.
+    """
+    )
+    cmd1 = create_command("somecommand", "Command one line help.", overview=overview)
+    cmd2 = create_command("other-cmd-2", "Some help.")
+    command_groups = [
+        CommandGroup("group1", [cmd1]),
+        CommandGroup("group2", [cmd2]),
+    ]
+
+    options = [
+        ("-h, --help", "Show this help message and exit."),
+        ("-q, --quiet", "Only show warnings and errors, not progress."),
+    ]
+
+    help_builder = HelpBuilder("testapp", "general summary", command_groups)
+    text = help_builder.get_command_help(cmd1(None), options, output_format)
+
+    expected_plain = textwrap.dedent(
+        """\
+        Usage:
+            testapp somecommand [options]
+
+        Summary:
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit,
+            sed do eiusmod tempor incididunt ut labore et dolore
+            magna aliqua.
+
+                 somecommand --example
+
+            Ut enim ad minim veniam, quis nostrud exercitation ullamco:
+
+                 Result   In   Columns
+                 yes      yes        3
+                 no       yes       12
+
+            Duis aute irure dolor in reprehenderit in voluptate velit
+            esse cillum dolore eu fugiat nulla pariatur.
+
+        Options:
+             -h, --help:  Show this help message and exit.
+            -q, --quiet:  Only show warnings and errors, not progress.
+
+        For a summary of all commands, run 'testapp help --all'.
+    """
+    )
+    expected_markdown = textwrap.dedent(
+        """\
+        ## Usage:
+        ```text
+        testapp somecommand [options]
+        ```
+
+        ## Summary:
+
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+
+        ```text
+        somecommand --example
+        ```
+
+        Ut enim ad minim veniam, quis nostrud exercitation ullamco:
+
+        ```text
+        Result   In   Columns
+        yes      yes        3
+        no       yes       12
+        ```
+
+        Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+
+        ## Options:
+        - `-h, --help`: Show this help message and exit.
+        - `-q, --quiet`: Only show warnings and errors, not progress.
+    """
+    )
+    assert text == (expected_plain if output_format == OutputFormat.plain else expected_markdown)
+
+
+@pytest.mark.parametrize("output_format", list(OutputFormat))
+def test_command_help_text_loneranger(output_format):
     """All different parts for a specific command that's the only one in its group."""
     overview = textwrap.dedent(
         """
@@ -316,9 +460,9 @@ def test_command_help_text_loneranger():
     ]
 
     help_builder = HelpBuilder("testapp", "general summary", command_groups)
-    text = help_builder.get_command_help(cmd1(None), options)
+    text = help_builder.get_command_help(cmd1(None), options, output_format)
 
-    expected = textwrap.dedent(
+    expected_plain = textwrap.dedent(
         """\
         Usage:
             testapp somecommand [options]
@@ -333,7 +477,23 @@ def test_command_help_text_loneranger():
         For a summary of all commands, run 'testapp help --all'.
     """
     )
-    assert text == expected
+    expected_markdown = textwrap.dedent(
+        """\
+        ## Usage:
+        ```text
+        testapp somecommand [options]
+        ```
+
+        ## Summary:
+
+        Quite some long text.
+
+        ## Options:
+        - `-h, --help`: Show this help message and exit.
+        - `-q, --quiet`: Only show warnings and errors, not progress.
+    """
+    )
+    assert text == (expected_plain if output_format == OutputFormat.plain else expected_markdown)
 
 
 # -- tests for the markdown overview processing
@@ -645,7 +805,7 @@ def test_tool_exec_help_on_too_many_things(sysargv):
         Usage: testapp [options] command [args]...
         Try 'testapp -h' for help.
 
-        Error: Too many parameters when requesting help; pass a command, '--all', or leave it empty
+        Error: Too many parameters when requesting help; pass a command (optionally with --format), '--all', or leave it empty
         """
     )
 
@@ -812,6 +972,33 @@ def test_tool_exec_help_command_on_command_ok():
         "-q, --quiet",
         "-v, --verbose",
     ]
+    assert args[2] == OutputFormat.plain
+
+
+def test_tool_exec_help_command_on_command_format_markdown():
+    """Execute the app asking for help on a command ok, asking for markdown format."""
+    cmd = create_command("somecommand", "This command does that.")
+    command_groups = [CommandGroup("group", [cmd])]
+    dispatcher = Dispatcher("testapp", command_groups)
+
+    with patch("craft_cli.helptexts.HelpBuilder.get_command_help") as mock:
+        mock.return_value = "test help"
+        with pytest.raises(ProvideHelpException) as exc_cm:
+            dispatcher.pre_parse_args(["help", "somecommand", "--format=markdown"])
+
+    # check the result of the help builder is what is transmitted
+    assert str(exc_cm.value) == "test help"
+
+    # check the given information to the help text builder
+    args = mock.call_args[0]
+    assert isinstance(args[0], cmd)
+    assert sorted(x[0] for x in args[1]) == [
+        "--verbosity",
+        "-h, --help",
+        "-q, --quiet",
+        "-v, --verbose",
+    ]
+    assert args[2] == OutputFormat.markdown
 
 
 def test_tool_exec_help_command_on_command_complex():
@@ -988,7 +1175,7 @@ def test_helprequested_too_many_parameters():
         Usage: testapp [options] command [args]...
         Try 'testapp -h' for help.
 
-        Error: Too many parameters when requesting help; pass a command, '--all', or leave it empty
+        Error: Too many parameters when requesting help; pass a command (optionally with --format), '--all', or leave it empty
     """
     )
     assert str(raised.value) == expected
@@ -1039,3 +1226,110 @@ def test_helprequested_specific_command():
     args = mock.call_args[0]
     assert isinstance(args[0], cmd)
     assert args[1] == []
+    assert args[2] == OutputFormat.plain
+
+
+@pytest.mark.parametrize(
+    "parameters",
+    [
+        ["--format=plain"],
+        ["--format=plain", "--all"],
+        ["--all", "--format=plain"],
+        ["--format", "plain"],
+        ["--format", "plain", "--all"],
+        ["--all", "--format", "plain"],
+    ],
+)
+def test_helprequested_format_noncommand(parameters):
+    """Output format is not allowed for non-command help."""
+    dispatcher = Dispatcher("testapp", [])
+    with pytest.raises(ArgumentParsingError) as raised:
+        dispatcher._get_requested_help(parameters)
+    expected = textwrap.dedent(
+        """\
+        Usage: testapp [options] command [args]...
+        Try 'testapp -h' for help.
+
+        Error: The --format option is allowed only when requesting help for a specific command
+    """
+    )
+    assert str(raised.value) == expected
+
+
+@pytest.mark.parametrize(
+    "parameters,expected_format",
+    [
+        (["--format=plain", "somecmd"], OutputFormat.plain),
+        (["somecmd", "--format=plain"], OutputFormat.plain),
+        (["--format=markdown", "somecmd"], OutputFormat.markdown),
+        (["somecmd", "--format=markdown"], OutputFormat.markdown),
+        (["--format", "plain", "somecmd"], OutputFormat.plain),
+        (["somecmd", "--format", "plain"], OutputFormat.plain),
+        (["--format", "markdown", "somecmd"], OutputFormat.markdown),
+        (["somecmd", "--format", "markdown"], OutputFormat.markdown),
+    ],
+)
+def test_helprequested_command_format_ok(parameters, expected_format):
+    """Help requested for a command specifying the format."""
+    cmd = create_command("somecmd", "This command does that.")
+    command_groups = [CommandGroup("group", [cmd])]
+    dispatcher = Dispatcher("testapp", command_groups)
+
+    with patch("craft_cli.helptexts.HelpBuilder.get_command_help") as mock:
+        with patch("craft_cli.dispatcher.Dispatcher._get_global_options", return_value=[]):
+            dispatcher._get_requested_help(parameters)
+    args = mock.call_args[0]
+    assert isinstance(args[0], cmd)
+    assert args[1] == []
+    assert args[2] == expected_format
+
+
+@pytest.mark.parametrize(
+    "parameters",
+    [
+        ["--format=rtf", "somecmd"],
+        ["somecmd", "--format=rtf"],
+        ["--format", "rtf", "somecmd"],
+        ["somecmd", "--format", "rtf"],
+    ],
+)
+def test_helprequested_command_format_bad(parameters):
+    """Help for a command with a wrong format."""
+    dispatcher = Dispatcher("testapp", [])
+    with pytest.raises(ArgumentParsingError) as raised:
+        dispatcher._get_requested_help(parameters)
+    expected = textwrap.dedent(
+        """\
+        Usage: testapp [options] command [args]...
+        Try 'testapp -h' for help.
+
+        Error: Invalid value for --format; allowed are: 'markdown', 'plain'
+    """
+    )
+    assert str(raised.value) == expected
+
+
+@pytest.mark.parametrize(
+    "parameters",
+    [
+        ["somecmd", "--format"],
+        ["--format"],
+        ["somecmd", "--format="],
+        ["--format="],
+        ["--format=", "somecmd"],
+    ],
+)
+def test_helprequested_command_format_truncated(parameters):
+    """Help for a command with a format not really specified."""
+    dispatcher = Dispatcher("testapp", [])
+    with pytest.raises(ArgumentParsingError) as raised:
+        dispatcher._get_requested_help(parameters)
+    expected = textwrap.dedent(
+        """\
+        Usage: testapp [options] command [args]...
+        Try 'testapp -h' for help.
+
+        Error: The 'format' option expects one argument.
+    """
+    )
+    assert str(raised.value) == expected
