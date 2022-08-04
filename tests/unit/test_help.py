@@ -260,10 +260,12 @@ def test_command_help_text_no_parameters(output_format):
         Multiline!
 
         ## Options:
-        - `-h, --help`: Show this help message and exit.
-        - `-q, --quiet`: Only show warnings and errors, not progress.
-        - `--name`: The name of the charm.
-        - `--revision`: The revision to release (defaults to latest).
+        | | |
+        |-|-|
+        | `-h, --help` | Show this help message and exit. |
+        | `-q, --quiet` | Only show warnings and errors, not progress. |
+        | `--name` | The name of the charm. |
+        | `--revision` | The revision to release (defaults to latest). |
 
         ## See also:
         - `other-cmd-2`
@@ -331,9 +333,11 @@ def test_command_help_text_with_parameters(output_format):
         Quite some long text.
 
         ## Options:
-        - `-h, --help`: Show this help message and exit.
-        - `--revision`: The revision to release (defaults to latest).
-        - `--other-option`: Other option.
+        | | |
+        |-|-|
+        | `-h, --help` | Show this help message and exit. |
+        | `--revision` | The revision to release (defaults to latest). |
+        | `--other-option` | Other option. |
 
         ## See also:
         - `other-cmd-2`
@@ -432,8 +436,10 @@ def test_command_help_text_complex_overview(output_format):
         Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
 
         ## Options:
-        - `-h, --help`: Show this help message and exit.
-        - `-q, --quiet`: Only show warnings and errors, not progress.
+        | | |
+        |-|-|
+        | `-h, --help` | Show this help message and exit. |
+        | `-q, --quiet` | Only show warnings and errors, not progress. |
     """
     )
     assert text == (expected_plain if output_format == OutputFormat.plain else expected_markdown)
@@ -489,8 +495,10 @@ def test_command_help_text_loneranger(output_format):
         Quite some long text.
 
         ## Options:
-        - `-h, --help`: Show this help message and exit.
-        - `-q, --quiet`: Only show warnings and errors, not progress.
+        | | |
+        |-|-|
+        | `-h, --help` | Show this help message and exit. |
+        | `-q, --quiet` | Only show warnings and errors, not progress. |
     """
     )
     assert text == (expected_plain if output_format == OutputFormat.plain else expected_markdown)

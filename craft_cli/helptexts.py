@@ -76,16 +76,6 @@ def _build_item_plain(title: str, text: str, title_space: int) -> List[str]:
     return result
 
 
-def _build_item_markdown(title: str, text: str) -> List[str]:
-    """Prepare an item for the help in markdown format, generically a title and a text aligned.
-
-    It's itemized, with the title in monospaced. The wrapping if text is too long is handled
-    by the rendered.
-    """
-    result = f"- `{title}`: {text}"
-    return [result]
-
-
 def process_overview_for_markdown(text: str) -> str:
     """Process a regular overview to be rendered with markdown.
 
@@ -357,9 +347,14 @@ class HelpBuilder:
         overview = process_overview_for_markdown(overview)
         textblocks.append(f"## Summary:\n\n{overview}")
 
-        option_lines = ["## Options:"]
+        option_lines = [
+            "## Options:",
+            "| | |",
+            "|-|-|",
+        ]
         for title, text in options:
-            option_lines.extend(_build_item_markdown(title, text))
+            option_lines.append(f"| `{title}` | {text} |")
+
         textblocks.append("\n".join(option_lines))
 
         if other_command_names:
