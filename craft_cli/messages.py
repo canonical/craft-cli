@@ -920,9 +920,6 @@ class Emitter:
 
         Note that no messages will be collected while paused, not even for logging.
         """
-        # XXX Facundo 2022-06-23: this internal message should mutate to a '.debug' call
-        # (when it's available, in the next PRs) so it's properly logged (as in trace it
-        # will not reach the logs unless in TRACE mode).
         self.debug("Emitter: Pausing control of the terminal")
         self._printer.stop()  # type: ignore
         self._stopped = True
@@ -931,9 +928,6 @@ class Emitter:
         finally:
             self._stopped = False
             self._printer = _Printer(self._log_filepath)  # type: ignore
-            # XXX Facundo 2022-06-23: this internal message should mutate to a '.debug' call
-            # (when it's available, in the next PRs) so it's properly logged (as in trace it
-            # will not reach the logs unless in TRACE mode).
             self.debug("Emitter: Resuming control of the terminal")
 
     def _stop(self) -> None:
