@@ -258,7 +258,7 @@ def _run_subprocess_with_emitter(mode):
 
 
 def example_21():
-    """Run an app that uses emitter in a subprocess, pausing the external control, normal mode."""
+    """Run an app that uses emitter in a subprocess, pausing the external control, brief mode."""
     _run_subprocess_with_emitter(EmitterMode.BRIEF)
 
 
