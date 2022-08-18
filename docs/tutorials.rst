@@ -60,7 +60,7 @@ First start with a class sub-classing `BaseCommand` with the appropriate attribu
             A file needs to be indicated. It is an argument error if the path does not exist
             or it's a directory.
     
-            It will return succesfully if the file was properly removed.
+            It will return successfully if the file was properly removed.
         """)
 
         def fill_parser(self, parser):
@@ -76,7 +76,7 @@ First start with a class sub-classing `BaseCommand` with the appropriate attribu
             except Exception as exc:
                 raise CraftError(f"Problem removing the file: {exc}.")
 
-            emit.message("File removed succesfully.")
+            emit.message("File removed successfully.")
 
 Then initiate the ``emit`` object and call the ``Dispatcher`` functionality::
 
@@ -140,7 +140,7 @@ Ask help for specifically for the command::
         A file needs to be indicated. It is an argument error if the path does not exist
         or it's a directory.
     
-        It will return succesfully if the file was properly removed.
+        It will return successfully if the file was properly removed.
     
     Options:
            -h, --help:  Show this help message and exit
@@ -157,7 +157,7 @@ Time to run the command on a file, you should see the successful message::
     $ ls testfile
     testfile
     $ env/bin/python example-app.py unlink testfile 
-    File removed succesfully.
+    File removed successfully.
     $ ls testfile
     ls: cannot access 'testfile': No such file or directory
 
