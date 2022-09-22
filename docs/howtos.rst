@@ -139,8 +139,8 @@ The ``dispatcher.pre_parse_args`` method returns the global arguments already pa
     app_config.set_secure_mode(global_args["secure_mode"])
 
 
-Set a default command in the application
-========================================
+Set a default command for the application
+=========================================
 
 To allow the application to run a command if none was given in the command line, you need to set a default command in the application when instantiating :class:`craft_cli.dispatcher.Dispatcher`::
 
@@ -155,10 +155,10 @@ And even run the specified default command if options are given for that command
     $ my-super-app --important-option
 
 
-Allow temporarily other application to control the terminal
-===========================================================
+Temporarily allow another application to control the terminal
+=============================================================
 
-To be able to run another application (in other process) without interfering in the use of the terminal between the main application and the sub-executed one, you need to pause the emitter::
+To be able to run another application (another process) without interfering in the use of the terminal between the main application and the sub-executed one, you need to pause the emitter::
 
     with emit.pause():
         subprocess.run(["someapp"])
@@ -168,8 +168,8 @@ When the emitter is paused the terminal is freed, and the emitter does not have 
 The normal behaviour is resumed when the context manager exits (even if an exception was raised inside).
 
 
-Create unit tests for code that uses Craft CLI Emitter
-======================================================
+Create unit tests for code that uses Craft CLI's Emitter
+========================================================
 
 The library provides two fixtures that simplifies the testing of code using the Emitter when using ``pytest``.
 
