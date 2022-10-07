@@ -230,11 +230,18 @@ def test_progress_brief_terminal(capsys):
     emit.progress("Another message.")
     emit.ended_ok()
 
-    expected = [
+    expected_term = [
         Line("The meaning of life is 42.", permanent=False),
-        Line("Another message.", permanent=True),  # stays as it's the last message
+        Line("Another message.", permanent=False),
+        # This cleaner line is inserted by the printer stop
+        # sequence to reset the last ephemeral print to terminal.
+        Line("", permanent=False),
     ]
-    assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)
+    expected_log = [
+        Line("The meaning of life is 42.", permanent=False),
+        Line("Another message.", permanent=False),
+    ]
+    assert_outputs(capsys, emit, expected_err=expected_term, expected_log=expected_log)
 
 
 @pytest.mark.parametrize("output_is_terminal", [False])
@@ -358,7 +365,10 @@ def test_progressbar_brief_terminal(capsys, monkeypatch):
         Line("Uploading stuff [████████████████████████       ] 1400/1788", permanent=False),
         Line("Uploading stuff [███████████████████████████████] 1788/1788", permanent=False),
         Line("Uploading stuff (<---)", permanent=False),
-        Line("And so on", permanent=True),
+        Line("And so on", permanent=False),
+        # This cleaner line is inserted by the printer stop
+        # sequence to reset the last ephemeral print to terminal.
+        Line("", permanent=False),
     ]
     expected_log = [
         Line("Uploading stuff (--->)"),

@@ -234,7 +234,7 @@ class _Printer:
         # open the log file (will be closed explicitly later)
         self.log = open(log_filepath, "at", encoding="utf8")  # pylint: disable=consider-using-with
 
-        # keep account of output streams with unfinished lines
+        # keep account of output terminal streams with unfinished lines
         self.unfinished_stream: Optional[TextIO] = None
 
         # run the spinner supervisor
@@ -439,7 +439,18 @@ class _Printer:
         if not TESTMODE:
             self.spinner.stop()
         if self.unfinished_stream is not None:
-            print(flush=True, file=self.unfinished_stream)
+            # With unfinished_stream set, the prv_msg object is valid.
+            if self.prv_msg.ephemeral:  # type: ignore
+                # If the last printed message is of 'ephemeral' type, the stop
+                # request must clean and reset the line.
+                cleaner = " " * (_get_terminal_width() - 1)
+                line = "\r" + cleaner + "\r"
+                print(line, end="", flush=True, file=self.prv_msg.stream)  # type: ignore
+            else:
+                # The last printed message is permanent. Leave the cursor on
+                # the next clean line.
+                print(flush=True, file=self.unfinished_stream)
+
         self.log.close()
         self.stopped = True
 
