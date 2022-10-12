@@ -378,6 +378,46 @@ def test_progressbar_brief_terminal(capsys, monkeypatch):
     assert_outputs(capsys, emit, expected_err=expected_screen, expected_log=expected_log)
 
 
+@pytest.mark.parametrize("output_is_terminal", [True])
+def test_progressbar_brief_permanent_terminal(capsys, monkeypatch):
+    """Show a progress bar in brief mode."""
+    # fake size so lines to compare are static
+    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 60)
+
+    emit = Emitter()
+
+    # patch `set_mode` so it's not really run and set the mode manually, as we do NOT want
+    # the "Logging execution..." message to be sent to screen because it's too long and will
+    # break the tests. Note we want the fake terminal width to be small so we can "draw" here
+    # in the test the progress bar we want to see.
+    emit.set_mode = lambda mode: None
+    emit.init(EmitterMode.BRIEF, "testapp", GREETING)
+    emit._mode = EmitterMode.BRIEF
+
+    with emit.progress_bar("Uploading stuff", 1788) as progress:
+        for uploaded in [700, 700, 388]:
+            progress.advance(uploaded)
+    emit.progress(
+        "And so on", permanent=True
+    )  # just a line so last progress line is not artificially permanent
+    emit.ended_ok()
+
+    expected_screen = [
+        Line("Uploading stuff (--->)", permanent=False),
+        Line("Uploading stuff [████████████                    ] 700/1788", permanent=False),
+        Line("Uploading stuff [████████████████████████       ] 1400/1788", permanent=False),
+        Line("Uploading stuff [███████████████████████████████] 1788/1788", permanent=False),
+        Line("Uploading stuff (<---)", permanent=False),
+        Line("And so on", permanent=True),
+    ]
+    expected_log = [
+        Line("Uploading stuff (--->)"),
+        Line("Uploading stuff (<---)"),
+        Line("And so on"),
+    ]
+    assert_outputs(capsys, emit, expected_err=expected_screen, expected_log=expected_log)
+
+
 @pytest.mark.parametrize(
     "mode",
     [
