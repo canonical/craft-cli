@@ -335,6 +335,45 @@ def example_25():
     emit.message("The meaning of life is 42.")
 
 
+def example_26():
+    """Show emitter progress message handover.
+
+    This example demonstrates seamless emitter progress message handover
+    between two craft tools. Handover uses emit.pause() on the local
+    craft tool before an LXD launched craft tool takes over, and hands back.
+    """
+    emit.set_mode(EmitterMode.BRIEF)
+
+    lxd_craft_tool = textwrap.dedent(
+        """
+        import time
+
+        from craft_cli import emit, EmitterMode
+
+        emit.init(EmitterMode.BRIEF, "subapp", "An example sub application.")
+        emit.progress("seamless progress #2")
+        time.sleep(2)
+        emit.progress("seamless progress #3")
+        time.sleep(2)
+        emit.ended_ok()
+    """
+    )
+    temp_fh, temp_name = tempfile.mkstemp()
+    with open(temp_fh, "wt", encoding="utf8") as fh:
+        fh.write(lxd_craft_tool)
+
+    emit.message("Application Start.")
+    emit.progress("seamless progress #1")
+    time.sleep(2)
+    with emit.pause():
+        cmd = [sys.executable, temp_name]
+        subprocess.run(cmd, env={"PYTHONPATH": os.getcwd()}, capture_output=False, text=True)
+        os.unlink(temp_name)
+    emit.progress("seamless progress #4")
+    time.sleep(2)
+    emit.message("Application End.")
+
+
 # -- end of test cases
 
 if len(sys.argv) != 2:

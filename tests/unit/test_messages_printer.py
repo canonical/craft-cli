@@ -905,10 +905,11 @@ def test_stop_streams_ok(capsys, log_filepath):
     assert not err
 
 
-def test_stop_streams_unfinished_out(capsys, log_filepath):
+def test_stop_streams_unfinished_out_non_ephemeral(capsys, log_filepath, monkeypatch):
     """Stopping when stdout is not complete."""
     printer = _Printer(log_filepath)
     printer.unfinished_stream = sys.stdout
+    printer.prv_msg = _MessageInfo(sys.stdout, "test")
     printer.stop()
 
     out, err = capsys.readouterr()
@@ -916,10 +917,24 @@ def test_stop_streams_unfinished_out(capsys, log_filepath):
     assert not err
 
 
+def test_stop_streams_unfinished_out_ephemeral(capsys, log_filepath, monkeypatch):
+    """Stopping when stdout is not complete."""
+    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 10)
+    printer = _Printer(log_filepath)
+    printer.unfinished_stream = sys.stdout
+    printer.prv_msg = _MessageInfo(sys.stdout, "test", ephemeral=True)
+    printer.stop()
+
+    out, err = capsys.readouterr()
+    assert out == "\r         \r"  # 9 spaces
+    assert not err
+
+
 def test_stop_streams_unfinished_err(capsys, log_filepath):
     """Stopping when stderr is not complete."""
     printer = _Printer(log_filepath)
     printer.unfinished_stream = sys.stderr
+    printer.prv_msg = _MessageInfo(sys.stderr, "test")
     printer.stop()
 
     out, err = capsys.readouterr()
