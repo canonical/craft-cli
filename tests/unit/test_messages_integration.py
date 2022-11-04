@@ -26,6 +26,7 @@ import subprocess
 import sys
 import textwrap
 from dataclasses import dataclass
+from datetime import datetime
 from unittest.mock import patch
 
 import pytest
@@ -1162,3 +1163,71 @@ def test_logging_after_closing(capsys, logger):
         Line("info 1"),
     ]
     assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)
+
+
+def _parse_timestamp(text):
+    """Parse a timestamp from its text format to seconds from epoch."""
+    date_and_time, msec = text.strip().split(".")
+    dt = datetime.strptime(date_and_time, "%Y-%m-%d %H:%M:%S")
+    tstamp = dt.timestamp()
+    assert len(msec) == 3
+    tstamp += int(msec) / 1000
+    return tstamp
+
+
+@pytest.mark.parametrize("loops, sleep, max_repetitions", [
+    (100, .01, 30),
+    (1000, .001, 100),
+    (10, .1, 2),
+])
+@pytest.mark.parametrize("output_is_terminal", [True, False])
+def test_capture_delays(tmp_path, loops, sleep, max_repetitions):
+    """Check that there are no noticeable delays when capturing output.
+
+    Note that the sub Python process is run in unbuffered mode. If the `-u` is removed from
+    the command line, it will not output information as soon it's available, and the test
+    will fail. This somewhat proves that as long the subprocess is quick to output text,
+    the capturing part is fine.
+    """
+    # something to execute
+    script = tmp_path / "script.py"
+
+    script.write_text(
+        textwrap.dedent(
+            f"""
+        import random
+        import time
+        from datetime import datetime
+
+        for _ in range({loops}):
+            tstamp = datetime.now().isoformat(sep=" ", timespec="milliseconds")
+            print(tstamp, "short text to repeat " * random.randint(1, {max_repetitions}))
+            time.sleep({sleep})
+    """
+        )
+    )
+    emit = Emitter()
+    emit.init(EmitterMode.BRIEF, "testapp", GREETING)
+    with emit.open_stream("Testing stream") as stream:
+        cmd = [sys.executable, "-u", script]
+        subprocess.run(cmd, stdout=stream, check=True)
+    emit.ended_ok()
+
+    timestamps = []
+    with open(emit._log_filepath, "rt", encoding="utf8") as filehandler:
+        for line in filehandler:
+            match = re.match(rf"({TIMESTAMP_FORMAT}):: ({TIMESTAMP_FORMAT}).*\n", line)
+            if not match:
+                continue
+            timestamps.append([_parse_timestamp(x) for x in match.groups()])
+
+    if not timestamps:
+        pytest.fail("Bad logs, couldn't retrieve timestamps")
+
+    # no big deltas! in a development machine the delay limit can be 2 ms and still passes ok,
+    # raising it because CIs are slower (a limit that is still useful: when
+    # subprocess Python is run without the `-u` option average delays are around 500 ms.
+    delays = [t_outside - t_inside for t_outside, t_inside in timestamps]
+    too_big = [delay for delay in delays if delay > 0.050]
+    if too_big:
+        pytest.fail(f"Delayed capture: {too_big} avg delay is {sum(delays) / len(delays):.3f}")
