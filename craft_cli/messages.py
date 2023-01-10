@@ -1,5 +1,7 @@
+# XXX Facundo 2022-01-10: will split this module in a subsequent branch
+# pylint: disable=too-many-lines
 #
-# Copyright 2021-2022 Canonical Ltd.
+# Copyright 2021-2023 Canonical Ltd.
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -39,7 +41,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime
 from functools import lru_cache
-from typing import Literal, Optional, TextIO, Union
+from typing import Dict, Literal, Optional, TextIO, Union
 
 import platformdirs
 
@@ -526,9 +528,11 @@ class _PipeReaderThread(threading.Thread):
     # byte used to unblock the reading (under Windows)
     UNBLOCK_BYTE = b"\x00"
 
-    def __init__(self, printer: _Printer, stream: Optional[TextIO], use_timestamp: bool):
+    def __init__(
+        self, printer: _Printer, stream: Optional[TextIO], printer_flags: Dict[str, bool]
+    ):
         super().__init__()
-        self.use_timestamp = use_timestamp
+        self.printer_flags = printer_flags
 
         # prepare the pipe pair: the one to read (used in the thread core loop) and the
         # one which is to be written externally (and also used internally under windows
@@ -537,7 +541,10 @@ class _PipeReaderThread(threading.Thread):
         if _WINDOWS_MODE:
             # parameters: default security, default buffer size, binary mode
             binary_mode = os.O_BINARY  # pylint: disable=no-member  # (it does exist in Windows!)
-            self.read_pipe, self.write_pipe = win32pipe.FdCreatePipe(None, 0, binary_mode)
+            # ignoring the type of the first parameter below, as documentation allows to use None
+            # to make it use a NULL security descriptor:
+            #     https://www.markjour.com/docs/pywin32-docs/PySECURITY_ATTRIBUTES.html
+            self.read_pipe, self.write_pipe = win32pipe.FdCreatePipe(None, 0, binary_mode)  # type: ignore
         else:
             self.read_pipe, self.write_pipe = os.pipe()
 
@@ -573,7 +580,7 @@ class _PipeReaderThread(threading.Thread):
             # write the useful line to intended outputs
             unicode_line = useful_line.decode("utf8")
             text = f":: {unicode_line}"
-            self.printer.show(self.stream, text, end_line=True, use_timestamp=self.use_timestamp)
+            self.printer.show(self.stream, text, **self.printer_flags)
 
     def _run_posix(self) -> None:
         """Run the thread, handling pipes in the POSIX way."""
@@ -633,15 +640,28 @@ class _PipeReaderThread(threading.Thread):
 class _StreamContextManager:
     """A context manager that provides a pipe for subprocess to write its output."""
 
-    def __init__(
-        self, printer: _Printer, text: str, stream: Optional[TextIO], use_timestamp: bool
+    def __init__(  # pylint: disable=too-many-arguments
+        self,
+        printer: _Printer,
+        text: str,
+        stream: Optional[TextIO],
+        use_timestamp: bool,
+        ephemeral_mode: bool,
     ):
+        # prepare the printer flags for the initial message and everything produced
+        # by the pipe reader
+        printer_flags = {"use_timestamp": use_timestamp}
+        if ephemeral_mode:
+            printer_flags.update(ephemeral=True, end_line=False)
+        else:
+            printer_flags.update(ephemeral=False, end_line=True)
+
         # show the intended text (explicitly asking for a complete line) before passing the
         # output command to the pip-reading thread
-        printer.show(stream, text, end_line=True, use_timestamp=use_timestamp)
+        printer.show(stream, text, **printer_flags)
 
         # enable the thread to read and show what comes through the provided pipe
-        self.pipe_reader = _PipeReaderThread(printer, stream, use_timestamp)
+        self.pipe_reader = _PipeReaderThread(printer, stream, printer_flags)
 
     def __enter__(self):
         self.pipe_reader.start()
@@ -912,17 +932,33 @@ class Emitter:
     @_active_guard()
     def open_stream(self, text: str):
         """Open a stream context manager to get messages from subprocesses."""
-        if self._mode in (EmitterMode.QUIET, EmitterMode.BRIEF):
-            # don't show third party streams if quiet or normal
+        if self._mode == EmitterMode.QUIET:
+            # no third party stream
             stream = None
+            ephemeral = True
+            use_timestamp = False
+        elif self._mode == EmitterMode.BRIEF:
+            stream = sys.stderr
+            ephemeral = True
             use_timestamp = False
         elif self._mode == EmitterMode.VERBOSE:
+            # third party stream to stderr
             stream = sys.stderr
+            ephemeral = False
             use_timestamp = False
         else:
+            # third party stream to stderr with timestamp
             stream = sys.stderr
+            ephemeral = False
             use_timestamp = True
-        return _StreamContextManager(self._printer, text, stream=stream, use_timestamp=use_timestamp)  # type: ignore
+        manager = _StreamContextManager(
+            self._printer,  # type: ignore
+            text,
+            stream=stream,
+            use_timestamp=use_timestamp,
+            ephemeral_mode=ephemeral,
+        )
+        return manager
 
     @_active_guard()
     @contextmanager
