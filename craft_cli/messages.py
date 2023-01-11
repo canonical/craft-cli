@@ -47,6 +47,7 @@ import platformdirs
 
 try:
     import win32pipe  # type: ignore
+    import win32security  # type: ignore
 
     _WINDOWS_MODE = True
 except ImportError:
@@ -544,7 +545,9 @@ class _PipeReaderThread(threading.Thread):
             # ignoring the type of the first parameter below, as documentation allows to use None
             # to make it use a NULL security descriptor:
             #     https://www.markjour.com/docs/pywin32-docs/PySECURITY_ATTRIBUTES.html
-            self.read_pipe, self.write_pipe = win32pipe.FdCreatePipe(None, 0, binary_mode)  # type: ignore
+            # self.read_pipe, self.write_pipe = win32pipe.FdCreatePipe(None, 0, binary_mode)  # type: ignore
+            sec_attrib = win32security.SECURITY_ATTRIBUTES()
+            self.read_pipe, self.write_pipe = win32pipe.FdCreatePipe(sec_attrib, 0, binary_mode)
         else:
             self.read_pipe, self.write_pipe = os.pipe()
 
