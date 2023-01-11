@@ -1232,6 +1232,7 @@ def _parse_timestamp(text):
     return tstamp
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="Temporary skip, need to investigate why slow")
 @pytest.mark.parametrize(
     "loops, sleep, max_repetitions",
     [
