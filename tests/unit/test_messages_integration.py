@@ -1288,6 +1288,6 @@ def test_capture_delays(tmp_path, loops, sleep, max_repetitions):
     # raising it because CIs are slower (a limit that is still useful: when
     # subprocess Python is run without the `-u` option average delays are around 500 ms.
     delays = [t_outside - t_inside for t_outside, t_inside in timestamps]
-    too_big = [delay for delay in delays if delay > 0.200]
+    too_big = [delay for delay in delays if delay > 0.300]
     if too_big:
         pytest.fail(f"Delayed capture: {too_big} avg delay is {sum(delays) / len(delays):.3f}")
