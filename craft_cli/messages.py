@@ -612,7 +612,6 @@ class _PipeReaderThread(threading.Thread):
 
             if data:
                 self._write(data)
-            time.sleep(0.1)
 
     def run(self) -> None:
         """Run the thread."""
