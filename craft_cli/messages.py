@@ -652,7 +652,7 @@ class _StreamContextManager:
         printer_flags = {
             "use_timestamp": use_timestamp,
             "ephemeral": ephemeral_mode,
-            "end_line": not ephemeral_mode
+            "end_line": not ephemeral_mode,
         }
 
         # show the intended text (explicitly asking for a complete line) before passing the
