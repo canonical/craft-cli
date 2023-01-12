@@ -649,11 +649,11 @@ class _StreamContextManager:
     ):
         # prepare the printer flags for the initial message and everything produced
         # by the pipe reader
-        printer_flags = {"use_timestamp": use_timestamp}
-        if ephemeral_mode:
-            printer_flags.update(ephemeral=True, end_line=False)
-        else:
-            printer_flags.update(ephemeral=False, end_line=True)
+        printer_flags = {
+            "use_timestamp": use_timestamp,
+            "ephemeral": ephemeral_mode,
+            "end_line": not ephemeral_mode
+        }
 
         # show the intended text (explicitly asking for a complete line) before passing the
         # output command to the pip-reading thread
