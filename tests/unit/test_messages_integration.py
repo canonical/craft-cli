@@ -1232,7 +1232,6 @@ def _parse_timestamp(text):
     return tstamp
 
 
-@pytest.mark.skipif(sys.platform == "win32", reason="Temporary skip, need to investigate why slow")
 @pytest.mark.parametrize(
     "loops, sleep, max_repetitions",
     [
@@ -1264,7 +1263,7 @@ def test_capture_delays(tmp_path, loops, sleep, max_repetitions):
             tstamp = datetime.now().isoformat(sep=" ", timespec="milliseconds")
             print(tstamp, "short text to repeat " * random.randint(1, {max_repetitions}))
             time.sleep({sleep})
-    """
+        """
         )
     )
     emit = Emitter()
