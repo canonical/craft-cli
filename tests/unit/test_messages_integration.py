@@ -1268,7 +1268,7 @@ def test_capture_delays(tmp_path, loops, sleep, max_repetitions):
         )
     )
     emit = Emitter()
-    emit.init(EmitterMode.BRIEF, "testapp", GREETING)
+    emit.init(EmitterMode.QUIET, "testapp", GREETING)
     with emit.open_stream("Testing stream") as stream:
         cmd = [sys.executable, "-u", script]
         subprocess.run(cmd, stdout=stream, check=True)
