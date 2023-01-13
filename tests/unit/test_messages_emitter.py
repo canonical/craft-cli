@@ -1,5 +1,5 @@
 #
-# Copyright 2021-2022 Canonical Ltd.
+# Copyright 2021-2023 Canonical Ltd.
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -490,16 +490,9 @@ def test_progressbar_with_delta_false(get_initiated_emitter):
     assert progresser.delta is False
 
 
-@pytest.mark.parametrize(
-    "mode",
-    [
-        EmitterMode.QUIET,
-        EmitterMode.BRIEF,
-    ],
-)
-def test_openstream_in_quietish_modes(get_initiated_emitter, mode):
+def test_openstream_in_quiet_mode(get_initiated_emitter):
     """Return a stream context manager with the output stream in None."""
-    emitter = get_initiated_emitter(mode)
+    emitter = get_initiated_emitter(EmitterMode.QUIET)
 
     with patch("craft_cli.messages._StreamContextManager") as stream_context_manager_mock:
         instantiated_cm = object()
@@ -509,7 +502,29 @@ def test_openstream_in_quietish_modes(get_initiated_emitter, mode):
     assert emitter.printer_calls == []
     assert context_manager is instantiated_cm
     assert stream_context_manager_mock.mock_calls == [
-        call(emitter._printer, "some text", stream=None, use_timestamp=False),
+        call(emitter._printer, "some text", stream=None, use_timestamp=False, ephemeral_mode=True),
+    ]
+
+
+def test_openstream_in_brief_mode(get_initiated_emitter):
+    """Return a stream context manager with stderr as the output stream and ephemeral mode."""
+    emitter = get_initiated_emitter(EmitterMode.BRIEF)
+
+    with patch("craft_cli.messages._StreamContextManager") as stream_context_manager_mock:
+        instantiated_cm = object()
+        stream_context_manager_mock.return_value = instantiated_cm
+        context_manager = emitter.open_stream("some text")
+
+    assert emitter.printer_calls == []
+    assert context_manager is instantiated_cm
+    assert stream_context_manager_mock.mock_calls == [
+        call(
+            emitter._printer,
+            "some text",
+            stream=sys.stderr,
+            use_timestamp=False,
+            ephemeral_mode=True,
+        ),
     ]
 
 
@@ -525,7 +540,13 @@ def test_openstream_in_verbose_mode(get_initiated_emitter):
     assert emitter.printer_calls == []
     assert context_manager is instantiated_cm
     assert stream_context_manager_mock.mock_calls == [
-        call(emitter._printer, "some text", stream=sys.stderr, use_timestamp=False),
+        call(
+            emitter._printer,
+            "some text",
+            stream=sys.stderr,
+            use_timestamp=False,
+            ephemeral_mode=False,
+        ),
     ]
 
 
@@ -548,7 +569,13 @@ def test_openstream_in_developer_modes(get_initiated_emitter, mode):
     assert emitter.printer_calls == []
     assert context_manager is instantiated_cm
     assert stream_context_manager_mock.mock_calls == [
-        call(emitter._printer, "some text", stream=sys.stderr, use_timestamp=True),
+        call(
+            emitter._printer,
+            "some text",
+            stream=sys.stderr,
+            use_timestamp=True,
+            ephemeral_mode=False,
+        ),
     ]
 
 

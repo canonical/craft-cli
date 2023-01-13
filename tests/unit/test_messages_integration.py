@@ -1,5 +1,5 @@
 #
-# Copyright 2021-2022 Canonical Ltd.
+# Copyright 2021-2023 Canonical Ltd.
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -684,15 +684,8 @@ def test_trace_in_trace_mode(capsys):
     assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)
 
 
-@pytest.mark.parametrize(
-    "mode",
-    [
-        EmitterMode.QUIET,
-        EmitterMode.BRIEF,
-    ],
-)
 @pytest.mark.parametrize("output_is_terminal", [True, False])
-def test_third_party_output_quietish_modes(capsys, tmp_path, mode):
+def test_third_party_output_quiet(capsys, tmp_path):
     """Manage the streams produced for sub-executions, more quiet modes."""
     # something to execute
     script = tmp_path / "script.py"
@@ -706,7 +699,7 @@ def test_third_party_output_quietish_modes(capsys, tmp_path, mode):
         )
     )
     emit = Emitter()
-    emit.init(mode, "testapp", GREETING)
+    emit.init(EmitterMode.QUIET, "testapp", GREETING)
     with emit.open_stream("Testing stream") as stream:
         subprocess.run([sys.executable, script], stdout=stream, stderr=stream, check=True)
     emit.ended_ok()
@@ -717,6 +710,70 @@ def test_third_party_output_quietish_modes(capsys, tmp_path, mode):
         Line(":: foobar err"),
     ]
     assert_outputs(capsys, emit, expected_log=expected)
+
+
+@pytest.mark.parametrize("output_is_terminal", [True])
+def test_third_party_output_brief_terminal(capsys, tmp_path):
+    """Manage the streams produced for sub-executions, brief mode, to the terminal."""
+    # something to execute
+    script = tmp_path / "script.py"
+    script.write_text(
+        textwrap.dedent(
+            """
+        import sys
+        print("foobar out", flush=True)
+        print("foobar err", file=sys.stderr, flush=True)
+    """
+        )
+    )
+    emit = Emitter()
+    emit.init(EmitterMode.BRIEF, "testapp", GREETING)
+    with emit.open_stream("Testing stream") as stream:
+        subprocess.run([sys.executable, script], stdout=stream, stderr=stream, check=True)
+    emit.ended_ok()
+
+    expected_err = [
+        Line("Testing stream", permanent=False),
+        Line(":: foobar out", permanent=False),
+        Line(":: foobar err", permanent=False),
+        # This cleaner line is inserted by the printer stop
+        # sequence to reset the last ephemeral print to terminal.
+        Line("", permanent=False),
+    ]
+    expected_log = [
+        Line("Testing stream"),
+        Line(":: foobar out"),
+        Line(":: foobar err"),
+    ]
+    assert_outputs(capsys, emit, expected_err=expected_err, expected_log=expected_log)
+
+
+@pytest.mark.parametrize("output_is_terminal", [False])
+def test_third_party_output_brief_captured(capsys, tmp_path):
+    """Manage the streams produced for sub-executions, brief mode, captured."""
+    # something to execute
+    script = tmp_path / "script.py"
+    script.write_text(
+        textwrap.dedent(
+            """
+        import sys
+        print("foobar out", flush=True)
+        print("foobar err", file=sys.stderr, flush=True)
+    """
+        )
+    )
+    emit = Emitter()
+    emit.init(EmitterMode.BRIEF, "testapp", GREETING)
+    with emit.open_stream("Testing stream") as stream:
+        subprocess.run([sys.executable, script], stdout=stream, stderr=stream, check=True)
+    emit.ended_ok()
+
+    expected = [
+        Line("Testing stream"),
+        Line(":: foobar out"),
+        Line(":: foobar err"),
+    ]
+    assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)
 
 
 @pytest.mark.parametrize("output_is_terminal", [True, False])
@@ -1168,18 +1225,21 @@ def test_logging_after_closing(capsys, logger):
 def _parse_timestamp(text):
     """Parse a timestamp from its text format to seconds from epoch."""
     date_and_time, msec = text.strip().split(".")
-    dt = datetime.strptime(date_and_time, "%Y-%m-%d %H:%M:%S")
-    tstamp = dt.timestamp()
+    dt_ = datetime.strptime(date_and_time, "%Y-%m-%d %H:%M:%S")
+    tstamp = dt_.timestamp()
     assert len(msec) == 3
     tstamp += int(msec) / 1000
     return tstamp
 
 
-@pytest.mark.parametrize("loops, sleep, max_repetitions", [
-    (100, .01, 30),
-    (1000, .001, 100),
-    (10, .1, 2),
-])
+@pytest.mark.parametrize(
+    "loops, sleep, max_repetitions",
+    [
+        (100, 0.01, 30),
+        (1000, 0.001, 100),
+        (10, 0.1, 2),
+    ],
+)
 @pytest.mark.parametrize("output_is_terminal", [True, False])
 def test_capture_delays(tmp_path, loops, sleep, max_repetitions):
     """Check that there are no noticeable delays when capturing output.
@@ -1203,18 +1263,18 @@ def test_capture_delays(tmp_path, loops, sleep, max_repetitions):
             tstamp = datetime.now().isoformat(sep=" ", timespec="milliseconds")
             print(tstamp, "short text to repeat " * random.randint(1, {max_repetitions}))
             time.sleep({sleep})
-    """
+        """
         )
     )
     emit = Emitter()
-    emit.init(EmitterMode.BRIEF, "testapp", GREETING)
+    emit.init(EmitterMode.QUIET, "testapp", GREETING)
     with emit.open_stream("Testing stream") as stream:
         cmd = [sys.executable, "-u", script]
         subprocess.run(cmd, stdout=stream, check=True)
     emit.ended_ok()
 
     timestamps = []
-    with open(emit._log_filepath, "rt", encoding="utf8") as filehandler:
+    with open(emit._log_filepath, "rt", encoding="utf8") as filehandler:  # type: ignore
         for line in filehandler:
             match = re.match(rf"({TIMESTAMP_FORMAT}):: ({TIMESTAMP_FORMAT}).*\n", line)
             if not match:

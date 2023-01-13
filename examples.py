@@ -11,6 +11,14 @@ import time
 
 from craft_cli import CraftError, EmitterMode, emit
 
+USAGE = """
+USAGE: explorator.py <test_id> [<extra1>, [...]]")
+
+E.g.:
+    explorator.py 04
+    explorator.py 32 brief extrastuff
+"""
+
 
 def example_01():
     """Show a simple message, the expected command result."""
@@ -374,10 +382,47 @@ def example_26():
     emit.message("Application End.")
 
 
+def example_27(mode_name, total_messages=10):
+    """Capture the output of a noisy subprocess in different modes."""
+    mode = EmitterMode[mode_name.upper()]
+    emit.set_mode(mode)
+
+    example_test_sub_app = textwrap.dedent(
+        """
+        import sys
+        import time
+        from random import random, randint, sample
+        from string import ascii_lowercase as letters
+
+        total = int(sys.argv[1])
+        for idx in range(total):
+            short = random() > .2
+            delay = random() / 4 if short else random() * 2
+            delay_for_spinner = random() > .9
+            more = " ".join("".join(sample(letters, randint(3, 8))) for _ in range(randint(5, 30)))
+            print(f"Noisy message {idx} / {total} -- {more}", flush=True)
+            time.sleep(delay)
+            if delay_for_spinner:
+                time.sleep(5)
+    """
+    )
+    temp_fh, temp_name = tempfile.mkstemp()
+    with open(temp_fh, "wt", encoding="utf8") as fh:
+        fh.write(example_test_sub_app)
+
+    emit.progress("About to run a noisy subprocess")
+    time.sleep(1)
+    with emit.open_stream("Running custom Python app in unbuffered mode") as stream:
+        cmd = [sys.executable, "-u", temp_name, str(total_messages)]
+        subprocess.run(cmd, stdout=stream, stderr=stream)
+    os.unlink(temp_name)
+    emit.message("All done!")
+
+
 # -- end of test cases
 
-if len(sys.argv) != 2:
-    print("USAGE: explorator.py <test_id>  # ej 04")
+if len(sys.argv) < 2:
+    print(USAGE)
     exit()
 
 name = f"example_{int(sys.argv[1]):02d}"
@@ -388,7 +433,7 @@ if func is None:
 
 emit.init(EmitterMode.BRIEF, "explorator", "Greetings earthlings")
 try:
-    func()
+    func(*sys.argv[2:])
 except CraftError as err:
     emit.error(err)
 except KeyboardInterrupt as exc:

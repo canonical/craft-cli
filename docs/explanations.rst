@@ -346,7 +346,9 @@ The last column of the table though is not about the screen: it indicates if the
        | without progress
    * - ``.open_stream(...)``
      - --
-     - --
+     - | stderr
+       | transient (*)
+       | plain
      - | stderr
        | permanent
        | plain
