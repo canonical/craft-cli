@@ -1,4 +1,4 @@
-# Copyright 2022 Canonical Ltd.
+# Copyright 2022-2023 Canonical Ltd.
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -19,7 +19,7 @@ from unittest.mock import call
 
 import pytest
 
-from craft_cli import messages
+from craft_cli import messages, printer
 
 # -- tests for the `init_emitter` auto-fixture
 
@@ -33,6 +33,7 @@ def test_initemitter_initiated():
 def test_initemitter_testmode():
     """The messages module is set to test mode."""
     assert messages.TESTMODE is True
+    assert printer.TESTMODE is True
 
 
 def test_initemitter_isolated_tempdir(tmp_path):

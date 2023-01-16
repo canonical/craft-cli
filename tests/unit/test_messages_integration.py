@@ -31,7 +31,7 @@ from unittest.mock import patch
 
 import pytest
 
-from craft_cli import messages
+from craft_cli import messages, printer
 from craft_cli.errors import CraftError
 from craft_cli.messages import Emitter, EmitterMode
 
@@ -51,7 +51,7 @@ def prepare_environment(tmp_path, monkeypatch):
     monkeypatch.setattr(messages, "_get_log_filepath", lambda appname: fake_logpath)
 
     # set a very big terminal width so messages are briefly not wrapped
-    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 500)
+    monkeypatch.setattr(printer, "_get_terminal_width", lambda: 500)
 
 
 @pytest.fixture(autouse=True)
@@ -61,7 +61,7 @@ def force_output_behaviour(monkeypatch, output_is_terminal):
     Note that it's always safer to use this fixture, as the very effect of running the
     tests makes the output to be captured, so it's a good idea to be explicit.
     """
-    monkeypatch.setattr(messages, "_stream_is_terminal", lambda stream: output_is_terminal)
+    monkeypatch.setattr(printer, "_stream_is_terminal", lambda stream: output_is_terminal)
 
 
 @pytest.fixture
@@ -84,8 +84,8 @@ class Line:
 
 def compare_lines(expected_lines, raw_stream, std_stream):
     """Helper to compare expected lines to what was written to the terminal."""
-    width = messages._get_terminal_width()
-    terminal = messages._stream_is_terminal(std_stream)
+    width = printer._get_terminal_width()
+    terminal = printer._stream_is_terminal(std_stream)
     if expected_lines:
         assert len(raw_stream) > 0
 
@@ -342,7 +342,7 @@ def test_progressbar_quiet(capsys):
 def test_progressbar_brief_terminal(capsys, monkeypatch):
     """Show a progress bar in brief mode."""
     # fake size so lines to compare are static
-    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 60)
+    monkeypatch.setattr(printer, "_get_terminal_width", lambda: 60)
 
     emit = Emitter()
 
@@ -383,7 +383,7 @@ def test_progressbar_brief_terminal(capsys, monkeypatch):
 def test_progressbar_brief_permanent_terminal(capsys, monkeypatch):
     """Show a progress bar in brief mode."""
     # fake size so lines to compare are static
-    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 60)
+    monkeypatch.setattr(printer, "_get_terminal_width", lambda: 60)
 
     emit = Emitter()
 
@@ -473,7 +473,7 @@ def test_progressbar_captured_developer_modes(capsys, monkeypatch, mode):
 def test_progressbar_verbose(capsys, monkeypatch):
     """Show a progress bar in verbose mode."""
     # fake size so lines to compare are static
-    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 60)
+    monkeypatch.setattr(printer, "_get_terminal_width", lambda: 60)
 
     emit = Emitter()
 
@@ -518,7 +518,7 @@ def test_progressbar_verbose(capsys, monkeypatch):
 def test_progressbar_developer_modes(capsys, mode, monkeypatch):
     """Show a progress bar in debug and trace modes."""
     # fake size so lines to compare are static
-    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 60)
+    monkeypatch.setattr(printer, "_get_terminal_width", lambda: 60)
 
     emit = Emitter()
 

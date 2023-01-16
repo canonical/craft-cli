@@ -64,7 +64,7 @@ def get_initiated_emitter(tmp_path, monkeypatch):
     """
     fake_logpath = str(tmp_path / FAKE_LOG_NAME)
     monkeypatch.setattr(messages, "_get_log_filepath", lambda appname: fake_logpath)
-    with patch("craft_cli.messages._Printer", autospec=True) as mock_printer:
+    with patch("craft_cli.messages.Printer", autospec=True) as mock_printer:
 
         def func(mode, greeting="default greeting"):
             emitter = RecordingEmitter()
@@ -94,12 +94,12 @@ def test_init_quietish(mode, tmp_path, monkeypatch):
 
     greeting = "greeting"
     emitter = Emitter()
-    with patch("craft_cli.messages._Printer") as mock_printer:
+    with patch("craft_cli.messages.Printer") as mock_printer:
         emitter.init(mode, "testappname", greeting)
 
     assert emitter._mode == mode
     assert mock_printer.mock_calls == [
-        call(fake_logpath),  # the _Printer instantiation, passing the log filepath
+        call(fake_logpath),  # the Printer instantiation, passing the log filepath
         call().show(None, "greeting"),  # the greeting, only sent to the log
     ]
 
@@ -117,13 +117,13 @@ def test_init_verbose_mode(tmp_path, monkeypatch):
 
     greeting = "greeting"
     emitter = Emitter()
-    with patch("craft_cli.messages._Printer") as mock_printer:
+    with patch("craft_cli.messages.Printer") as mock_printer:
         emitter.init(EmitterMode.VERBOSE, "testappname", greeting)
 
     assert emitter._mode == EmitterMode.VERBOSE
     log_locat = f"Logging execution to {fake_logpath!r}"
     assert mock_printer.mock_calls == [
-        call(fake_logpath),  # the _Printer instantiation, passing the log filepath
+        call(fake_logpath),  # the Printer instantiation, passing the log filepath
         call().show(None, "greeting"),  # the greeting, only sent to the log
         call().show(sys.stderr, greeting, use_timestamp=False, end_line=True, avoid_logging=True),
         call().show(sys.stderr, log_locat, use_timestamp=False, end_line=True, avoid_logging=True),
@@ -150,13 +150,13 @@ def test_init_developer_modes(mode, tmp_path, monkeypatch):
 
     greeting = "greeting"
     emitter = Emitter()
-    with patch("craft_cli.messages._Printer") as mock_printer:
+    with patch("craft_cli.messages.Printer") as mock_printer:
         emitter.init(mode, "testappname", greeting)
 
     assert emitter._mode == mode
     log_locat = f"Logging execution to {fake_logpath!r}"
     assert mock_printer.mock_calls == [
-        call(fake_logpath),  # the _Printer instantiation, passing the log filepath
+        call(fake_logpath),  # the Printer instantiation, passing the log filepath
         call().show(None, "greeting"),  # the greeting, only sent to the log
         call().show(sys.stderr, greeting, use_timestamp=True, end_line=True, avoid_logging=True),
         call().show(sys.stderr, log_locat, use_timestamp=True, end_line=True, avoid_logging=True),
@@ -185,13 +185,13 @@ def test_init_receiving_logfile(tmp_path, monkeypatch):
     greeting = "greeting"
     emitter = Emitter()
     fake_logpath = tmp_path / FAKE_LOG_NAME
-    with patch("craft_cli.messages._Printer") as mock_printer:
+    with patch("craft_cli.messages.Printer") as mock_printer:
         emitter.init(EmitterMode.DEBUG, "testappname", greeting, log_filepath=fake_logpath)
 
     # filepath is properly informed and passed to the printer
     log_locat = f"Logging execution to {str(fake_logpath)!r}"
     assert mock_printer.mock_calls == [
-        call(fake_logpath),  # the _Printer instantiation, passing the log filepath
+        call(fake_logpath),  # the Printer instantiation, passing the log filepath
         call().show(None, "greeting"),  # the greeting, only sent to the log
         call().show(sys.stderr, greeting, use_timestamp=True, end_line=True, avoid_logging=True),
         call().show(sys.stderr, log_locat, use_timestamp=True, end_line=True, avoid_logging=True),
@@ -205,7 +205,7 @@ def test_init_double_regular_mode(tmp_path, monkeypatch):
 
     emitter = Emitter()
 
-    with patch("craft_cli.messages._Printer"):
+    with patch("craft_cli.messages.Printer"):
         emitter.init(EmitterMode.VERBOSE, "testappname", "greeting")
 
         with pytest.raises(RuntimeError, match="Double Emitter init detected!"):
@@ -220,7 +220,7 @@ def test_init_double_tests_mode(tmp_path, monkeypatch):
     monkeypatch.setattr(messages, "TESTMODE", True)
     emitter = Emitter()
 
-    with patch("craft_cli.messages._Printer"):
+    with patch("craft_cli.messages.Printer"):
         with patch.object(emitter, "_stop") as mock_stop:
             emitter.init(EmitterMode.VERBOSE, "testappname", "greeting")
             assert mock_stop.called is False
@@ -745,7 +745,7 @@ def test_paused_resumed_ok(get_initiated_emitter, tmp_path):
         emitter.printer_calls.clear()
         # we end ok here
 
-    # a new _Printer is created, with same logpath and the resuming message is shown
+    # a new Printer is created, with same logpath and the resuming message is shown
     assert emitter.printer_calls == [
         call(str(tmp_path / FAKE_LOG_NAME)),
         call().show(None, "Emitter: Resuming control of the terminal", use_timestamp=True),
@@ -769,7 +769,7 @@ def test_paused_resumed_error(get_initiated_emitter, tmp_path):
             # all this is inside a `pytest.raises`, but the emitter should resume ok
             raise ValueError()
 
-    # a new _Printer is created, with same logpath and the resuming message is shown
+    # a new Printer is created, with same logpath and the resuming message is shown
     assert emitter.printer_calls == [
         call(str(tmp_path / FAKE_LOG_NAME)),
         call().show(None, "Emitter: Resuming control of the terminal", use_timestamp=True),
