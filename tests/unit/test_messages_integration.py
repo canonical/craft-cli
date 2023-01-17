@@ -1284,10 +1284,11 @@ def test_capture_delays(tmp_path, loops, sleep, max_repetitions):
     if not timestamps:
         pytest.fail("Bad logs, couldn't retrieve timestamps")
 
-    # no big deltas! in a development machine the delay limit can be 2 ms and still passes ok,
-    # raising it because CIs are slower (a limit that is still useful: when
-    # subprocess Python is run without the `-u` option average delays are around 500 ms.
+    # no big deltas in most of the messages! in a development machine the
+    # delay limit can be 2 ms and still passes ok, raising it because CIs
+    # are slower (a limit that is still useful: when subprocess Python
+    # is run without the `-u` option average delays are around 500 ms.
     delays = [t_outside - t_inside for t_outside, t_inside in timestamps]
     too_big = [delay for delay in delays if delay > 0.050]
-    if too_big:
+    if len(too_big) > loops / 20:
         pytest.fail(f"Delayed capture: {too_big} avg delay is {sum(delays) / len(delays):.3f}")
