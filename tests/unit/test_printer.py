@@ -1,5 +1,5 @@
 #
-# Copyright 2021-2022 Canonical Ltd.
+# Copyright 2021-2023 Canonical Ltd.
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -14,17 +14,19 @@
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-"""Tests that check the whole _Printer machinery."""
+"""Tests that check the whole Printer machinery."""
 
+import re
 import shutil
 import sys
 import threading
+import time
 from datetime import datetime
 
 import pytest
 
-from craft_cli import messages
-from craft_cli.messages import _MessageInfo, _Printer, _Spinner
+from craft_cli import printer as printermod
+from craft_cli.printer import Printer, _MessageInfo, _Spinner
 
 
 @pytest.fixture(autouse=True)
@@ -57,9 +59,9 @@ def clear_stream_is_terminal_cache():
     Otherwise our isatty monkey-patching can either confuse or be confused
     by other tests.
     """
-    messages._stream_is_terminal.cache_clear()
+    printermod._stream_is_terminal.cache_clear()
     yield
-    messages._stream_is_terminal.cache_clear()
+    printermod._stream_is_terminal.cache_clear()
 
 
 # -- simple helpers
@@ -67,14 +69,14 @@ def clear_stream_is_terminal_cache():
 
 def test_terminal_width():
     """Check the terminal width helper."""
-    assert messages._get_terminal_width() == shutil.get_terminal_size().columns
+    assert printermod._get_terminal_width() == shutil.get_terminal_size().columns
 
 
 def test_streamisterminal_no_isatty_method():
     """The stream does not have an isatty method."""
     stream = object()
     assert not hasattr(stream, "isatty")
-    result = messages._stream_is_terminal(stream)
+    result = printermod._stream_is_terminal(stream)
     assert result is False
 
 
@@ -85,31 +87,31 @@ def test_streamisterminal_tty_not():
         def isatty(self):
             return False
 
-    result = messages._stream_is_terminal(FakeStream())
+    result = printermod._stream_is_terminal(FakeStream())
     assert result is False
 
 
 def test_streamisterminal_tty_yes_usable(monkeypatch):
     """The stream is a terminal of use."""
-    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 40)
+    monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
 
     class FakeStream:
         def isatty(self):
             return True
 
-    result = messages._stream_is_terminal(FakeStream())
+    result = printermod._stream_is_terminal(FakeStream())
     assert result is True
 
 
 def test_streamisterminal_tty_yes_unusable(monkeypatch):
     """The stream is a terminal that cannot really be used (no columns!)."""
-    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 0)
+    monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 0)
 
     class FakeStream:
         def isatty(self):
             return True
 
-    result = messages._stream_is_terminal(FakeStream())
+    result = printermod._stream_is_terminal(FakeStream())
     assert result is False
 
 
@@ -118,8 +120,8 @@ def test_streamisterminal_tty_yes_unusable(monkeypatch):
 
 def test_writelineterminal_simple_complete(capsys, monkeypatch, log_filepath):
     """Complete verification of _write_line_terminal for a simple case."""
-    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 40)
-    printer = _Printer(log_filepath)
+    monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
+    printer = Printer(log_filepath)
 
     test_text = "test text"
     msg = _MessageInfo(sys.stdout, test_text)
@@ -136,8 +138,8 @@ def test_writelineterminal_simple_complete(capsys, monkeypatch, log_filepath):
 
 def test_writelineterminal_simple_too_long(capsys, monkeypatch, log_filepath):
     """A permanent message that exceeds the line length."""
-    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 20)
-    printer = _Printer(log_filepath)
+    monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 20)
+    printer = Printer(log_filepath)
 
     test_text = "012345678901234567890123456789"
     msg = _MessageInfo(sys.stdout, test_text)
@@ -155,8 +157,8 @@ def test_writelineterminal_simple_too_long(capsys, monkeypatch, log_filepath):
 
 def test_writelineterminal_different_stream(capsys, monkeypatch, log_filepath):
     """Use a different stream."""
-    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 40)
-    printer = _Printer(log_filepath)
+    monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
+    printer = Printer(log_filepath)
 
     test_text = "test text"
     msg = _MessageInfo(sys.stderr, test_text)
@@ -173,8 +175,8 @@ def test_writelineterminal_different_stream(capsys, monkeypatch, log_filepath):
 
 def test_writelineterminal_with_timestamp(capsys, monkeypatch, log_filepath):
     """A timestamp was indicated to use."""
-    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 40)
-    printer = _Printer(log_filepath)
+    monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
+    printer = Printer(log_filepath)
 
     fake_now = datetime(2009, 9, 1, 12, 13, 15, 123456)
     msg = _MessageInfo(sys.stdout, "test text", use_timestamp=True, created_at=fake_now)
@@ -190,8 +192,8 @@ def test_writelineterminal_with_timestamp(capsys, monkeypatch, log_filepath):
 
 def test_writelineterminal_having_previous_message_out(capsys, monkeypatch, log_filepath):
     """There is a previous message to be completed (in stdout)."""
-    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 40)
-    printer = _Printer(log_filepath)
+    monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
+    printer = Printer(log_filepath)
     printer.prv_msg = _MessageInfo(sys.stdout, "previous text")
 
     test_text = "test text"
@@ -206,8 +208,8 @@ def test_writelineterminal_having_previous_message_out(capsys, monkeypatch, log_
 
 def test_writelineterminal_having_previous_message_err(capsys, monkeypatch, log_filepath):
     """There is a previous message to be completed (in stderr)."""
-    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 40)
-    printer = _Printer(log_filepath)
+    monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
+    printer = Printer(log_filepath)
     printer.prv_msg = _MessageInfo(sys.stderr, "previous text")
 
     test_text = "test text"
@@ -222,8 +224,8 @@ def test_writelineterminal_having_previous_message_err(capsys, monkeypatch, log_
 
 def test_writelineterminal_having_previous_message_complete(capsys, monkeypatch, log_filepath):
     """There is a previous message which is already complete."""
-    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 40)
-    printer = _Printer(log_filepath)
+    monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
+    printer = Printer(log_filepath)
     printer.prv_msg = _MessageInfo(sys.stdout, "previous text", end_line=True)
 
     test_text = "test text"
@@ -238,8 +240,8 @@ def test_writelineterminal_having_previous_message_complete(capsys, monkeypatch,
 
 def test_writelineterminal_indicated_to_complete(capsys, monkeypatch, log_filepath):
     """The message is indicated to complete the line."""
-    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 40)
-    printer = _Printer(log_filepath)
+    monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
+    printer = Printer(log_filepath)
 
     test_text = "test text"
     msg = _MessageInfo(sys.stdout, test_text, end_line=True)
@@ -255,8 +257,8 @@ def test_writelineterminal_indicated_to_complete(capsys, monkeypatch, log_filepa
 
 def test_writelineterminal_ephemeral_message_short(capsys, monkeypatch, log_filepath):
     """Complete verification of _write_line_terminal for a simple case."""
-    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 40)
-    printer = _Printer(log_filepath)
+    monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
+    printer = Printer(log_filepath)
 
     test_text = "test text"
     msg = _MessageInfo(sys.stdout, test_text)
@@ -273,8 +275,8 @@ def test_writelineterminal_ephemeral_message_short(capsys, monkeypatch, log_file
 
 def test_writelineterminal_ephemeral_message_too_long(capsys, monkeypatch, log_filepath):
     """Complete verification of _write_line_terminal for a simple case."""
-    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 20)
-    printer = _Printer(log_filepath)
+    monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 20)
+    printer = Printer(log_filepath)
 
     test_text = "0123456789012345678901234567890"
     msg = _MessageInfo(sys.stdout, test_text, ephemeral=True)
@@ -291,8 +293,8 @@ def test_writelineterminal_ephemeral_message_too_long(capsys, monkeypatch, log_f
 
 def test_writelineterminal_having_previous_message_ephemeral(capsys, monkeypatch, log_filepath):
     """There is a previous message to be overwritten."""
-    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 40)
-    printer = _Printer(log_filepath)
+    monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
+    printer = Printer(log_filepath)
     printer.prv_msg = _MessageInfo(sys.stdout, "previous text", ephemeral=True)
 
     test_text = "test text"
@@ -315,8 +317,8 @@ def test_writelineterminal_having_previous_message_ephemeral(capsys, monkeypatch
 )
 def test_writelineterminal_spintext_simple(capsys, monkeypatch, log_filepath, prv_msg):
     """A message with spintext."""
-    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 40)
-    printer = _Printer(log_filepath)
+    monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
+    printer = Printer(log_filepath)
     printer.prv_msg = prv_msg  # will overwrite previous message not matter what
 
     msg = _MessageInfo(sys.stdout, "test text")
@@ -331,8 +333,8 @@ def test_writelineterminal_spintext_simple(capsys, monkeypatch, log_filepath, pr
 
 def test_writelineterminal_spintext_message_too_long(capsys, monkeypatch, log_filepath):
     """A message with spintext that is too long only overwrites the last "real line"."""
-    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 20)
-    printer = _Printer(log_filepath)
+    monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 20)
+    printer = Printer(log_filepath)
 
     msg = _MessageInfo(sys.stdout, "0.1.2.3.4.5.6.7.8.9.a.b.c.d.e.")
     printer._write_line_terminal(msg, spintext=" * 3.15s")
@@ -347,8 +349,8 @@ def test_writelineterminal_spintext_message_too_long(capsys, monkeypatch, log_fi
 
 def test_writelineterminal_spintext_length_just_exceeded(capsys, monkeypatch, log_filepath):
     """A message that would fit, but it just exceeds the line length because of the spin text."""
-    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 20)
-    printer = _Printer(log_filepath)
+    monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 20)
+    printer = Printer(log_filepath)
 
     msg = _MessageInfo(sys.stdout, "0x1x2x3x4x5x6x7x8x")  # len 16, it would fit!
     printer._write_line_terminal(msg, spintext=" * 3.15s")  # adding this would exceed the length
@@ -374,7 +376,7 @@ def test_writelineterminal_spintext_length_just_exceeded(capsys, monkeypatch, lo
 )
 def test_writelinecaptured_simple_complete(capsys, monkeypatch, log_filepath, test_text):
     """Complete verification of _write_line_captured several text cases."""
-    printer = _Printer(log_filepath)
+    printer = Printer(log_filepath)
 
     msg = _MessageInfo(sys.stdout, test_text)
     printer._write_line_captured(msg)
@@ -389,8 +391,8 @@ def test_writelinecaptured_simple_complete(capsys, monkeypatch, log_filepath, te
 
 def test_writelinecaptured_with_timestamp(capsys, monkeypatch, log_filepath):
     """A timestamp was indicated to use."""
-    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 40)
-    printer = _Printer(log_filepath)
+    monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
+    printer = Printer(log_filepath)
 
     fake_now = datetime(2009, 9, 1, 12, 13, 15, 123456)
     msg = _MessageInfo(sys.stdout, "test text", use_timestamp=True, created_at=fake_now)
@@ -407,8 +409,8 @@ def test_writelinecaptured_with_timestamp(capsys, monkeypatch, log_filepath):
 
 def test_writebarterminal_simple(capsys, monkeypatch, log_filepath):
     """Complete verification of _write_bar_terminal for a simple case."""
-    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 40)
-    printer = _Printer(log_filepath)
+    monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
+    printer = Printer(log_filepath)
 
     msg = _MessageInfo(sys.stdout, "test text", bar_progress=50, bar_total=100)
     printer._write_bar_terminal(msg)
@@ -425,8 +427,8 @@ def test_writebarterminal_simple(capsys, monkeypatch, log_filepath):
 
 def test_writebarterminal_timestamp(capsys, monkeypatch, log_filepath):
     """A timestamp was indicated to use."""
-    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 60)
-    printer = _Printer(log_filepath)
+    monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 60)
+    printer = Printer(log_filepath)
 
     fake_now = datetime(2009, 9, 1, 12, 13, 15, 123456)
     msg = _MessageInfo(
@@ -451,8 +453,8 @@ def test_writebarterminal_timestamp(capsys, monkeypatch, log_filepath):
 
 def test_writebarterminal_simple_empty(capsys, monkeypatch, log_filepath):
     """The indicated progress is zero."""
-    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 40)
-    printer = _Printer(log_filepath)
+    monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
+    printer = Printer(log_filepath)
 
     msg = _MessageInfo(sys.stdout, "test text", bar_progress=0, bar_total=100)
     printer._write_bar_terminal(msg)
@@ -464,8 +466,8 @@ def test_writebarterminal_simple_empty(capsys, monkeypatch, log_filepath):
 
 def test_writebarterminal_simple_total(capsys, monkeypatch, log_filepath):
     """The indicated progress is the total."""
-    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 40)
-    printer = _Printer(log_filepath)
+    monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
+    printer = Printer(log_filepath)
 
     msg = _MessageInfo(sys.stdout, "test text", bar_progress=100, bar_total=100)
     printer._write_bar_terminal(msg)
@@ -477,8 +479,8 @@ def test_writebarterminal_simple_total(capsys, monkeypatch, log_filepath):
 
 def test_writebarterminal_simple_exceeding(capsys, monkeypatch, log_filepath):
     """The indicated progress exceeds the total."""
-    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 40)
-    printer = _Printer(log_filepath)
+    monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
+    printer = Printer(log_filepath)
 
     msg = _MessageInfo(sys.stdout, "test text", bar_progress=120, bar_total=100)
     printer._write_bar_terminal(msg)
@@ -490,8 +492,8 @@ def test_writebarterminal_simple_exceeding(capsys, monkeypatch, log_filepath):
 
 def test_writebarterminal_too_long_text(capsys, monkeypatch, log_filepath):
     """No space for the bar because the text is too long."""
-    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 20)
-    printer = _Printer(log_filepath)
+    monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 20)
+    printer = Printer(log_filepath)
 
     test_text = "012345678901234567890123456789"
     msg = _MessageInfo(sys.stdout, test_text, bar_progress=20, bar_total=100)
@@ -504,8 +506,8 @@ def test_writebarterminal_too_long_text(capsys, monkeypatch, log_filepath):
 
 def test_writebarterminal_too_long_artifacts(capsys, monkeypatch, log_filepath):
     """No space for the bar with all proper artifacts."""
-    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 20)
-    printer = _Printer(log_filepath)
+    monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 20)
+    printer = Printer(log_filepath)
 
     test_text = "01234567890123456"  # this would really fit
     msg = _MessageInfo(sys.stdout, test_text, bar_progress=2000, bar_total=100000)  # big numbers!
@@ -517,8 +519,8 @@ def test_writebarterminal_too_long_artifacts(capsys, monkeypatch, log_filepath):
 
 def test_writebarterminal_different_stream(capsys, monkeypatch, log_filepath):
     """Use a different stream."""
-    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 40)
-    printer = _Printer(log_filepath)
+    monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
+    printer = Printer(log_filepath)
 
     msg = _MessageInfo(sys.stderr, "test text", bar_progress=50, bar_total=100)
     printer._write_bar_terminal(msg)
@@ -534,8 +536,8 @@ def test_writebarterminal_different_stream(capsys, monkeypatch, log_filepath):
 
 def test_writebarterminal_having_previous_message_out(capsys, monkeypatch, log_filepath):
     """There is a previous message to be completed (in stdout)."""
-    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 40)
-    printer = _Printer(log_filepath)
+    monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
+    printer = Printer(log_filepath)
     printer.prv_msg = _MessageInfo(sys.stdout, "previous text")
 
     msg = _MessageInfo(sys.stdout, "test text", bar_progress=50, bar_total=100)
@@ -549,8 +551,8 @@ def test_writebarterminal_having_previous_message_out(capsys, monkeypatch, log_f
 
 def test_writebarterminal_having_previous_message_err(capsys, monkeypatch, log_filepath):
     """There is a previous message to be completed (in stderr)."""
-    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 40)
-    printer = _Printer(log_filepath)
+    monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
+    printer = Printer(log_filepath)
     printer.prv_msg = _MessageInfo(sys.stderr, "previous text")
 
     msg = _MessageInfo(sys.stdout, "test text", bar_progress=50, bar_total=100)
@@ -564,8 +566,8 @@ def test_writebarterminal_having_previous_message_err(capsys, monkeypatch, log_f
 
 def test_writebarterminal_having_previous_message_complete(capsys, monkeypatch, log_filepath):
     """There is a previous message which is already complete."""
-    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 40)
-    printer = _Printer(log_filepath)
+    monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
+    printer = Printer(log_filepath)
     printer.prv_msg = _MessageInfo(sys.stdout, "previous text", end_line=True)
 
     msg = _MessageInfo(sys.stdout, "test text", bar_progress=50, bar_total=100)
@@ -579,8 +581,8 @@ def test_writebarterminal_having_previous_message_complete(capsys, monkeypatch, 
 
 def test_writebarterminal_having_previous_message_ephemeral(capsys, monkeypatch, log_filepath):
     """There is a previous message to be overwritten."""
-    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 40)
-    printer = _Printer(log_filepath)
+    monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
+    printer = Printer(log_filepath)
     printer.prv_msg = _MessageInfo(sys.stdout, "previous text", ephemeral=True)
 
     msg = _MessageInfo(sys.stdout, "test text", bar_progress=50, bar_total=100)
@@ -597,7 +599,7 @@ def test_writebarterminal_having_previous_message_ephemeral(capsys, monkeypatch,
 
 def test_writebarcaptured_simple(capsys, monkeypatch, log_filepath):
     """Complete verification of _write_bar_captured for a simple case."""
-    printer = _Printer(log_filepath)
+    printer = Printer(log_filepath)
 
     msg = _MessageInfo(sys.stdout, "test text", bar_progress=50, bar_total=100)
     printer._write_bar_captured(msg)
@@ -613,7 +615,7 @@ def test_writebarcaptured_simple(capsys, monkeypatch, log_filepath):
 
 def test_logfile_opened(log_filepath):
     """The logfile is properly opened."""
-    printer = _Printer(log_filepath)
+    printer = Printer(log_filepath)
     assert not printer.log.closed
     assert printer.log.mode == "at"
     assert printer.log.encoding == "utf8"
@@ -621,14 +623,14 @@ def test_logfile_opened(log_filepath):
 
 def test_logfile_closed(log_filepath):
     """The logfile is properly closed."""
-    printer = _Printer(log_filepath)
+    printer = Printer(log_filepath)
     printer.stop()
     assert printer.log.closed
 
 
 def test_logfile_used(log_filepath):
     """A message was logged to the file."""
-    printer = _Printer(log_filepath)
+    printer = Printer(log_filepath)
 
     fake_now = datetime(2009, 9, 1, 12, 13, 15, 123456)
     msg = _MessageInfo(sys.stdout, "test text", use_timestamp=True, created_at=fake_now)
@@ -883,20 +885,20 @@ def test_show_when_stopped(recording_printer):
 
 def test_init_printer_ok(log_filepath):
     """Printer is initiated as usual."""
-    printer = _Printer(log_filepath)
+    printer = Printer(log_filepath)
     assert printer.spinner.is_alive()
 
 
 def test_init_printer_testmode(log_filepath, monkeypatch):
     """Printer is initiated as usual."""
-    monkeypatch.setattr(messages, "TESTMODE", True)
-    printer = _Printer(log_filepath)
+    monkeypatch.setattr(printermod, "TESTMODE", True)
+    printer = Printer(log_filepath)
     assert not printer.spinner.is_alive()
 
 
 def test_stop_streams_ok(capsys, log_filepath):
     """Stopping when all streams complete."""
-    printer = _Printer(log_filepath)
+    printer = Printer(log_filepath)
     assert printer.unfinished_stream is None
     printer.stop()
 
@@ -907,7 +909,7 @@ def test_stop_streams_ok(capsys, log_filepath):
 
 def test_stop_streams_unfinished_out_non_ephemeral(capsys, log_filepath, monkeypatch):
     """Stopping when stdout is not complete."""
-    printer = _Printer(log_filepath)
+    printer = Printer(log_filepath)
     printer.unfinished_stream = sys.stdout
     printer.prv_msg = _MessageInfo(sys.stdout, "test")
     printer.stop()
@@ -919,8 +921,8 @@ def test_stop_streams_unfinished_out_non_ephemeral(capsys, log_filepath, monkeyp
 
 def test_stop_streams_unfinished_out_ephemeral(capsys, log_filepath, monkeypatch):
     """Stopping when stdout is not complete."""
-    monkeypatch.setattr(messages, "_get_terminal_width", lambda: 10)
-    printer = _Printer(log_filepath)
+    monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 10)
+    printer = Printer(log_filepath)
     printer.unfinished_stream = sys.stdout
     printer.prv_msg = _MessageInfo(sys.stdout, "test", ephemeral=True)
     printer.stop()
@@ -932,7 +934,7 @@ def test_stop_streams_unfinished_out_ephemeral(capsys, log_filepath, monkeypatch
 
 def test_stop_streams_unfinished_err(capsys, log_filepath):
     """Stopping when stderr is not complete."""
-    printer = _Printer(log_filepath)
+    printer = Printer(log_filepath)
     printer.unfinished_stream = sys.stderr
     printer.prv_msg = _MessageInfo(sys.stderr, "test")
     printer.stop()
@@ -944,7 +946,7 @@ def test_stop_streams_unfinished_err(capsys, log_filepath):
 
 def test_stop_spinner_ok(log_filepath):
     """Stop the spinner."""
-    printer = _Printer(log_filepath)
+    printer = Printer(log_filepath)
     assert printer.spinner.is_alive()
     printer.stop()
     assert not printer.spinner.is_alive()
@@ -952,7 +954,148 @@ def test_stop_spinner_ok(log_filepath):
 
 def test_stop_spinner_testmode(log_filepath, monkeypatch):
     """Stop the spinner."""
-    monkeypatch.setattr(messages, "TESTMODE", True)
-    printer = _Printer(log_filepath)
+    monkeypatch.setattr(printermod, "TESTMODE", True)
+    printer = Printer(log_filepath)
     printer.stop()
     assert not printer.spinner.is_alive()
+
+
+# -- tests for the _Spinner class
+
+
+class RecordingPrinter(Printer):
+    """A Printer isolated from outputs; just records spin calls."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.spinned = []
+
+    def spin(self, message, spintext):
+        """Overwrite the real one to avoid it and record the message."""
+        self.spinned.append((message, spintext))
+
+
+@pytest.fixture
+def spinner(tmp_path):
+    """Provide a spinner easy to test.
+
+    Two characteristics:
+    - we'll ensure it is stopped
+    - use a fake Printer so we can assert on "spin" calls
+    """
+    spinner = _Spinner(RecordingPrinter(tmp_path / "test.log"))
+    spinner.start()
+    try:
+        yield spinner
+    finally:
+        spinner.stop()
+
+
+def test_spinner_daemon(spinner):
+    """It should be a daemon."""
+    assert spinner.daemon
+
+
+def test_spinner_working_simple(spinner, monkeypatch):
+    """The spinner at work."""
+    # set absurdly low times so we can have several spin texts in the test
+    monkeypatch.setattr(printermod, "_SPINNER_THRESHOLD", 0.001)
+    monkeypatch.setattr(printermod, "_SPINNER_DELAY", 0.001)
+
+    # send a message, wait enough until we have enough spinned to test, and turn it off
+    msg = _MessageInfo(sys.stdout, "test msg")
+    spinner.supervise(msg)
+    for _ in range(100):
+        if len(spinner.printer.spinned) >= 6:
+            break
+        time.sleep(0.01)
+    else:
+        pytest.fail("Waited too long for the _Spinner to generate messages")
+    spinner.supervise(None)
+    to_check = spinner.printer.spinned[:5]
+
+    # check the initial messages complete the "spinner drawing" also showing elapsed time
+    spinned_messages, spinned_texts = list(zip(*to_check))
+    assert all(spinned_msg is msg for spinned_msg in spinned_messages)
+    expected_texts = (
+        r" - \(\d\.\ds\)",
+        r" \\ \(\d\.\ds\)",
+        r" | \(\d\.\ds\)",
+        r" / \(\d\.\ds\)",
+        r" - \(\d\.\ds\)",
+    )
+    for expected, real in zip(expected_texts, spinned_texts):
+        assert re.match(expected, real)
+
+    # the last message should clean the spinner
+    assert spinner.printer.spinned[-1] == (msg, " ")
+
+
+def test_spinner_two_messages(spinner, monkeypatch):
+    """Two consecutive messages with spinner."""
+    # set absurdly low times so we can have several spin texts in the test
+    monkeypatch.setattr(printermod, "_SPINNER_THRESHOLD", 0.001)
+    monkeypatch.setattr(printermod, "_SPINNER_DELAY", 0.001)
+
+    # send a first message, wait enough until we have enough spinned to test
+    msg1 = _MessageInfo(sys.stdout, "test msg 1")
+    spinner.supervise(msg1)
+    for _ in range(100):
+        if len(spinner.printer.spinned) >= 6:
+            break
+        time.sleep(0.01)
+    else:
+        pytest.fail("Waited too long for the _Spinner to generate messages")
+
+    # send a second message, wait again, and turn it off
+    msg2 = _MessageInfo(sys.stdout, "test msg 2")
+    spinner.supervise(msg2)
+    first_pass_spinned_length = len(spinner.printer.spinned)
+    for _ in range(100):
+        if len(spinner.printer.spinned) >= first_pass_spinned_length + 6:
+            break
+        time.sleep(0.01)
+    else:
+        pytest.fail("Waited too long for the _Spinner to generate messages")
+    spinner.supervise(None)
+
+    # check we have two set of messages
+    spinned_1 = [sp_text for sp_msg, sp_text in spinner.printer.spinned if sp_msg == msg1]
+    spinned_2 = [sp_text for sp_msg, sp_text in spinner.printer.spinned if sp_msg == msg2]
+    assert spinned_1 and spinned_2
+
+    # in both cases, the final message should be to clean the spinner
+    assert spinned_1[-1] == " "
+    assert spinned_2[-1] == " "
+
+
+def test_spinner_silent_before_threshold(spinner, monkeypatch):
+    """Nothing happens before the threshold time."""
+    monkeypatch.setattr(printermod, "_SPINNER_THRESHOLD", 10)
+    spinner.supervise(_MessageInfo(sys.stdout, "test msg 1"))
+    spinner.supervise(_MessageInfo(sys.stdout, "test msg 2"))
+    assert spinner.printer.spinned == []
+
+
+def test_spinner_in_the_vacuum(spinner, monkeypatch):
+    """There is no spinner without a previous message."""
+    # set absurdly low times to for the Spinner to start processing
+    monkeypatch.setattr(printermod, "_SPINNER_THRESHOLD", 0.001)
+    monkeypatch.setattr(printermod, "_SPINNER_DELAY", 0.001)
+
+    # enough time for activation
+    time.sleep(0.05)
+
+    # nothing spinned, as no message to spin
+    assert spinner.printer.spinned == []
+
+
+def test_spinner_silent_on_complete_messages(spinner, monkeypatch):
+    """Nothing happens before the threshold time."""
+    monkeypatch.setattr(printermod, "_SPINNER_THRESHOLD", 0.001)
+    spinner.supervise(_MessageInfo(sys.stdout, "test msg 1", end_line=True))
+
+    # enough time for activation
+    time.sleep(0.05)
+
+    assert spinner.printer.spinned == []

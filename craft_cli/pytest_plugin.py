@@ -1,4 +1,4 @@
-# Copyright 2022 Canonical Ltd.
+# Copyright 2022-2023 Canonical Ltd.
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -24,7 +24,7 @@ from unittest.mock import call
 
 import pytest
 
-from craft_cli import messages
+from craft_cli import messages, printer
 
 
 @pytest.fixture(autouse=True)
@@ -45,6 +45,7 @@ def init_emitter(monkeypatch):
     temp_logfile = pathlib.Path(temp_logfile)
 
     monkeypatch.setattr(messages, "TESTMODE", True)
+    monkeypatch.setattr(printer, "TESTMODE", True)
     messages.emit.init(
         messages.EmitterMode.QUIET, "test-emitter", "Hello world", log_filepath=temp_logfile
     )

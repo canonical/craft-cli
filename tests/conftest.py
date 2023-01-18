@@ -1,5 +1,5 @@
 #
-# Copyright 2021-2022 Canonical Ltd.
+# Copyright 2021-2023 Canonical Ltd.
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -18,7 +18,7 @@
 
 import pytest
 
-from craft_cli.messages import _Printer, _Spinner
+from craft_cli.printer import Printer, _Spinner
 
 
 class RecordingSpinner(_Spinner):
@@ -32,7 +32,7 @@ class RecordingSpinner(_Spinner):
         self.supervised.append(message)
 
 
-class RecordingPrinter(_Printer):
+class RecordingPrinter(Printer):
     """A Printer isolated from outputs.
 
     Instead, it records all messages to print.

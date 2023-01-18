@@ -23,7 +23,7 @@ import time
 
 import pytest
 
-from craft_cli import messages
+from craft_cli import messages, printer
 from craft_cli.messages import _PipeReaderThread, _StreamContextManager
 
 
@@ -42,7 +42,7 @@ def thread_guard(tmp_path):
 @pytest.fixture(autouse=True)
 def force_terminal_behaviour(monkeypatch):
     """Fixture to force the "terminal" behaviour."""
-    monkeypatch.setattr(messages, "_stream_is_terminal", lambda stream: True)
+    monkeypatch.setattr(printer, "_stream_is_terminal", lambda stream: True)
 
 
 # -- tests for the stream context manager
