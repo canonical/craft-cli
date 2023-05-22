@@ -190,7 +190,7 @@ def test_streamcm_dont_consume_exceptions(recording_printer):
 @pytest.mark.parametrize("stream", [sys.stdout, sys.stderr])
 def test_pipereader_simple(recording_printer, stream):
     """Basic pipe reader usage."""
-    flags = {'use_timestamp': False, 'ephemeral': False, 'end_line': True}
+    flags = {"use_timestamp": False, "ephemeral": False, "end_line": True}
     prt = _PipeReaderThread(recording_printer, stream, flags)
     prt.start()
     os.write(prt.write_pipe, b"123\n")
@@ -209,7 +209,7 @@ def test_pipereader_simple(recording_printer, stream):
 @pytest.mark.parametrize("stream", [sys.stdout, sys.stderr])
 def test_pipereader_with_timestamp(recording_printer, stream):
     """Basic pipe reader usage with a timestamp."""
-    flags = {'use_timestamp': True, 'ephemeral': False, 'end_line': True}
+    flags = {"use_timestamp": True, "ephemeral": False, "end_line": True}
     prt = _PipeReaderThread(recording_printer, stream, flags)
     prt.start()
     os.write(prt.write_pipe, b"123\n")
@@ -228,7 +228,7 @@ def test_pipereader_with_timestamp(recording_printer, stream):
 @pytest.mark.parametrize("stream", [sys.stdout, sys.stderr])
 def test_pipereader_ephemeral(recording_printer, stream):
     """Basic pipe reader usage in ephemeral moede."""
-    flags = {'use_timestamp': False, 'ephemeral': True, 'end_line': False}
+    flags = {"use_timestamp": False, "ephemeral": True, "end_line": False}
     prt = _PipeReaderThread(recording_printer, stream, flags)
     prt.start()
     os.write(prt.write_pipe, b"123\n")
@@ -247,7 +247,7 @@ def test_pipereader_ephemeral(recording_printer, stream):
 def test_pipereader_chunk_assembler(recording_printer, monkeypatch):
     """Converts ok arbitrary chunks to lines."""
     monkeypatch.setattr(messages, "_PIPE_READER_CHUNK_SIZE", 5)
-    flags = {'use_timestamp': False, 'ephemeral': False, 'end_line': True}
+    flags = {"use_timestamp": False, "ephemeral": False, "end_line": True}
     prt = _PipeReaderThread(recording_printer, sys.stdout, flags)
     prt.start()
 
@@ -275,7 +275,7 @@ def test_pipereader_chunk_assembler(recording_printer, monkeypatch):
 
 def test_no_fail_if_big_number_is_used(recording_printer):
     """Ensures that opening and closing a big number of objects doesn't fail."""
-    flags = {'use_timestamp': False, 'ephemeral': False, 'end_line': True}
+    flags = {"use_timestamp": False, "ephemeral": False, "end_line": True}
     # The limit is 1024 both in Linux and BSD, but each object opens two FDs
     for _ in range(514):
         prt = _PipeReaderThread(recording_printer, sys.stdout, flags)
@@ -287,7 +287,7 @@ def test_no_fail_if_big_number_is_used(recording_printer):
 
 def test_ensure_pipes_are_closed(recording_printer):
     """Ensures that all the resources are freed on exit."""
-    flags = {'use_timestamp': False, 'ephemeral': False, 'end_line': True}
+    flags = {"use_timestamp": False, "ephemeral": False, "end_line": True}
     prt = _PipeReaderThread(recording_printer, sys.stdout, flags)
     prt.start()
     prt.stop()
