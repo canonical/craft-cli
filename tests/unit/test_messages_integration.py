@@ -27,6 +27,7 @@ import sys
 import textwrap
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Collection
 from unittest.mock import patch
 
 import pytest
@@ -82,7 +83,7 @@ class Line:
     timestamp: bool = False  # if it should be prefixed by a timestamp
 
 
-def compare_lines(expected_lines, raw_stream, std_stream):
+def compare_lines(expected_lines: Collection[Line], raw_stream, std_stream):
     """Helper to compare expected lines to what was written to the terminal."""
     width = printer._get_terminal_width()
     terminal = printer._stream_is_terminal(std_stream)
@@ -96,9 +97,9 @@ def compare_lines(expected_lines, raw_stream, std_stream):
             len(raw_stream) % width == 0
         ), f"Bad length {len(raw_stream)} ({width=}) {raw_stream=!r}"
         args = [iter(raw_stream)] * width
-        lines = ["".join(x) for x in zip(*args)]
+        lines = ["".join(x) for x in zip(*args)]  # pyright: ignore[reportGeneralTypeIssues]
     else:
-        # when the output is capturead, each line is simple and it should end in newline, so use
+        # when the output is captured, each line is simple and it should end in newline, so use
         # that for splitting (but don't lose the newline)
         lines = [line + "\n" for line in raw_stream.split("\n") if line]
 
@@ -108,7 +109,7 @@ def compare_lines(expected_lines, raw_stream, std_stream):
         lines = lines[1:]
 
     assert len(expected_lines) == len(lines), repr(lines)
-    for expected, real in zip(expected_lines, lines):
+    for expected, real in zip(expected_lines, lines):  # pyright: ignore[reportGeneralTypeIssues]
         end_of_line = "\n" if expected.permanent else "\r"
         timestamp = TIMESTAMP_FORMAT if expected.timestamp else ""
 
