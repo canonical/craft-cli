@@ -8,7 +8,7 @@ on:
 
 jobs:
   linters:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -51,8 +51,8 @@ jobs:
   tests:
     strategy:
       matrix:
-        os: [macos-11, macos-12, ubuntu-18.04, ubuntu-20.04, ubuntu-22.04, windows-2019, windows-2022]
-        python-version: [3.8, 3.9, "3.10"]
+        os: [macos-11, macos-12, ubuntu-20.04, ubuntu-22.04, windows-2019, windows-2022]
+        python-version: [3.8, 3.9, "3.10", "3.11", "3.12-dev"]
 
     runs-on: ${{ matrix.os }}
     steps:
