@@ -1024,7 +1024,7 @@ def test_spinner_working_simple(spinner, monkeypatch):
         r" / \(\d\.\ds\)",
         r" - \(\d\.\ds\)",
     )
-    for expected, real in zip(expected_texts, spinned_texts):
+    for expected, real in list(zip(expected_texts, spinned_texts)):
         assert re.match(expected, real)
 
     # the last message should clean the spinner
