@@ -615,7 +615,7 @@ class Emitter:
             yield
         finally:
             self._stopped = False
-            self._printer = Printer(self._log_filepath)  # type: ignore
+            self._printer = self._log_handler.printer = Printer(self._log_filepath)  # type: ignore
             self.debug("Emitter: Resuming control of the terminal")
 
     def _stop(self) -> None:
