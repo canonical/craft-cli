@@ -129,6 +129,9 @@ fail_under = 74
 #strict = ["craft_cli"] # NOTE: disabled pending fix of the many errors (see gh issue #147)
 pythonVersion = "3.8"
 pythonPlatform = "Linux"
+ignore = [
+    "docs/*"
+]
 
 [tool.mypy]
 python_version = "3.8"
@@ -136,6 +139,7 @@ exclude = [
     "build",
     "tests",
     "results",
+    "docs",
 ]
 warn_unused_configs = true
 warn_redundant_casts = true
