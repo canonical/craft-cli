@@ -156,12 +156,16 @@ module = ["tests.*"]
 strict = false
 
 [tool.ruff]
-line-length = 88
+line-length = 99
 target-version = "py38"
-src = ["starcraft", "tests"]
+src = ["craft_cli", "tests"]
 extend-exclude = [
     "docs",
     "__pycache__",
+    # NOTE: disabling ruff to handle in a separate issue (#146)
+    "craft_cli",
+    "examples.py",
+    "tests",
 ]
 # Follow ST063 - Maintaining and updating linting specifications for updating these.
 select = [  # Base linting rule selections.
