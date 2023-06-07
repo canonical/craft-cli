@@ -334,7 +334,9 @@ class Dispatcher:  # pylint: disable=too-many-instance-attributes
         msg = f"no such command {missing_command!r}{extra_similar}"
         return self._help_builder.get_usage_message(msg)
 
-    def _parse_options(self, defined_arguments, sysargs):  # pylint: disable=too-many-branches
+    def _parse_options(
+        self, defined_arguments: List[GlobalArgument], sysargs: List[str]
+    ):  # pylint: disable=too-many-branches
         """Parse arguments."""
         # get all arguments (default to what's specified) and those per options, to filter sysargs
         global_args: Dict[str, Any] = {}

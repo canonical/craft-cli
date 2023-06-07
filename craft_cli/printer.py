@@ -25,7 +25,7 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime
 from functools import lru_cache
-from typing import Optional, TextIO, Union
+from typing import Any, Optional, TextIO, Union
 
 # the char used to draw the progress bar ('FULL BLOCK')
 _PROGRESS_BAR_SYMBOL = "█"
@@ -92,7 +92,7 @@ class _Spinner(threading.Thread):
         self.daemon = True
 
         # communication from the printer
-        self.queue: queue.Queue = queue.Queue()
+        self.queue: queue.Queue[Any] = queue.Queue()
 
         # hold the printer, to make it spin
         self.printer = printer
