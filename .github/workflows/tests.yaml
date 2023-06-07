@@ -41,7 +41,7 @@ jobs:
   tests:
     strategy:
       matrix:
-        platform: [ubuntu-20.04, ubuntu-22.04]
+        platform: [macos-latest, ubuntu-20.04, ubuntu-22.04, windows-latest]
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v3
