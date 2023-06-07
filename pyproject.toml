@@ -1,19 +1,46 @@
 [project]
-name = "starcraft"
-dynamic = ["version", "readme"]
+name = "craft-cli"
+dynamic = ["version"]
+description = "Command Line Interface"
+authors = [
+    {name = "Canonical Ltd", email = "snapcraft@lists.snapcraft.io"}
+]
 dependencies = [
-
+    "platformdirs",
+    "pydantic",
+    "pyyaml",
+    "pywin32; sys_platform == 'win32'"
 ]
 classifiers = [
-    "Development Status :: 1 - Planning",
-    "License :: OSI Approved :: GNU General Public License (GPL)",
+    "Development Status :: 5 - Production/Stable",
+    "Framework :: Pytest",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
 ]
 requires-python = ">=3.8"
 
-[project.scripts]
-starcraft-hello = "starcraft:hello"
+[project.license]
+file = "LICENSE"
+
+[project.readme]
+file = "README.md"
+content-type = "text/markdown"
+
+[project.urls]
+Website = "https://github.com/canonical/craft-cli"
+Documentation = "https://craft-cli.readthedocs.io/en/latest/"
+Source = "https://github.com/canonical/craft-cli.git"
+Issues = "https://github.com/canonical/craft-cli/issues"
+
+[project.entry-points.pytest11]
+emitter = "craft_cli.pytest_plugin"
 
 [project.optional-dependencies]
 dev = [
@@ -21,6 +48,7 @@ dev = [
     "pytest==7.3.1",
     "pytest-cov==4.1.0",
     "pytest-mock==3.10.0",
+    "pytest-subprocess"
 ]
 lint = [
     "black==23.3.0",
@@ -36,6 +64,7 @@ docs = [
     "furo==2023.5.20",
     "sphinx>=6.2.1,<7.0",
     "sphinx-autobuild==2021.3.14",
+    "sphinx-autodoc-typehints",
     "sphinx-copybutton==0.5.2",
     "sphinx-design==0.4.1",
     "sphinx-pydantic==0.1.1",
@@ -54,16 +83,15 @@ build-backend = "setuptools.build_meta"
 readme = {file = "README.rst"}
 
 [tool.setuptools_scm]
-write_to = "starcraft/_version.py"
+write_to = "craft_cli/_version.py"
 
 [tool.setuptools.packages.find]
 exclude = [
-    "dist",
-    "docs",
-    "results",
-    "tests",
+    "dist*",
+    "docs*",
+    "results*",
+    "tests*",
 ]
-
 
 [tool.black]
 target-version = ["py38"]
