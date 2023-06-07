@@ -2,8 +2,8 @@
 Explanations
 ************
 
-About the appropriate mode to initiate `emit`
-=============================================
+About the appropriate mode to initiate ``emit``
+===============================================
 
 The first mandatory parameter of the ``emit`` object is ``mode``, which controls the initial verboseness level of the system.
 
@@ -37,7 +37,7 @@ Unless overridden when ``emit`` is initiated (see :ref:`how to do that <howto_ot
 Global and command specific arguments
 =====================================
 
-One of the functionalities that the Dispatcher provides is global arguments handling: options that will be recognized and used no matter the position in the command line because they are not specific to any command, but global to all commands and the application itself. 
+One of the functionalities that the Dispatcher provides is global arguments handling: options that will be recognized and used no matter the position in the command line because they are not specific to any command, but global to all commands and the application itself.
 
 For example, all these application executions are equivalent:
 
@@ -45,7 +45,7 @@ For example, all these application executions are equivalent:
     <app> <command> --verbose <command-parameter>
     <app> <command> <command-parameter> --verbose
 
-The Dispatcher automatically provides the following global arguments, but more can be specified through the `extra_global_args` option (see :ref:`how to do that <howto_global_args>`):
+The Dispatcher automatically provides the following global arguments, but more can be specified through the ``extra_global_args`` option (see :ref:`how to do that <howto_global_args>`):
 
 - ``-h`` / ``--help``: provides a help text for the application or command
 - ``-q`` / ``--quiet``: sets the ``emit`` output level to QUIET
@@ -58,13 +58,13 @@ Each command can also specify its own arguments parsing rules using the ``fill_p
 Group of commands
 =================
 
-The Dispatcher's `command_groups` parameter is just a list `CommandGroup` objects, each of one grouping different commands for the different types of functionalities that may offer the application. See `its reference here <craft_cli.dispatcher.html#craft_cli.dispatcher.CommandGroup>`_, but its use is quite straightforward. E.g.::
+The Dispatcher's ``command_groups`` parameter is just a list ``CommandGroup`` objects, each of one grouping different commands for the different types of functionalities that may offer the application. See `its reference here <craft_cli.dispatcher.html#craft_cli.dispatcher.CommandGroup>`_, but its use is quite straightforward. E.g.::
 
     CommandGroup("Basic", [LoginCommand, LogoutCommand])
 
 A list of these command groups is what is passed to the ``Dispatcher`` to run them as part of the application.
 
-This grouping is uniquely for building the help exposed to the user, which improves the UX of the application. 
+This grouping is uniquely for building the help exposed to the user, which improves the UX of the application.
 
 When requesting the full application help, all commands will be grouped and presented in the order declared in each ``CommandGroup`` and in the list given to the ``Dispatcher``, and when requesting help for one command, other commands from the same group are suggested to the user as related to the requested one.
 
@@ -133,7 +133,7 @@ Progress bar
 
 The ``progress_bar`` method is to be used in a potentially long-running single step of a command (e.g. a download or provisioning step).
 
-It receives a `text` that should reflect the operation that is about to start, a ``total`` that will be the number to reach when the operation is completed, and optionally a `delta=False` to indicate that calls to ``.advance`` method should pass the total so far (by default is True, which implies that calls to ``.advance`` indicates the delta in the operation progress). Returns a context manager with the  ``.advance`` method to call on each progress.
+It receives a ``text`` that should reflect the operation that is about to start, a ``total`` that will be the number to reach when the operation is completed, and optionally a ``delta=False`` to indicate that calls to ``.advance`` method should pass the total so far (by default is True, which implies that calls to ``.advance`` indicates the delta in the operation progress). Returns a context manager with the  ``.advance`` method to call on each progress.
 
 ::
 
@@ -200,7 +200,7 @@ E.g.::
 Get messages from subprocesses
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The ``open_stream`` returns a context manager that can be used to get the standard output and/or error from the executed subprocess. 
+The ``open_stream`` returns a context manager that can be used to get the standard output and/or error from the executed subprocess.
 
 This way all the outputs of the subprocess will be captured by ``craft-cli`` and shown or not to the screen (according to verbosity setup) and always logged.
 
@@ -342,7 +342,7 @@ The last column of the table though is not about the screen: it indicates if the
      - | stderr
        | permanent
        | timestamp
-     - | first line only, 
+     - | first line only,
        | without progress
    * - ``.open_stream(...)``
      - --
@@ -391,7 +391,7 @@ The last column of the table though is not about the screen: it indicates if the
      - | stderr
        | permanent
        | timestamp
-     - | only when 
+     - | only when
        | level=trace
    * - | **captured logs**
        | (level > ``logging.DEBUG``)
@@ -428,7 +428,7 @@ The last column of the table though is not about the screen: it indicates if the
      - | stderr
        | permanent
        | timestamp
-     - | only when 
+     - | only when
        | level=trace
 
 (*) when redirected to a file it doesn't make sense to have "transient" messages, so 'progress' messages will always end in a newline, and 'progress_bar' will just send its message line but without the progress indication.

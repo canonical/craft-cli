@@ -7,7 +7,7 @@ Run a command based application with craft-cli
 
 This tutorial will explain how to use Craft CLI to run an application that is based on commands.
 
-Along the way you will define a simple command (named `unlink`, with the functionality of removing files), and call the appropriate library mechanisms for that command to be executed when running the application.
+Along the way you will define a simple command (named ``unlink``, with the functionality of removing files), and call the appropriate library mechanisms for that command to be executed when running the application.
 
 
 Prerequisites
@@ -32,34 +32,34 @@ Then enable the virtual environment and install Craft CLI::
 Define the command and run it using the Dispatcher
 --------------------------------------------------
 
-First start with a class sub-classing `BaseCommand` with the appropriate attributes to name it and have automatic help texts, then provide a `fill_parser` method to declare what arguments are possible for this command, and finally a `run` method where the "real" functionality is implemented::
+First start with a class sub-classing ``BaseCommand`` with the appropriate attributes to name it and have automatic help texts, then provide a ``fill_parser`` method to declare what arguments are possible for this command, and finally a ``run`` method where the "real" functionality is implemented::
 
     import pathlib
     import textwrap
     import sys
     from craft_cli import (
-        ArgumentParsingError, 
-        BaseCommand, 
+        ArgumentParsingError,
+        BaseCommand,
         CommandGroup,
-        CraftError, 
-        Dispatcher, 
+        CraftError,
+        Dispatcher,
         EmitterMode,
         ProvideHelpException,
-        emit, 
+        emit,
     )
 
 
     class RemoveFileCommand(BaseCommand):
         """Remove the indicated file."""
-    
+
         name = "unlink"
         help_msg = "Remove the indicated file."
         overview = textwrap.dedent("""
             Remove the indicated file.
-    
+
             A file needs to be indicated. It is an argument error if the path does not exist
             or it's a directory.
-    
+
             It will return successfully if the file was properly removed.
         """)
 
@@ -99,32 +99,32 @@ Then initiate the ``emit`` object and call the ``Dispatcher`` functionality::
         error.__cause__ = exc
         emit.error(error)
     except Exception as exc:
-        error = CraftError(f"Application internal error: {exc!r}") 
+        error = CraftError(f"Application internal error: {exc!r}")
         error.__cause__ = exc
         emit.error(error)
     else:
         emit.ended_ok()
 
-Finally, put both chunks of code in a ``example-app.py`` file, and (having the virtual environment you prepared at the beginning still activated), run it. You should see the help message for the whole application (as a command is missing, which would be the same output if you pass the `help`, `-h` or `--help` parameters)::
+Finally, put both chunks of code in a ``example-app.py`` file, and (having the virtual environment you prepared at the beginning still activated), run it. You should see the help message for the whole application (as a command is missing, which would be the same output if you pass the ``help``, ``-h`` or ``--help`` parameters)::
 
     $ python example-app.py
     Usage:
         example-app [help] <command>
-    
+
     Summary:    Example application for the craft-cli tutorial.
-    
+
     Global options:
            -h, --help:  Show this help message and exit
         -v, --verbose:  Show debug information and be more verbose
           -q, --quiet:  Only show warnings and errors, not progress
-          --verbosity:  Set the verbosity level to 'quiet', 'brief', 
+          --verbosity:  Set the verbosity level to 'quiet', 'brief',
                         'verbose', 'debug' or 'trace'",
-    
+
     Starter commands:
-    
+
     Commands can be classified as follows:
               Example:  unlink
-    
+
     For more information about a command, run 'example-app help <command>'.
     For a summary of all commands, run 'example-app help --all'.
 
@@ -133,30 +133,30 @@ Ask help for specifically for the command::
     $ python example-app.py help unlink
     Usage:
         example-app unlink [options] <filepath>
-    
+
     Summary:
         Remove the indicated file.
-    
+
         A file needs to be indicated. It is an argument error if the path does not exist
         or it's a directory.
-    
+
         It will return successfully if the file was properly removed.
-    
+
     Options:
            -h, --help:  Show this help message and exit
         -v, --verbose:  Show debug information and be more verbose
           -q, --quiet:  Only show warnings and errors, not progress
-          --verbosity:  Set the verbosity level to 'quiet', 'brief', 
+          --verbosity:  Set the verbosity level to 'quiet', 'brief',
                         'verbose', 'debug' or 'trace'",
-    
+
     For a summary of all commands, run 'example-app help --all'.
-    
+
 Time to run the command on a file, you should see the successful message::
 
     $ touch testfile
     $ ls testfile
     testfile
-    $ env/bin/python example-app.py unlink testfile 
+    $ env/bin/python example-app.py unlink testfile
     File removed successfully.
     $ ls testfile
     ls: cannot access 'testfile': No such file or directory
@@ -166,9 +166,9 @@ Explore different error situations, first trying to remove a directory, then try
     $ mkdir testdir
     $ python example-app.py unlink testdir
     The indicated path is not a file or does not exist.
-    
+
     $ touch /tmp/testfile
-    $ sudo chown root /tmp/testfile 
+    $ sudo chown root /tmp/testfile
     $ python example-app.py unlink /tmp/testfile
     Problem removing the file: [Errno 1] Operation not permitted: '/tmp/testfile'.
     Full execution log: '/home/user/.cache/example-app/log/example-app-20220114-120745.861866.log'

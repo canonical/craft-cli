@@ -7,7 +7,7 @@ HOW TOs
 Use a different logfile structure than the default
 ==================================================
 
-To override :ref:`the default management of application log files <expl_log_management>`, a file path can be specified when initiating the `emit` object, using the ``log_filepath`` parameter::
+To override :ref:`the default management of application log files <expl_log_management>`, a file path can be specified when initiating the ``emit`` object, using the ``log_filepath`` parameter::
 
     emit.init(mode, appname, greeting, log_filepath)
 
@@ -55,11 +55,11 @@ In the following code structure we see all these effects at once::
 
 In detail:
 
-- the return code from the command's execution is bound when calling `dispatcher.run`, supporting the case of it not returning anything (defaults to `0`)
+- the return code from the command's execution is bound when calling ``dispatcher.run``, supporting the case of it not returning anything (defaults to ``0``)
 
-- have different return codes assigned for the different `except` situations, with two particular cases: for ``ProvideHelpException`` it's `0` as it's a normal exit situation when the user requested for help, and for ``CraftError`` where the return code is taken from the exception itself
+- have different return codes assigned for the different ``except`` situations, with two particular cases: for ``ProvideHelpException`` it's ``0`` as it's a normal exit situation when the user requested for help, and for ``CraftError`` where the return code is taken from the exception itself
 
-- a `sys.exit` at the very end for the process to return the value
+- a ``sys.exit`` at the very end for the process to return the value
 
 
 Raise more informational errors
@@ -78,13 +78,13 @@ So, in addition of just passing a message to the user...
 - ``details``: full error details received from a third party or extended information about the situation, useful for debugging but not to be normally shown to the user. E.g.::
 
     raise CraftError(
-        "Cannot access the indicated file.", 
+        "Cannot access the indicated file.",
         details=f"File permissions: {oct(filepath.stat().st_mode)}")
 
     raise CraftError(
         f"Server returned bad code {error_code}",
         details=f"Full server response: {response.content!r}")
-    
+
 
 - ``resolution``: an extra line indicating to the user how the error may be fixed or avoided. E.g.::
 
@@ -128,7 +128,7 @@ To define more automatic global arguments than the ones provided automatically b
 Check :class:`craft_cli.dispatcher.GlobalArgument` for more information about the parameters needed, but it's very straightforward to create these objects. E.g.::
 
     ga_sec = GlobalArgument("secure_mode", "flag", "-s", "--secure", "Run the app in secure mode")
-    
+
 To use it, just pass a list of the needed global arguments to the dispatcher using the ``extra_global_args`` option::
 
     dispatcher = Dispatcher(..., extra_global_args=[ga_sec])
@@ -189,7 +189,7 @@ The following example shows a simple usage, please refer to :class:`craft_cli.py
 Have a hidden option in a command
 =================================
 
-To have a command with an option that should not be shown in the help messages, effectively hidden from final users (e.g. because it's experimental), just use a special value in the option's `help`::
+To have a command with an option that should not be shown in the help messages, effectively hidden from final users (e.g. because it's experimental), just use a special value in the option's ``help``::
 
     def fill_parser(self, parser):
         ...
