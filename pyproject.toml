@@ -126,7 +126,7 @@ skip_empty = true
 fail_under = 80
 
 [tool.pyright]
-strict = ["starcraft"]
+#strict = ["craft_cli"] # NOTE: disabled pending fix of the many errors (see gh issue #147)
 pythonVersion = "3.8"
 pythonPlatform = "Linux"
 
