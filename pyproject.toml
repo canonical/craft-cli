@@ -95,6 +95,7 @@ exclude = [
 
 [tool.black]
 target-version = ["py38"]
+line-length = 99
 
 [tool.codespell]
 ignore-words-list = "buildd,crate,keyserver,comandos,ro,dedent,dedented"
