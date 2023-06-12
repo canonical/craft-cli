@@ -35,7 +35,7 @@ class CommandGroup(NamedTuple):
     """
 
     name: str
-    commands: List["BaseCommand"]
+    commands: List[Type["BaseCommand"]]
 
 
 class GlobalArgument(NamedTuple):
@@ -116,11 +116,11 @@ class BaseCommand:
     to the Dispatcher.
     """
 
+    name: str
+    help_msg: str
+    overview: str
     common = False
     hidden = False
-    name: Optional[str] = None
-    help_msg: Optional[str] = None
-    overview: Optional[str] = None
 
     def __init__(self, config: Optional[Dict[str, Any]]):
         self.config = config
@@ -128,7 +128,7 @@ class BaseCommand:
         # validate attributes
         mandatory = ("name", "help_msg", "overview")
         for attr_name in mandatory:
-            if getattr(self, attr_name) is None:
+            if not hasattr(self, attr_name):
                 raise ValueError(f"Bad command configuration: missing value in '{attr_name}'.")
         if self.common and self.hidden:
             raise ValueError("Common commands can not be hidden.")
