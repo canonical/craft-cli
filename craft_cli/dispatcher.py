@@ -128,7 +128,7 @@ class BaseCommand:
         # validate attributes
         mandatory = ("name", "help_msg", "overview")
         for attr_name in mandatory:
-            if not hasattr(self, attr_name):
+            if getattr(self, attr_name, None) is None:
                 raise ValueError(f"Bad command configuration: missing value in '{attr_name}'.")
         if self.common and self.hidden:
             raise ValueError("Common commands can not be hidden.")
