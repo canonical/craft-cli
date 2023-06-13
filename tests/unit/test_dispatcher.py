@@ -615,6 +615,28 @@ def test_basecommand_mandatory_attribute_overview():
     assert str(exc_cm.value) == "Bad command configuration: missing value in 'overview'."
 
 
+@pytest.mark.parametrize("cmd_name", ["name", None])
+@pytest.mark.parametrize("cmd_overview", ["overview", None])
+@pytest.mark.parametrize("cmd_help_msg", ["help_msg", None])
+def test_basecommand_mandatory_attributes_not_none(cmd_name, cmd_overview, cmd_help_msg):
+    """BaseCommand subclasses must provide non-None values for name, overview and help_message."""
+    if cmd_name and cmd_overview and cmd_help_msg:
+        pytest.skip("name, overview and help_msg all valid; skipping failure test.")
+
+    class TestCommand(BaseCommand):
+        """Test command for mandatory attributes being None"""
+
+        name = cmd_name
+        overview = cmd_overview
+        help_msg = cmd_help_msg
+
+        def run(self, parsed_args):
+            pass
+
+    with pytest.raises(ValueError, match=r"Bad command configuration: missing value in .*"):
+        TestCommand(None)
+
+
 @pytest.mark.parametrize(
     "common_, hidden_, is_ok",
     [

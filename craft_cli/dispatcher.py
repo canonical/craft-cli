@@ -17,35 +17,47 @@
 
 import argparse
 import difflib
-from collections import namedtuple
-from typing import Any, Dict, List, Optional, Tuple, Type
+from typing import Any, Dict, List, Literal, NamedTuple, Optional, Tuple, Type
 
 from craft_cli import EmitterMode, emit
 from craft_cli.errors import ArgumentParsingError, ProvideHelpException
 from craft_cli.helptexts import HelpBuilder, OutputFormat
 
-CommandGroup = namedtuple("CommandGroup", "name commands")
-"""Definition of a command group.
 
-A list of these is what is passed to the ``Dispatcher`` to run commands as part
-of the application.
+class CommandGroup(NamedTuple):
+    """Definition of a command group.
 
-:param name: identifier of the command group (to be used in help texts).
-:param commands: a list of the commands in this group.
-"""
+    A list of these is what is passed to the ``Dispatcher`` to run commands as part
+    of the application.
 
-GlobalArgument = namedtuple("GlobalArgument", "name type short_option long_option help_message")
-"""Definition of a global argument to be handled by the Dispatcher.
+    :param name: identifier of the command group (to be used in help texts).
+    :param commands: a list of the commands in this group.
+    """
 
-:param name: identifier of the argument (the reference in the dictionary returned
-    by ``Dispatcher.pre_parse_args`` method)
-:param type: the argument type: ``flag`` for arguments that are set to ``True`` if
-    specified (``False`` by default), or ``option`` if a value is needed after it.
-:param short_option: the short form of the argument (a dash with a letter, e.g. ``-s``); it can
-    be None if the option does not have a short form.
-:param long_option: the long form of the argument (two dashes and a name, e.g. ``--secure``).
-:param help_message: the one-line text that describes the argument, for building the help texts.
-"""
+    name: str
+    commands: List[Type["BaseCommand"]]
+
+
+class GlobalArgument(NamedTuple):
+    """Definition of a global argument to be handled by the Dispatcher.
+
+    :param name: identifier of the argument (the reference in the dictionary returned
+        by ``Dispatcher.pre_parse_args`` method)
+    :param type: the argument type: ``flag`` for arguments that are set to ``True`` if
+        specified (``False`` by default), or ``option`` if a value is needed after it.
+    :param short_option: the short form of the argument (a dash with a letter, e.g. ``-s``); it can
+        be None if the option does not have a short form.
+    :param long_option: the long form of the argument (two dashes and a name, e.g. ``--secure``).
+    :param help_message: the one-line text that describes the argument, for building the help texts.
+    """
+
+    name: str
+    type: Literal["flag", "option"]
+    short_option: Optional[str]
+    long_option: str
+    help_message: str
+
+
 _DEFAULT_GLOBAL_ARGS = [
     GlobalArgument(
         "help",
@@ -104,11 +116,11 @@ class BaseCommand:
     to the Dispatcher.
     """
 
+    name: str
+    help_msg: str
+    overview: str
     common = False
     hidden = False
-    name: Optional[str] = None
-    help_msg: Optional[str] = None
-    overview: Optional[str] = None
 
     def __init__(self, config: Optional[Dict[str, Any]]):
         self.config = config
@@ -116,7 +128,7 @@ class BaseCommand:
         # validate attributes
         mandatory = ("name", "help_msg", "overview")
         for attr_name in mandatory:
-            if getattr(self, attr_name) is None:
+            if getattr(self, attr_name, None) is None:
                 raise ValueError(f"Bad command configuration: missing value in '{attr_name}'.")
         if self.common and self.hidden:
             raise ValueError("Common commands can not be hidden.")
