@@ -244,6 +244,19 @@ def test_pipereader_ephemeral(recording_printer, stream):
     assert msg.bar_total is None
 
 
+@pytest.mark.parametrize("stream", [sys.stdout, sys.stderr])
+def test_pipereader_tabs(recording_printer, stream):
+    """Check that tabs are converted to spaces."""
+    flags = {"use_timestamp": False, "ephemeral": False, "end_line": True}
+    prt = _PipeReaderThread(recording_printer, stream, flags)
+    prt.start()
+    os.write(prt.write_pipe, b"\t123\t456\n")
+    prt.stop()
+
+    (msg,) = recording_printer.written_terminal_lines  # pylint: disable=unbalanced-tuple-unpacking
+    assert msg.text == "::   123  456"  # tabs expanded into 2 spaces
+
+
 def test_pipereader_chunk_assembler(recording_printer, monkeypatch):
     """Converts ok arbitrary chunks to lines."""
     monkeypatch.setattr(messages, "_PIPE_READER_CHUNK_SIZE", 5)

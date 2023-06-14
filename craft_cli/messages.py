@@ -221,6 +221,9 @@ class _PipeReaderThread(threading.Thread):
 
             # write the useful line to intended outputs
             unicode_line = useful_line.decode("utf8")
+            # replace tabs with a set number of spaces so that the printer
+            # can correctly count the characters.
+            unicode_line = unicode_line.replace("\t", "  ")
             text = f":: {unicode_line}"
             self.printer.show(self.stream, text, **self.printer_flags)
 
