@@ -382,11 +382,26 @@ def example_26():
     emit.message("Application End.")
 
 
-def example_27(mode_name, total_messages=10):
+def _run_noisy_subprocess(mode_name, total_messages, subprocess_code):
     """Capture the output of a noisy subprocess in different modes."""
     mode = EmitterMode[mode_name.upper()]
     emit.set_mode(mode)
 
+    temp_fh, temp_name = tempfile.mkstemp()
+    with open(temp_fh, "wt", encoding="utf8") as fh:
+        fh.write(subprocess_code)
+
+    emit.progress("About to run a noisy subprocess")
+    time.sleep(1)
+    with emit.open_stream("Running custom Python app in unbuffered mode") as stream:
+        cmd = [sys.executable, "-u", temp_name, str(total_messages)]
+        subprocess.check_call(cmd, stdout=stream, stderr=stream)
+    os.unlink(temp_name)
+    emit.message("All done!")
+
+
+def example_27(mode_name, total_messages=10):
+    """Capture the output of a noisy subprocess in different modes."""
     example_test_sub_app = textwrap.dedent(
         """
         import sys
@@ -406,17 +421,34 @@ def example_27(mode_name, total_messages=10):
                 time.sleep(5)
     """
     )
-    temp_fh, temp_name = tempfile.mkstemp()
-    with open(temp_fh, "wt", encoding="utf8") as fh:
-        fh.write(example_test_sub_app)
+    _run_noisy_subprocess(mode_name, total_messages, example_test_sub_app)
 
-    emit.progress("About to run a noisy subprocess")
-    time.sleep(1)
-    with emit.open_stream("Running custom Python app in unbuffered mode") as stream:
-        cmd = [sys.executable, "-u", temp_name, str(total_messages)]
-        subprocess.run(cmd, stdout=stream, stderr=stream)
-    os.unlink(temp_name)
-    emit.message("All done!")
+
+def example_28(mode_name, total_messages=10):
+    """Capture the multi-line, tab-containing output of a noisy subprocess."""
+    example_test_sub_app = textwrap.dedent(
+        """
+        import sys
+        import time
+        import textwrap
+
+        total = int(sys.argv[1])
+        for idx in range(total):
+            #short = random() > .2
+            delay = 1
+            delay_for_spinner = False # random() > .9
+            message = textwrap.dedent(f'''
+            This first message should never appear.
+            \tThis second message shouldn't appear either.
+            \tThis line should appear, preceded "::   " ({idx} / {total}).
+            ''').strip()
+            print(message,flush=True)
+            time.sleep(delay)
+            if delay_for_spinner:
+                time.sleep(5)
+    """
+    )
+    _run_noisy_subprocess(mode_name, total_messages, example_test_sub_app)
 
 
 # -- end of test cases
