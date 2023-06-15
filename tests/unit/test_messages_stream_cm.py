@@ -257,6 +257,29 @@ def test_pipereader_tabs(recording_printer, stream):
     assert msg.text == "::   123  456"  # tabs expanded into 2 spaces
 
 
+@pytest.mark.parametrize(
+    ("prefix", "expected_msg"),
+    (
+        (None, ":: 123"),
+        (":: ", ":: 123"),
+        (">>>", ">>>123"),
+        (">>> ", ">>> 123"),
+        ("", "123"),
+    ),
+)
+@pytest.mark.parametrize("stream", [sys.stdout, sys.stderr])
+def test_pipereader_prefix(recording_printer, stream, prefix, expected_msg):
+    """The passed prefix is added to all subprocess messages."""
+    flags = {"use_timestamp": False, "ephemeral": False, "end_line": True}
+    prt = _PipeReaderThread(recording_printer, stream, flags, prefix=prefix)
+    prt.start()
+    os.write(prt.write_pipe, b"123\n")
+    prt.stop()
+
+    (msg,) = recording_printer.written_terminal_lines  # pylint: disable=unbalanced-tuple-unpacking
+    assert msg.text == expected_msg
+
+
 def test_pipereader_chunk_assembler(recording_printer, monkeypatch):
     """Converts ok arbitrary chunks to lines."""
     monkeypatch.setattr(messages, "_PIPE_READER_CHUNK_SIZE", 5)

@@ -840,6 +840,40 @@ def test_third_party_output_developer_modes(capsys, tmp_path, mode):
     assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)
 
 
+@pytest.mark.parametrize("output_is_terminal", [True])
+def test_third_party_output_prefix(capsys, tmp_path):
+    """Manage the streams produced for sub-executions, brief mode, to the terminal."""
+    # something to execute
+    script = tmp_path / "script.py"
+    script.write_text(
+        textwrap.dedent(
+            """
+        import sys
+        print("foobar out", flush=True)
+        print("foobar err", file=sys.stderr, flush=True)
+    """
+        )
+    )
+    emit = Emitter()
+    emit.init(EmitterMode.BRIEF, "testapp", GREETING)
+    with emit.open_stream("Testing stream", prefix=">>> ") as stream:
+        subprocess.run([sys.executable, script], stdout=stream, stderr=stream, check=True)
+    emit.ended_ok()
+
+    expected_err = [
+        Line("Testing stream", permanent=False),
+        Line(">>> foobar out", permanent=False),
+        Line(">>> foobar err", permanent=False),
+        Line("", permanent=False),
+    ]
+    expected_log = [
+        Line("Testing stream"),
+        Line(">>> foobar out"),
+        Line(">>> foobar err"),
+    ]
+    assert_outputs(capsys, emit, expected_err=expected_err, expected_log=expected_log)
+
+
 @pytest.mark.parametrize(
     "mode",
     [

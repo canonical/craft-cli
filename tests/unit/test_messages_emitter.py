@@ -502,7 +502,14 @@ def test_openstream_in_quiet_mode(get_initiated_emitter):
     assert emitter.printer_calls == []
     assert context_manager is instantiated_cm
     assert stream_context_manager_mock.mock_calls == [
-        call(emitter._printer, "some text", stream=None, use_timestamp=False, ephemeral_mode=True),
+        call(
+            emitter._printer,
+            "some text",
+            stream=None,
+            use_timestamp=False,
+            ephemeral_mode=True,
+            prefix=None,
+        ),
     ]
 
 
@@ -524,6 +531,7 @@ def test_openstream_in_brief_mode(get_initiated_emitter):
             stream=sys.stderr,
             use_timestamp=False,
             ephemeral_mode=True,
+            prefix=None,
         ),
     ]
 
@@ -546,6 +554,7 @@ def test_openstream_in_verbose_mode(get_initiated_emitter):
             stream=sys.stderr,
             use_timestamp=False,
             ephemeral_mode=False,
+            prefix=None,
         ),
     ]
 
@@ -575,6 +584,7 @@ def test_openstream_in_developer_modes(get_initiated_emitter, mode):
             stream=sys.stderr,
             use_timestamp=True,
             ephemeral_mode=False,
+            prefix=None,
         ),
     ]
 
