@@ -121,7 +121,8 @@ xfail_strict = true
 
 [tool.coverage.run]
 branch = true
-parallel = true
+# Disable parallel coverage to preserve the data-file name so that 'coverage xml' finds it
+parallel = false
 omit = ["tests/**"]
 
 [tool.coverage.report]
