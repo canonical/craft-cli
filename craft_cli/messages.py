@@ -31,7 +31,7 @@ import threading
 import traceback
 from contextlib import contextmanager
 from datetime import datetime
-from typing import Dict, Literal, Optional, TextIO, Union
+from typing import Any, Callable, cast, Dict, Literal, Optional, TextIO, TypeVar, Union
 
 import platformdirs
 
@@ -351,7 +351,10 @@ class _Handler(logging.Handler):
         self.printer.show(stream, record.getMessage(), use_timestamp=use_timestamp)
 
 
-def _active_guard(ignore_when_stopped=False):
+FuncT = TypeVar("FuncT", bound=Callable[..., Any])
+
+
+def _active_guard(ignore_when_stopped: bool = False) -> Callable[..., Any]:
     """Decorate Emitter methods to be called when active.
 
     It will check that the emitter is initiated and that is not stopped (except when
@@ -359,8 +362,10 @@ def _active_guard(ignore_when_stopped=False):
     double-ending).
     """
 
-    def decorator(wrapped_func):
-        def func(self, *args, **kwargs):  # pylint: disable=inconsistent-return-statements
+    def decorator(wrapped_func: FuncT) -> FuncT:
+        def func(  # pylint: disable=inconsistent-return-statements
+            self, *args: Any, **kwargs: Any
+        ) -> Any:
             if not self._initiated:  # pylint: disable=protected-access
                 raise RuntimeError("Emitter needs to be initiated first")
             if self._stopped:  # pylint: disable=protected-access
@@ -369,7 +374,7 @@ def _active_guard(ignore_when_stopped=False):
                 raise RuntimeError("Emitter is stopped already")
             return wrapped_func(self, *args, **kwargs)
 
-        return func
+        return cast(FuncT, func)
 
     return decorator
 

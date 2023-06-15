@@ -16,7 +16,16 @@
 
 """Interact with Canonical services such as Charmhub and the Snap Store."""
 
-__version__ = "1.2.0"
+try:
+    from ._version import __version__
+except ImportError:  # pragma: no cover
+    from importlib.metadata import version, PackageNotFoundError
+
+    try:
+        __version__ = version("craft-cli")
+    except PackageNotFoundError:
+        __version__ = "dev"
+
 
 # names included here only to be exposed as external API; the particular order of imports
 # is to break cyclic dependencies

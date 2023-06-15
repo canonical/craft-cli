@@ -1,22 +1,264 @@
+[project]
+name = "craft-cli"
+dynamic = ["version"]
+description = "Command Line Interface"
+authors = [
+    {name = "Canonical Ltd", email = "snapcraft@lists.snapcraft.io"}
+]
+dependencies = [
+    "platformdirs",
+    "pydantic",
+    "pyyaml",
+    "pywin32; sys_platform == 'win32'"
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Framework :: Pytest",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+]
+requires-python = ">=3.8"
+
+[project.license]
+file = "LICENSE"
+
+[project.readme]
+file = "README.md"
+content-type = "text/markdown"
+
+[project.urls]
+Website = "https://github.com/canonical/craft-cli"
+Documentation = "https://craft-cli.readthedocs.io/en/latest/"
+Source = "https://github.com/canonical/craft-cli.git"
+Issues = "https://github.com/canonical/craft-cli/issues"
+
+[project.entry-points.pytest11]
+emitter = "craft_cli.pytest_plugin"
+
+[project.optional-dependencies]
+dev = [
+    "coverage[toml]==7.2.7",
+    "pytest==7.3.1",
+    "pytest-cov==4.1.0",
+    "pytest-mock==3.10.0",
+    "pytest-subprocess"
+]
+lint = [
+    "black==23.3.0",
+    "codespell[toml]==2.2.4",
+    "pylint==2.17.4",
+    "pylint-fixme-info==1.0.3",
+    "pylint-pytest==1.1.2",
+    "ruff==0.0.269",
+    "yamllint==1.32.0"
+]
+types = [
+    "mypy[reports]==1.3.0",
+    "pyright==1.1.311",
+]
+docs = [
+    "furo==2023.5.20",
+    "sphinx>=6.2.1,<7.0",
+    "sphinx-autobuild==2021.3.14",
+    "sphinx-autodoc-typehints",
+    "sphinx-copybutton==0.5.2",
+    "sphinx-design==0.4.1",
+    "sphinx-pydantic==0.1.1",
+    "sphinx-toolbox==3.4.0",
+    "sphinx-lint==0.6.7",
+]
+
+[build-system]
+requires = [
+    "setuptools==67.7.2",
+    "setuptools_scm[toml]>=7.1"
+]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.dynamic]
+readme = {file = "README.rst"}
+
+[tool.setuptools_scm]
+write_to = "craft_cli/_version.py"
+
+[tool.setuptools.packages.find]
+exclude = [
+    "dist*",
+    "docs*",
+    "results*",
+    "tests*",
+]
+
+[tool.black]
+target-version = ["py38"]
+line-length = 99
+
+[tool.codespell]
+ignore-words-list = "buildd,crate,keyserver,comandos,ro,dedent,dedented"
+skip = ".tox,.git,build,.*_cache,__pycache__,*.tar,*.snap,*.png,./node_modules,./docs/_build,.direnv,.venv,venv,.vscode"
+quiet-level = 3
+check-filenames = true
+
 [tool.isort]
 multi_line_output = 3
 include_trailing_comma = true
 force_grid_wrap = 0
 use_parentheses = true
 ensure_newline_before_comments = true
-line_length = 99
+line_length = 88
 
-[tool.black]
-line-length = 99
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = "tests"
+xfail_strict = true
+
+[tool.coverage.run]
+branch = true
+parallel = true
+omit = ["tests/**"]
+
+[tool.coverage.report]
+skip_empty = true
+fail_under = 74
 
 [tool.pyright]
+#strict = ["craft_cli"] # NOTE: disabled pending fix of the many errors (see gh issue #147)
 pythonVersion = "3.8"
-exclude = [
-    "**/__pycache__",
-    "**/.mypy_cache",
-    "**/.pytest_cache",
-    ".direnv",
-    "build",
-    "docs",
-    "venv"
+pythonPlatform = "Linux"
+ignore = [
+    "docs/*"
 ]
+
+[tool.mypy]
+python_version = "3.8"
+exclude = [
+    "build",
+    "tests",
+    "results",
+    "docs",
+]
+warn_unused_configs = true
+warn_redundant_casts = true
+strict_equality = true
+strict_concatenate = true
+warn_return_any = true
+disallow_subclassing_any = true
+disallow_untyped_decorators = true
+disallow_any_generics = true
+
+[[tool.mypy.overrides]]
+module = ["craft_cli"]
+disallow_untyped_defs = true
+no_implicit_optional = true
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+strict = false
+
+[tool.ruff]
+line-length = 99
+target-version = "py38"
+src = ["craft_cli", "tests"]
+extend-exclude = [
+    "docs",
+    "__pycache__",
+    # NOTE: disabling ruff to handle in a separate issue (#146)
+    "craft_cli",
+    "examples.py",
+    "tests",
+]
+# Follow ST063 - Maintaining and updating linting specifications for updating these.
+select = [  # Base linting rule selections.
+    # See the internal document for discussion:
+    # https://docs.google.com/document/d/1i1n8pDmFmWi4wTDpk-JfnWCVUThPJiggyPi2DYwBBu4/edit
+    # All sections here are stable in ruff and shouldn't randomly introduce
+    # failures with ruff updates.
+    "F",  # The rules built into Flake8
+    "E", "W",  # pycodestyle errors and warnings
+    "I",  # isort checking
+    "N",  # PEP8 naming
+    "D",  # Implement pydocstyle checking as well.
+    "UP",  # Pyupgrade - note that some of are excluded below due to Python versions
+    "YTT",  # flake8-2020: Misuse of `sys.version` and `sys.version_info`
+    "ANN",  # Type annotations.
+    "BLE",  # Do not catch blind exceptions
+    "FBT",  # Disallow boolean positional arguments (make them keyword-only)
+    "B0",  # Common mistakes and typos.
+    "A",  # Shadowing built-ins.
+    "C4", # Encourage comprehensions, which tend to be faster than alternatives.
+    "T10",  # Don't call the debugger in production code
+    "ISC",  # Implicit string concatenation that can cause subtle issues
+    "ICN",  # Only use common conventions for import aliases.
+    "INP",  # Implicit namespace packages
+    "PYI",  # Linting for type stubs.
+    "PT",  # Pytest
+    "Q",  # Consistent quotations
+    "RSE",  # Errors on pytest raises.
+    "RET",  # Simpler logic after return, raise, continue or break
+    "SIM",  # Code simplification
+    "TCH",  # Guard imports only used for type checking behind a type-checkning block.
+    "ARG",  # Unused arguments
+    "PTH",  # Migrate to pathlib
+    "ERA",  # Don't check in commented out code
+    "PGH",  # Pygrep hooks
+    "PL",  # Pylint
+    "TRY",  # Cleaner try/except,
+]
+extend-select = [
+    # Pyupgrade: https://github.com/charliermarsh/ruff#pyupgrade-up
+    "UP00", "UP01", "UP02", "UP030", "UP032", "UP033",
+    # "UP034",  # Very new, not yet enabled in ruff 0.0.227
+    # Annotations: https://github.com/charliermarsh/ruff#flake8-annotations-ann
+    "ANN0",  # Type annotations for arguments other than `self` and `cls`
+    "ANN2",  # Return type annotations
+    "B026",  # Keyword arguments must come after starred arguments
+    # flake8-bandit: security testing. https://github.com/charliermarsh/ruff#flake8-bandit-s
+    # https://bandit.readthedocs.io/en/latest/plugins/index.html#complete-test-plugin-listing
+    "S101", "S102",  # assert or exec
+    "S103", "S108",  # File permissions and tempfiles - use #noqa to silence when appropriate.
+    "S104",  # Network binds
+    "S105", "S106", "S107",  # Hardcoded passwords
+    "S110",  # try-except-pass (use contextlib.suppress instead)
+    "S113",  # Requests calls without timeouts
+    "S3",  # Serialising, deserialising, hashing, crypto, etc.
+    "S506",  # Unsafe YAML load
+    "S508", "S509",  # Insecure SNMP
+    "S701",  # jinja2 templates without autoescape
+    "RUF001", "RUF002", "RUF003",  # Ambiguous unicode characters
+    "RUF005",  # Encourages unpacking rather than concatenation
+    "RUF008",  # Do not use mutable default values for dataclass attributes
+    "RUF100",  # #noqa directive that doesn't flag anything
+]
+ignore = [
+    "ANN10",  # Type annotations for `self` and `cls`
+    #"E203",  # Whitespace before ":"  -- Commented because ruff doesn't currently check E203
+    "E501",  # Line too long (reason: black will automatically fix this for us)
+    "D105",  # Missing docstring in magic method (reason: magic methods already have definitions)
+    "D107",  # Missing docstring in __init__ (reason: documented in class docstring)
+    "D203",  # 1 blank line required before class docstring (reason: pep257 default)
+    "D213",  # Multi-line docstring summary should start at the second line (reason: pep257 default)
+    "D215",  # Section underline is over-indented (reason: pep257 default)
+    "A003",  # Class attribute shadowing built-in (reason: Class attributes don't often get bare references)
+
+    # Ignored due to common usage in current code
+    "TRY003",  # Avoid specifying long messages outside the exception class
+]
+
+[tool.ruff.per-file-ignores]
+"tests/**.py" = [  # Some things we want for the moin project are unnecessary in tests.
+    "D",  # Ignore docstring rules in tests
+    "ANN", # Ignore type annotations in tests
+    "S101",  # Allow assertions in tests
+    "S103", # Allow `os.chmod` setting a permissive mask `0o555` on file or directory
+    "S108", # Allow Probable insecure usage of temporary file or directory
+    "PLR0913",  # Allow many arguments for test functions
+]
+# isort leaves init files alone by default, this makes ruff ignore them too.
+"__init__.py" = ["I001"]
