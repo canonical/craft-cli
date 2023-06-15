@@ -360,9 +360,9 @@ def _active_guard(ignore_when_stopped: bool = False) -> Callable[..., Any]:
     """
 
     def decorator(wrapped_func: FuncT) -> FuncT:
-        def func(
+        def func(  # pylint: disable=inconsistent-return-statements
             self, *args: Any, **kwargs: Any
-        ) -> Any:  # pylint: disable=inconsistent-return-statements
+        ) -> Any:
             if not self._initiated:  # pylint: disable=protected-access
                 raise RuntimeError("Emitter needs to be initiated first")
             if self._stopped:  # pylint: disable=protected-access
