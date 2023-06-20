@@ -17,7 +17,7 @@
 
 import argparse
 import difflib
-from typing import Any, Dict, List, Literal, NamedTuple, Optional, Tuple, Type
+from typing import Any, Dict, List, Literal, NamedTuple, Optional, Sequence, Tuple, Type
 
 from craft_cli import EmitterMode, emit
 from craft_cli.errors import ArgumentParsingError, ProvideHelpException
@@ -35,7 +35,7 @@ class CommandGroup(NamedTuple):
     """
 
     name: str
-    commands: List[Type["BaseCommand"]]
+    commands: Sequence[Type["BaseCommand"]]
 
 
 class GlobalArgument(NamedTuple):
