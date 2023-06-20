@@ -45,8 +45,8 @@ except ImportError:
 from craft_cli import errors
 from craft_cli.printer import Printer
 
-# the different modes the Emitter can be set
 EmitterMode = enum.Enum("EmitterMode", "QUIET BRIEF VERBOSE DEBUG TRACE")
+"""The different modes the Emitter can be set."""
 
 # the limit to how many log files to have
 _MAX_LOG_FILES = 5

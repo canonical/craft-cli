@@ -24,29 +24,33 @@ from typing import Optional
 
 
 class CraftError(Exception):
-    """Signal a program error with a lot of information to report.
+    """Signal a program error with a lot of information to report."""
 
-    :ivar message: the main message to the user, to be shown as first line (and
-      probably only that, according to the different modes); note that in some
-      cases the log location will be attached to this message.
+    message: str
+    """The main message to the user, to be shown as first line (and probably only that,
+      according to the different modes); note that in some cases the log location will be
+      attached to this message."""
 
-    :ivar details: the full error details received from a third party which
-      originated the error situation
+    details: Optional[str]
+    """The full error details received from a third party which originated the error
+      situation."""
 
-    :ivar resolution: an extra line indicating to the user how the error may be
-      fixed or avoided (to be shown together with 'message')
+    resolution: Optional[str]
+    """An extra line indicating to the user how the error may be fixed or avoided (to be
+      shown together with ``message``)."""
 
-    :ivar docs_url: an URL to point the user to documentation (to be shown
-      together with 'message')
+    docs_url: Optional[str]
+    """An URL to point the user to documentation (to be shown together with ``message``)."""
 
-    :ivar logpath_report: if the location of the log filepath should be presented
-      in the screen as the final message
+    logpath_report: bool
+    """Whether the location of the log filepath should be presented in the screen as the
+     final message."""
 
-    :ivar reportable: if an error report should be sent to some error-handling
-      backend (like Sentry)
+    reportable: bool
+    """If an error report should be sent to some error-handling backend (like Sentry)."""
 
-    :ivar retcode: the code to return when the application finishes
-    """
+    retcode: int
+    """The code to return when the application finishes."""
 
     def __init__(
         self,
