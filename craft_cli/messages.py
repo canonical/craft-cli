@@ -629,7 +629,7 @@ class Emitter:
             self._printer.set_terminal_prefix(text)
 
         if update_titlebar:
-            self._printer.set_titlebar(stream, text)
+            self._printer.set_titlebar(stream, text)  # type: ignore
 
     @_active_guard()
     def progress_bar(
