@@ -14,7 +14,7 @@
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-"""Interact with Canonical services such as Charmhub and the Snap Store."""
+"""A Command Line Client builder."""
 
 try:
     from ._version import __version__

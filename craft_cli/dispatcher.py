@@ -29,33 +29,35 @@ class CommandGroup(NamedTuple):
 
     A list of these is what is passed to the ``Dispatcher`` to run commands as part
     of the application.
-
-    :param name: identifier of the command group (to be used in help texts).
-    :param commands: a list of the commands in this group.
     """
 
     name: str
+    """The identifier of the command group (to be used in help texts)."""
+
     commands: Sequence[Type["BaseCommand"]]
+    """A list of the commands belonging in this group."""
 
 
 class GlobalArgument(NamedTuple):
-    """Definition of a global argument to be handled by the Dispatcher.
-
-    :param name: identifier of the argument (the reference in the dictionary returned
-        by ``Dispatcher.pre_parse_args`` method)
-    :param type: the argument type: ``flag`` for arguments that are set to ``True`` if
-        specified (``False`` by default), or ``option`` if a value is needed after it.
-    :param short_option: the short form of the argument (a dash with a letter, e.g. ``-s``); it can
-        be None if the option does not have a short form.
-    :param long_option: the long form of the argument (two dashes and a name, e.g. ``--secure``).
-    :param help_message: the one-line text that describes the argument, for building the help texts.
-    """
+    """Definition of a global argument to be handled by the Dispatcher."""
 
     name: str
+    """Identifier of the argument (the reference in the dictionary returned) by the
+      ``Dispatcher.pre_parse_args()`` method)"""
+
     type: Literal["flag", "option"]
+    """The argument type: ``flag`` for arguments that are set to ``True`` if specified
+      (``False`` by default), or ``option`` if a value is needed after it."""
+
     short_option: Optional[str]
+    """The short form of the argument (a dash with a letter, e.g. ``-s``); it can be None
+      if the option does not have a short form."""
+
     long_option: str
+    """The long form of the argument (two dashes and a name, e.g. ``--secure``)."""
+
     help_message: str
+    """the one-line text that describes the argument, for building the help texts."""
 
 
 _DEFAULT_GLOBAL_ARGS = [
@@ -93,34 +95,33 @@ _DEFAULT_GLOBAL_ARGS = [
 class BaseCommand:
     """Base class to build application commands.
 
-    Subclass this to create a new command; the subclass must define the following attributes:
+    Subclass this to create a new command; the subclass must define the ``name``,
+    ``help_msg``, and ``overview`` attributes. Additionally, it may override the
+    ``common`` and ``hidden`` attributes to change from their default values.
 
-    - name: the identifier in the command line
-
-    - help_msg: a one line help for user documentation
-
-    - overview: a longer multi-line text with the whole command description
-
-    Also it may override the following one to change its default:
-
-    - common: if it's a common/starter command, which are prioritized in the help (default to
-      False)
-
-    - hidden: do not show in help texts, useful for aliases or deprecated commands (default
-      to False)
-
-    It also must/can override some methods for the proper command behaviour (see each
+    The subclass may also override some methods for the proper command behaviour (see each
     method's docstring).
 
-    The subclass must be declared in the corresponding section of command groups indicated
-    to the Dispatcher.
+    Finally, the subclass must be declared in the corresponding section of command groups
+    indicated to the Dispatcher.
     """
 
     name: str
+    """The identifier in the command line, like "build" or "pack"."""
+
     help_msg: str
+    """A one-line help message for user documentation."""
+
     overview: str
-    common = False
-    hidden = False
+    """Longer, multi-line text with the whole command description."""
+
+    common: bool = False
+    """Whether this is a common/starter command, which are prioritized in the help
+      (defaults to False)."""
+
+    hidden: bool = False
+    """Do not show in help texts, useful for aliases or deprecated commands (defaults
+      to False)."""
 
     def __init__(self, config: Optional[Dict[str, Any]]):
         self.config = config
@@ -140,6 +141,8 @@ class BaseCommand:
         global ones (see `main.Dispatcher._build_argument_parser`).
 
         If this method is not overridden, the command will not have any parameters.
+
+        :param parser: The object to fill with this command's parameters.
         """
 
     def run(self, parsed_args: argparse.Namespace) -> Optional[int]:
@@ -147,9 +150,8 @@ class BaseCommand:
 
         It must be overridden by the command implementation.
 
-        This will receive parsed arguments that were defined in :meth:.fill_parser.
-
-        It should return None or the desired process' return code.
+        :param parsed_args: The parsed arguments that were defined in :meth:`fill_parser`.
+        :return: This method should return ``None`` or the desired process' return code.
         """
         raise NotImplementedError()
 

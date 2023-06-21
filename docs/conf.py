@@ -31,8 +31,7 @@ extensions = [
     "sphinx_copybutton",
     "sphinx-pydantic",
     "sphinx_toolbox",
-    "sphinx_toolbox.more_autodoc",
-    "sphinx.ext.autodoc",  # Must be loaded after more_autodoc
+    "sphinx.ext.autodoc",
 ]
 
 templates_path = ["_templates"]
@@ -69,6 +68,9 @@ typehints_document_rtype = True
 github_username = "canonical"
 github_repository = "craft-cli"
 # endregion
+
+# Document class properties before public methods
+autodoc_member_order = "bysource"
 
 
 # region Setup reference generation
