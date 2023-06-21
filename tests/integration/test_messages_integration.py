@@ -323,7 +323,7 @@ def test_title_set_in_tty(capsys, monkeypatch):
     emit.ended_ok()
 
     out, err = capsys.readouterr()
-    assert (out == "\x1b]2;The meaning of life is 42.\x07") is True
+    assert out == "\x1b]2;The meaning of life is 42.\x07"
     assert err.find("\x1b]2;The meaning of life is 42.\x07") is -1
 
 
