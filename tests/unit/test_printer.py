@@ -123,7 +123,7 @@ def test_streamisterminal_tty_yes_unusable(monkeypatch):
 def test_titlebar_no_tty(log_filepath):
     """Setting the titlebar to a no-tty stream does nothing"""
 
-    class FakeStream(io.TextIOBase):
+    class FakeStream(io.StringIO):
         def __init__(self):
             self.output = ""
             self.flushed = 0
@@ -149,7 +149,7 @@ def test_titlebar_true_tty(log_filepath):
     """Setting the titlebar to a true-tty stream sends the text and
     the corresponding ANSI escape codes to set the title"""
 
-    class FakeStream(io.TextIOBase):
+    class FakeStream(io.StringIO):
         def __init__(self):
             self.output = ""
             self.flushed = 0
