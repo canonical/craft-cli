@@ -121,14 +121,18 @@ def test_streamisterminal_tty_yes_unusable(monkeypatch):
 
 def test_titlebar_no_tty(log_filepath):
     """Setting the titlebar to a no-tty stream does nothing"""
+
     class FakeStream:
         def __init__(self):
             self.output = ""
             self.flushed = 0
+
         def isatty(self):
             return False
+
         def write(self, data):
             self.output += data
+
         def flush(self):
             self.flushed += 1
 
@@ -136,21 +140,25 @@ def test_titlebar_no_tty(log_filepath):
     text = "test text"
     printer = Printer(log_filepath)
     printer.set_titlebar(stream, text)
-    assert stream.output is ""
-    assert stream.flushed is 0
+    assert stream.output == ""
+    assert stream.flushed == 0
 
 
 def test_titlebar_true_tty(log_filepath):
     """Setting the titlebar to a true-tty stream sends the text and
-       the corresponding ANSI escape codes to set the title"""
+    the corresponding ANSI escape codes to set the title"""
+
     class FakeStream:
         def __init__(self):
             self.output = ""
             self.flushed = 0
+
         def isatty(self):
             return True
+
         def write(self, data):
             self.output += data
+
         def flush(self):
             self.flushed += 1
 
@@ -158,8 +166,8 @@ def test_titlebar_true_tty(log_filepath):
     text = "test text"
     printer = Printer(log_filepath)
     printer.set_titlebar(stream, text)
-    assert (stream.output == f"\033]2;{text}\007") is True
-    assert stream.flushed is 1
+    assert stream.output == f"\033]2;{text}\007"
+    assert stream.flushed == 1
 
 
 # -- tests for the writing line (terminal version) function

@@ -377,8 +377,8 @@ class Printer:
         if _stream_is_terminal(stream):
             # Sends the text with the right ANSI codes:
             # ESC]2;textoBEL
-            if stream==sys.stderr:
-                stream=sys.stdout
+            if stream == sys.stderr:
+                stream = sys.stdout
             print(f"\033]2;{text}\007", flush=True, file=stream, end="")
 
     def progress_bar(  # noqa: PLR0913

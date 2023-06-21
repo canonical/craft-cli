@@ -302,7 +302,7 @@ def test_progress_verbose(capsys, permanent):
 
 
 @pytest.mark.parametrize("output_is_terminal", [False])
-def test_title_set(capsys, monkeypatch):
+def test_title_set_no_tty(capsys, monkeypatch):
     """Show a progress message with update_title flag."""
     emit = Emitter()
     emit.init(EmitterMode.BRIEF, "testapp", GREETING)
@@ -315,7 +315,7 @@ def test_title_set(capsys, monkeypatch):
 
 
 @pytest.mark.parametrize("output_is_terminal", [True])
-def test_title_set(capsys, monkeypatch):
+def test_title_set_in_tty(capsys, monkeypatch):
     """Show a progress message with update_title flag."""
     emit = Emitter()
     emit.init(EmitterMode.BRIEF, "testapp", GREETING)
@@ -323,7 +323,7 @@ def test_title_set(capsys, monkeypatch):
     emit.ended_ok()
 
     out, err = capsys.readouterr()
-    assert (out=="\x1b]2;The meaning of life is 42.\x07") is True
+    assert (out == "\x1b]2;The meaning of life is 42.\x07") is True
     assert err.find("\x1b]2;The meaning of life is 42.\x07") is -1
 
 
