@@ -491,7 +491,8 @@ def example_30(new_title):
     time.sleep(1.5)
 
 def example_31():
-    """Set the window title twice"""
+    """Set the window title twice, to test if there is a delay when
+    changing the title"""
     emit.progress("Changed the title once", update_titlebar=True)
     time.sleep(2)
     emit.progress("Changed the title twice", update_titlebar=True)
