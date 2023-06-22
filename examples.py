@@ -485,6 +485,10 @@ def _call_lib(logger, index):
     logger.debug(f"   {lib} DEBUG 2")
     time.sleep(2)
 
+def example_30(new_title):
+    """Set the window title"""
+    emit.progress(new_title, update_titlebar=True)
+    time.sleep(1.5)
 
 # -- end of test cases
 
