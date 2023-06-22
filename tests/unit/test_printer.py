@@ -167,7 +167,7 @@ def test_titlebar_true_tty(log_filepath):
     text = "test text"
     printer = Printer(log_filepath)
     printer.set_titlebar(stream, text)
-    assert stream.output == f"\033]2;{text}\007"
+    assert stream.output == f"\033]30;{text}\007"
     assert stream.flushed == 1
 
 

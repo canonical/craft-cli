@@ -379,7 +379,7 @@ class Printer:
             # ESC]2;textoBEL
             if stream == sys.stderr:
                 stream = sys.stdout
-            print(f"\033]0;{text}\007", flush=True, file=stream, end="")
+            print(f"\033]30;{text}\007", flush=True, file=stream, end="")
 
     def progress_bar(  # noqa: PLR0913
         self,
