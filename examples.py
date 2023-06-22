@@ -490,6 +490,13 @@ def example_30(new_title):
     emit.progress(new_title, update_titlebar=True)
     time.sleep(1.5)
 
+def example_31():
+    """Set the window title twice"""
+    emit.progress("Changed the title once", update_titlebar=True)
+    time.sleep(2)
+    emit.progress("Changed the title twice", update_titlebar=True)
+    time.sleep(2)
+
 # -- end of test cases
 
 if len(sys.argv) < 2:
