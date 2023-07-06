@@ -19,6 +19,7 @@
 import re
 import shutil
 import sys
+import textwrap
 import threading
 import time
 from datetime import datetime
@@ -638,6 +639,29 @@ def test_logfile_used(log_filepath):
     printer.stop()
 
     assert log_filepath.read_text() == "2009-09-01 12:13:15.123 test text\n"
+
+
+def test_logfile_flush(log_filepath, mocker):
+    """Printer flushes the log file after every write."""
+    printer = Printer(log_filepath)
+
+    fake_now = datetime(2009, 9, 1, 12, 13, 15, 123456)
+    msg = _MessageInfo(None, "test text", created_at=fake_now)
+
+    flush = mocker.spy(printer.log, "flush")
+    assert flush.call_count == 0
+    printer._log(msg)
+    assert flush.call_count == 1
+    printer._log(msg)
+    assert flush.call_count == 2
+
+    printer.stop()
+    assert log_filepath.read_text() == textwrap.dedent(
+        """\
+        2009-09-01 12:13:15.123 test text
+        2009-09-01 12:13:15.123 test text
+        """
+    )
 
 
 # -- tests for message showing external API

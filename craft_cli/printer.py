@@ -301,6 +301,9 @@ class Printer:
         # prepare the text with (maybe) the timestamp
         timestamp_str = message.created_at.isoformat(sep=" ", timespec="milliseconds")
         self.log.write(f"{timestamp_str} {message.text}\n")
+        # Flush the file: protect a bit in case of crashes, and multiprocess-based
+        # parallelism.
+        self.log.flush()
 
     def spin(self, message: _MessageInfo, spintext: str) -> None:
         """Write a line message including a spin text, only to a terminal."""
