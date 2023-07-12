@@ -1237,6 +1237,55 @@ def test_helprequested_specific_command():
     assert args[2] == OutputFormat.plain
 
 
+def test_helprequested_with_raw_help_text():
+    """Requested help for a command."""
+    raw_text = """R|test raw text
+    This is a raw text
+    that is very long
+    and has several lines
+
+    with some blank lines
+
+        and spaces
+    """
+
+    def fill_parser(self, parser):  # pylint: disable=unused-argument
+        parser.add_argument("--choice", choices=[1, 2, 3], help=raw_text)
+
+    cmd = create_command("somecmd", "Some command with multiline help.")
+    cmd.fill_parser = fill_parser
+
+    command_groups = [CommandGroup("group", [cmd])]
+    dispatcher = Dispatcher("testapp", command_groups)
+
+    parameters = ["somecmd"]
+    assert dispatcher._get_requested_help(parameters) == (
+        """\
+Usage:
+    testapp somecmd [options]
+
+Summary:
+
+Options:
+       -h, --help:  Show this help message and exit
+    -v, --verbose:  Show debug information and be more verbose
+      -q, --quiet:  Only show warnings and errors, not progress
+      --verbosity:  Set the verbosity level to 'quiet', 'brief',
+                    'verbose', 'debug' or 'trace'
+         --choice:  test raw text
+    This is a raw text
+    that is very long
+    and has several lines
+
+    with some blank lines
+
+        and spaces
+
+For a summary of all commands, run 'testapp help --all'.
+"""
+    )
+
+
 @pytest.mark.parametrize(
     "parameters",
     [

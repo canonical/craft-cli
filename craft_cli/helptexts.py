@@ -63,7 +63,11 @@ def _build_item_plain(title: str, text: str, title_space: int) -> List[str]:
     # the first 4 spaces, the two spaces to separate title/text, and the ':'
     not_title_space = 7
     text_space = TERMINAL_WIDTH - title_space - not_title_space
-    wrapped_lines = textwrap.wrap(text, text_space)
+    raw_text = text.startswith("R|")
+    if raw_text:
+        wrapped_lines = text[2:].splitlines()
+    else:
+        wrapped_lines = textwrap.wrap(text, text_space)
 
     # first line goes with the title at column 4
     first = f"    {title:>{title_space}s}:  {wrapped_lines[0]}"
@@ -71,7 +75,10 @@ def _build_item_plain(title: str, text: str, title_space: int) -> List[str]:
 
     # the rest (if any) still aligned but without title
     for line in wrapped_lines[1:]:
-        result.append(" " * (title_space + not_title_space) + line)
+        if raw_text:
+            result.append(line)
+        else:
+            result.append(" " * (title_space + not_title_space) + line)
 
     return result
 
@@ -353,7 +360,11 @@ class HelpBuilder:
             "|-|-|",
         ]
         for title, text in options:
-            option_lines.append(f"| `{title}` | {text} |")
+            if text.startswith("R|"):
+                _text = text[2:].replace("\n", "<br>")
+            else:
+                _text = text.replace("\n", "<br>")
+            option_lines.append(f"| `{title}` | {_text} |")
 
         textblocks.append("\n".join(option_lines))
 
