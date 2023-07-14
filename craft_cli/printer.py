@@ -53,6 +53,7 @@ class _MessageInfo:  # pylint: disable=too-many-instance-attributes
     use_timestamp: bool = False
     end_line: bool = False
     created_at: datetime = field(default_factory=datetime.now)
+    terminal_prefix: str = ""
 
 
 @lru_cache
@@ -169,11 +170,17 @@ class Printer:
     def _write_line_terminal(self, message: _MessageInfo, *, spintext: str = "") -> None:
         """Write a simple line message to the screen."""
         # prepare the text with (maybe) the timestamp
-        if message.use_timestamp:
-            timestamp_str = message.created_at.isoformat(sep=" ", timespec="milliseconds")
-            text = timestamp_str + " " + message.text
+
+        if message.terminal_prefix:
+            text = message.terminal_prefix + message.text
         else:
             text = message.text
+
+        if message.use_timestamp:
+            timestamp_str = message.created_at.isoformat(sep=" ", timespec="milliseconds")
+            text = timestamp_str + " " + text
+        else:
+            text = text
 
         if spintext:
             # forced to overwrite the previous message to present the spinner
@@ -195,7 +202,17 @@ class Printer:
         usable = width - len(spintext) - 1  # the 1 is the cursor itself
         if len(text) > usable:
             if message.ephemeral:
-                text = text[: usable - 1] + "…"
+                # original
+                #text = text[: usable - 1] + "…"
+
+                # middle elision
+                i = " … "
+                half = (usable - len(i)) // 2
+                text = text[:half] + i + text[len(text) - half:]
+
+                # show only end
+                # i = " … "
+                # text = i + text[len(text) - (usable - len(i)):]
             elif spintext:
                 # we need to rewrite the message with the spintext, use only the last line for
                 # multiline messages, and ensure (again) that the last real line fits
@@ -319,6 +336,7 @@ class Printer:
         use_timestamp: bool = False,
         end_line: bool = False,
         avoid_logging: bool = False,
+        terminal_prefix: str = "",
     ) -> None:
         """Show a text to the given stream if not stopped."""
         if self.stopped:
@@ -330,6 +348,7 @@ class Printer:
             ephemeral=ephemeral,
             use_timestamp=use_timestamp,
             end_line=end_line,
+            terminal_prefix=terminal_prefix,
         )
         self._show(msg)
         if not avoid_logging:

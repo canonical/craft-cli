@@ -172,9 +172,10 @@ class _PipeReaderThread(threading.Thread):
     # byte used to unblock the reading (under Windows)
     UNBLOCK_BYTE = b"\x00"
 
-    def __init__(self, printer: Printer, stream: Optional[TextIO], printer_flags: Dict[str, bool]):
+    def __init__(self, printer: Printer, stream: Optional[TextIO], printer_flags: Dict[str, bool], prefix: str):
         super().__init__()
         self.printer_flags = printer_flags
+        self.prefix = prefix
 
         # prepare the pipe pair: the one to read (used in the thread core loop) and the
         # one which is to be written externally (and also used internally under windows
@@ -225,7 +226,7 @@ class _PipeReaderThread(threading.Thread):
             # can correctly count the characters.
             unicode_line = unicode_line.replace("\t", "  ")
             text = f":: {unicode_line}"
-            self.printer.show(self.stream, text, **self.printer_flags)
+            self.printer.show(self.stream, text, **self.printer_flags, terminal_prefix=self.prefix)
 
     def _run_posix(self) -> None:
         """Run the thread, handling pipes in the POSIX way."""
@@ -287,6 +288,7 @@ class _StreamContextManager:
     def __init__(  # pylint: disable=too-many-arguments
         self,
         printer: Printer,
+        handler,
         text: str,
         stream: Optional[TextIO],
         use_timestamp: bool,
@@ -305,14 +307,17 @@ class _StreamContextManager:
         printer.show(stream, text, **printer_flags)
 
         # enable the thread to read and show what comes through the provided pipe
-        self.pipe_reader = _PipeReaderThread(printer, stream, printer_flags)
+        self.pipe_reader = _PipeReaderThread(printer, stream, printer_flags, prefix=text)
+        self.handler = handler
 
     def __enter__(self):
         self.pipe_reader.start()
+        self.handler.set_pipe(self.pipe_reader.write_pipe, self.pipe_reader.stream, self.pipe_reader.printer_flags, self.pipe_reader.prefix)
         return self.pipe_reader.write_pipe
 
     def __exit__(self, *exc_info):
         self.pipe_reader.stop()
+        self.handler.reset_pipe()
         return False  # do not consume any exception
 
 
@@ -327,6 +332,8 @@ class _Handler(logging.Handler):
         # will decide on "emit" if also goes to screen using the custom mode
         self.level = 0
         self.mode = EmitterMode.QUIET
+
+        self.reset_pipe()
 
     def emit(self, record: logging.LogRecord) -> None:
         """Send the message in the LogRecord to the printer."""
@@ -348,7 +355,25 @@ class _Handler(logging.Handler):
             stream = sys.stderr
 
         use_timestamp = self.mode in (EmitterMode.DEBUG, EmitterMode.TRACE)
+        message = record.getMessage()
         self.printer.show(stream, record.getMessage(), use_timestamp=use_timestamp)
+
+        # if self.pipe is not None:
+        #     os.write(self.pipe, message.encode() + b"\n")
+        if self.pipe is not None:
+            # self.printer.show(message, **self.pipe_flags)
+            text = ":: " + message
+            self.printer.show(self.pipe_stream, text, **self.pipe_flags, terminal_prefix=self.pipe_prefix, avoid_logging=True)
+
+    def set_pipe(self, pipe, stream, printer_flags, pipe_prefix):
+        self.pipe = pipe
+        self.pipe_stream = stream
+        self.pipe_flags = printer_flags
+        self.pipe_prefix = pipe_prefix
+
+    def reset_pipe(self):
+        self.pipe = None
+        self.pipe_flags = {}
 
 
 FuncT = TypeVar("FuncT", bound=Callable[..., Any])
@@ -602,6 +627,7 @@ class Emitter:
             use_timestamp = True
         manager = _StreamContextManager(
             self._printer,  # type: ignore
+            self._log_handler,
             text,
             stream=stream,
             use_timestamp=use_timestamp,
