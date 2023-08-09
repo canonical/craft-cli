@@ -319,9 +319,16 @@ class _StreamContextManager:
 class _Handler(logging.Handler):
     """A logging handler that emits messages through the core Printer."""
 
-    def __init__(self, printer: Printer):
+    def __init__(self, printer: Printer, streaming_brief: bool = False):
+        """
+        :param printer:
+        :param bool streaming_brief:
+            Whether sys.stderr should be used as the stream when handling record
+            above DEBUG in BRIEF mode.
+        """
         super().__init__()
         self.printer = printer
+        self.streaming_brief = streaming_brief
 
         # level is 0 so we get EVERYTHING (as we need to send it all to the log file), and
         # will decide on "emit" if also goes to screen using the custom mode
@@ -347,8 +354,15 @@ class _Handler(logging.Handler):
             # in trace, everything
             stream = sys.stderr
 
+        text = record.getMessage()
+
+        ephemeral = False
+        if self.mode == EmitterMode.BRIEF and self.streaming_brief:
+            stream = sys.stderr if record.levelno > logging.DEBUG else None
+            ephemeral = True
+
         use_timestamp = self.mode in (EmitterMode.DEBUG, EmitterMode.TRACE)
-        self.printer.show(stream, record.getMessage(), use_timestamp=use_timestamp)
+        self.printer.show(stream, text, use_timestamp=use_timestamp, ephemeral=ephemeral)
 
 
 FuncT = TypeVar("FuncT", bound=Callable[..., Any])
@@ -402,6 +416,8 @@ class Emitter:
     the application behaviour and/or logs forensics.
     """
 
+    # pylint: disable=too-many-instance-attributes
+
     def __init__(self):
         # these attributes will be set at "real init time", with the `init` method below
         self._greeting = None
@@ -411,6 +427,7 @@ class Emitter:
         self._stopped = False
         self._log_filepath = None
         self._log_handler = None
+        self._streaming_brief = False
 
     def init(
         self,
@@ -418,8 +435,14 @@ class Emitter:
         appname: str,
         greeting: str,
         log_filepath: Optional[pathlib.Path] = None,
+        *,
+        streaming_brief: bool = False,
     ):
-        """Initialize the emitter; this must be called once and before emitting any messages."""
+        """Initialize the emitter; this must be called once and before emitting any messages.
+
+        :param streaming_brief: Whether "informational" messages should be "streamed" with
+            progress messages when using BRIEF mode.
+        """
         if self._initiated:
             if TESTMODE:
                 self._stop()
@@ -427,6 +450,7 @@ class Emitter:
                 raise RuntimeError("Double Emitter init detected!")
 
         self._greeting = greeting
+        self._streaming_brief = streaming_brief
 
         # create a log file, bootstrap the printer, and before anything else send the greeting
         # to the file
@@ -436,7 +460,7 @@ class Emitter:
 
         # hook into the logging system
         logger = logging.getLogger()
-        self._log_handler = _Handler(self._printer)
+        self._log_handler = _Handler(self._printer, streaming_brief=streaming_brief)
         logger.addHandler(self._log_handler)
 
         self._initiated = True
@@ -563,7 +587,18 @@ class Emitter:
         line (unless verbose/trace mode).
         """
         stream, use_timestamp, ephemeral = self._get_progress_params(permanent)
-        self._printer.show(stream, text, ephemeral=ephemeral, use_timestamp=use_timestamp)  # type: ignore
+
+        printer = cast(Printer, self._printer)
+
+        if self._streaming_brief:
+            # Clear the "new thing" prefix, as this is a new progress message.
+            printer.set_terminal_prefix("")
+
+        printer.show(stream, text, ephemeral=ephemeral, use_timestamp=use_timestamp)  # type: ignore
+
+        if self._mode == EmitterMode.BRIEF and ephemeral and self._streaming_brief:
+            # Set the "progress prefix" for upcoming non-permanent messages.
+            printer.set_terminal_prefix(text)
 
     @_active_guard()
     def progress_bar(self, text: str, total: Union[int, float], delta: bool = True) -> _Progresser:

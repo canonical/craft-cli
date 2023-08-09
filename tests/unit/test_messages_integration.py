@@ -21,10 +21,12 @@ outputs.
 """
 
 import logging
+import os
 import re
 import subprocess
 import sys
 import textwrap
+import time
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Collection
@@ -81,6 +83,7 @@ class Line:
     text: str
     permanent: bool = True  # if it should be overwritten by next message or not
     timestamp: bool = False  # if it should be prefixed by a timestamp
+    regex: bool = False  # if "text" is a regular expression instead of an exact string
 
 
 def compare_lines(expected_lines: Collection[Line], raw_stream, std_stream):
@@ -117,7 +120,10 @@ def compare_lines(expected_lines: Collection[Line], raw_stream, std_stream):
         template = f"{timestamp}(.*?) *{end_of_line}"
         match = re.match(template, real)
         assert match, f"Line {real!r} didn't match {template!r}"
-        assert match.groups()[0] == expected.text
+        if expected.regex:
+            assert re.match(expected.text, match.groups()[0])
+        else:
+            assert match.groups()[0] == expected.text
 
 
 def assert_outputs(capsys, emit, expected_out=None, expected_err=None, expected_log=None):
@@ -1293,3 +1299,136 @@ def test_capture_delays(tmp_path, loops, sleep, max_repetitions):
     too_big = [delay for delay in delays if delay > 0.050]
     if len(too_big) > loops / 20:
         pytest.fail(f"Delayed capture: {too_big} avg delay is {sum(delays) / len(delays):.3f}")
+
+
+@pytest.mark.parametrize("output_is_terminal", [True])
+def test_streaming_brief(capsys, logger):
+    """Test the overall behavior of the "streaming_brief" feature regarding the terminal
+    and the generated logs."""
+
+    emit = Emitter()
+    emit.init(EmitterMode.BRIEF, "testapp", GREETING, streaming_brief=True)
+
+    emit.progress("First stage", permanent=False)
+    logger.info("info 1")
+    logger.debug("debug 1")
+    logger.info("info 2")
+    logger.debug("debug 2")
+    emit.progress("Done first stage", permanent=True)
+
+    emit.progress("Second stage", permanent=False)
+    logger.info("info 1")
+    logger.debug("debug 1")
+    logger.info("info 2")
+    logger.debug("debug 2")
+    emit.progress("Done second stage", permanent=True)
+
+    emit.ended_ok()
+
+    # Messages shown on the terminal: progress messages, plus INFO-level log messages
+    # "streamed" into the most recent non-permanent progress() message.
+    expected_err = [
+        Line("First stage", permanent=False),
+        Line("First stage :: info 1", permanent=False),
+        Line("First stage :: info 2", permanent=False),
+        Line("Done first stage", permanent=True),
+        Line("Second stage", permanent=False),
+        Line("Second stage :: info 1", permanent=False),
+        Line("Second stage :: info 2", permanent=False),
+        Line("Done second stage", permanent=True),
+    ]
+
+    # Messages saved to the logfile: progress messages, plus all log messages. Note that
+    # INFO-level log messages are _not_ "prefixed" with the progress messages' text.
+    expected_log = [
+        Line("First stage"),
+        Line("info 1"),
+        Line("debug 1"),
+        Line("info 2"),
+        Line("debug 2"),
+        Line("Done first stage"),
+        Line("Second stage"),
+        Line("info 1"),
+        Line("debug 1"),
+        Line("info 2"),
+        Line("debug 2"),
+        Line("Done second stage"),
+    ]
+    assert_outputs(capsys, emit, expected_err=expected_err, expected_log=expected_log)
+
+
+@pytest.mark.parametrize("output_is_terminal", [True])
+def test_streaming_brief_open_stream(capsys, logger):
+    """Test the interaction between the "streaming brief" mode and the open_stream()."""
+
+    emit = Emitter()
+    emit.init(EmitterMode.BRIEF, "testapp", GREETING, streaming_brief=True)
+
+    emit.progress("Begin stage", permanent=False)
+    with emit.open_stream("Opening stream") as write_pipe:
+        os.write(write_pipe, b"Message inside stream\n")
+    emit.progress("Done stage", permanent=True)
+    emit.ended_ok()
+
+    # Messages written to the open_stream()'s pipe get prefixed when writing to the
+    # terminal...
+    expected_err = [
+        Line("Begin stage", permanent=False),
+        Line("Begin stage :: Opening stream", permanent=False),
+        Line("Begin stage :: Message inside stream", permanent=False),
+        Line("Done stage", permanent=True),
+    ]
+    # ... but not when writing to the logfile.
+    expected_log = [
+        Line("Begin stage"),
+        Line("Opening stream"),
+        Line(":: Message inside stream"),
+        Line("Done stage"),
+    ]
+    assert_outputs(capsys, emit, expected_err=expected_err, expected_log=expected_log)
+
+
+@pytest.fixture
+def init_emitter():
+    """Empty fixture to disable the "global", autouse init_emitter."""
+
+
+@pytest.mark.parametrize("output_is_terminal", [True])
+def test_streaming_brief_spinner(capsys, logger, monkeypatch, init_emitter):
+    """Test the interaction between the "streaming brief" mode and the spinner."""
+
+    # Set the spinner delays to fairly long values to try to get some determinism
+    # with this test.
+    monkeypatch.setattr(printer, "_SPINNER_THRESHOLD", 0.8)
+    monkeypatch.setattr(printer, "_SPINNER_DELAY", 10)
+    monkeypatch.setattr(printer, "TESTMODE", False)
+
+    emit = Emitter()
+    emit.init(EmitterMode.BRIEF, "testapp", GREETING, streaming_brief=True)
+
+    emit.progress("Begin stage", permanent=False)
+    time.sleep(1)
+    with emit.open_stream("Opening stream") as write_pipe:
+        os.write(write_pipe, b"Info message\n")
+    time.sleep(1)
+    emit.progress("Done stage", permanent=True)
+    emit.ended_ok()
+
+    # The spinner-added messages should contain both the prefix and the "submessage".
+    expected_err = [
+        Line("Begin stage", permanent=False),
+        Line(r"Begin stage - \(0.[7-9]s\)", permanent=False, regex=True),
+        Line("Begin stage", permanent=False),
+        Line("Begin stage :: Opening stream", permanent=False),
+        Line("Begin stage :: Info message", permanent=False),
+        Line(r"Begin stage :: Info message - \(0.[7-9]s\)", permanent=False, regex=True),
+        Line("Begin stage :: Info message", permanent=False),
+        Line("Done stage", permanent=True),
+    ]
+    expected_log = [
+        Line("Begin stage"),
+        Line("Opening stream"),
+        Line(":: Info message"),
+        Line("Done stage"),
+    ]
+    assert_outputs(capsys, emit, expected_err=expected_err, expected_log=expected_log)
