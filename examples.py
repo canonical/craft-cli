@@ -451,6 +451,41 @@ def example_28(mode_name, total_messages=10):
     _run_noisy_subprocess(mode_name, total_messages, example_test_sub_app)
 
 
+def example_29(mode_name, streaming_brief):
+    """Support some library logging."""
+    logger = logging.getLogger()
+    logger.setLevel(0)
+
+    mode = EmitterMode[mode_name.upper()]
+    emit.init(mode, "example_29", "Hi", streaming_brief=bool(int(streaming_brief)))
+
+    emit.progress(f"Mode set to {mode}", permanent=True)
+
+    emit.progress("Starting up lib1", permanent=False)
+    _call_lib(logger, 1)
+    emit.progress("Finished lib1", permanent=True)
+
+    emit.progress("Starting up lib2", permanent=False)
+    _call_lib(logger, 2)
+    emit.progress("Finished lib2", permanent=True)
+
+    emit.progress("Starting up lib3", permanent=False)
+    _call_lib(logger, 3)
+    emit.progress("Finished lib3", permanent=True)
+
+
+def _call_lib(logger, index):
+    lib = f"lib{index}"
+
+    time.sleep(2)
+    logger.info(f"   {lib} INFO 1")
+    logger.debug(f"   {lib} DEBUG 1")
+    time.sleep(2)
+    logger.info(f"   {lib} INFO 2")
+    logger.debug(f"   {lib} DEBUG 2")
+    time.sleep(2)
+
+
 # -- end of test cases
 
 if len(sys.argv) < 2:
@@ -463,7 +498,8 @@ if func is None:
     print(f"ERROR: function {name!r} not found")
     exit()
 
-emit.init(EmitterMode.BRIEF, "explorator", "Greetings earthlings")
+if int(sys.argv[1]) != 29:
+    emit.init(EmitterMode.BRIEF, "explorator", "Greetings earthlings")
 try:
     func(*sys.argv[2:])
 except CraftError as err:

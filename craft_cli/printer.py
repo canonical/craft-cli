@@ -53,6 +53,7 @@ class _MessageInfo:  # pylint: disable=too-many-instance-attributes
     use_timestamp: bool = False
     end_line: bool = False
     created_at: datetime = field(default_factory=datetime.now)
+    terminal_prefix: str = ""
 
 
 @lru_cache
@@ -161,19 +162,44 @@ class Printer:
         # keep account of output terminal streams with unfinished lines
         self.unfinished_stream: Optional[TextIO] = None
 
+        self.terminal_prefix = ""
+
         # run the spinner supervisor
         self.spinner = _Spinner(self)
         if not TESTMODE:
             self.spinner.start()
 
+    def set_terminal_prefix(self, prefix: str) -> None:
+        """Set the string to be prepended to every message shown to the terminal."""
+        self.terminal_prefix = prefix
+
+    def _get_prefixed_message_text(self, message: _MessageInfo) -> str:
+        """Get the message's text with the proper terminal prefix, if any."""
+        text = message.text
+        prefix = message.terminal_prefix
+
+        # Don't repeat text: can happen due to the spinner.
+        if prefix and text != prefix:
+            separator = ":: "
+
+            # Don't duplicate the separator, which can come from multiple different
+            # sources.
+            if text.startswith(separator):
+                separator = ""
+
+            text = f"{prefix} {separator}{text}"
+
+        return text
+
     def _write_line_terminal(self, message: _MessageInfo, *, spintext: str = "") -> None:
         """Write a simple line message to the screen."""
         # prepare the text with (maybe) the timestamp
+
+        text = self._get_prefixed_message_text(message)
+
         if message.use_timestamp:
             timestamp_str = message.created_at.isoformat(sep=" ", timespec="milliseconds")
-            text = timestamp_str + " " + message.text
-        else:
-            text = message.text
+            text = f"{timestamp_str} {text}"
 
         if spintext:
             # forced to overwrite the previous message to present the spinner
@@ -330,6 +356,7 @@ class Printer:
             ephemeral=ephemeral,
             use_timestamp=use_timestamp,
             end_line=end_line,
+            terminal_prefix=self.terminal_prefix,
         )
         self._show(msg)
         if not avoid_logging:

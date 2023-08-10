@@ -291,7 +291,7 @@ def test_handler_emit_full_message(handler):
     logging.getLogger().error("test message %s", 23)
 
     assert handler.printer.mock_calls == [
-        call.show(sys.stderr, "test message 23", use_timestamp=False),
+        call.show(sys.stderr, "test message 23", use_timestamp=False, ephemeral=False),
     ]
 
 
@@ -307,10 +307,10 @@ def test_handler_emit_quiet(handler):
     logger.log(5, "test custom sub-debug")
 
     assert handler.printer.mock_calls == [
-        call.show(None, "test error", use_timestamp=False),
-        call.show(None, "test warning", use_timestamp=False),
-        call.show(None, "test info", use_timestamp=False),
-        call.show(None, "test debug", use_timestamp=False),
+        call.show(None, "test error", use_timestamp=False, ephemeral=False),
+        call.show(None, "test warning", use_timestamp=False, ephemeral=False),
+        call.show(None, "test info", use_timestamp=False, ephemeral=False),
+        call.show(None, "test debug", use_timestamp=False, ephemeral=False),
     ]
 
 
@@ -326,10 +326,10 @@ def test_handler_emit_brief(handler):
     logger.log(5, "test custom sub-debug")
 
     assert handler.printer.mock_calls == [
-        call.show(None, "test error", use_timestamp=False),
-        call.show(None, "test warning", use_timestamp=False),
-        call.show(None, "test info", use_timestamp=False),
-        call.show(None, "test debug", use_timestamp=False),
+        call.show(None, "test error", use_timestamp=False, ephemeral=False),
+        call.show(None, "test warning", use_timestamp=False, ephemeral=False),
+        call.show(None, "test info", use_timestamp=False, ephemeral=False),
+        call.show(None, "test debug", use_timestamp=False, ephemeral=False),
     ]
 
 
@@ -345,10 +345,10 @@ def test_handler_emit_verbose(handler):
     logger.log(5, "test custom sub-debug")
 
     assert handler.printer.mock_calls == [
-        call.show(sys.stderr, "test error", use_timestamp=False),
-        call.show(sys.stderr, "test warning", use_timestamp=False),
-        call.show(sys.stderr, "test info", use_timestamp=False),
-        call.show(None, "test debug", use_timestamp=False),
+        call.show(sys.stderr, "test error", use_timestamp=False, ephemeral=False),
+        call.show(sys.stderr, "test warning", use_timestamp=False, ephemeral=False),
+        call.show(sys.stderr, "test info", use_timestamp=False, ephemeral=False),
+        call.show(None, "test debug", use_timestamp=False, ephemeral=False),
     ]
 
 
@@ -364,10 +364,10 @@ def test_handler_emit_debug(handler):
     logger.log(5, "test custom sub-debug")
 
     assert handler.printer.mock_calls == [
-        call.show(sys.stderr, "test error", use_timestamp=True),
-        call.show(sys.stderr, "test warning", use_timestamp=True),
-        call.show(sys.stderr, "test info", use_timestamp=True),
-        call.show(sys.stderr, "test debug", use_timestamp=True),
+        call.show(sys.stderr, "test error", use_timestamp=True, ephemeral=False),
+        call.show(sys.stderr, "test warning", use_timestamp=True, ephemeral=False),
+        call.show(sys.stderr, "test info", use_timestamp=True, ephemeral=False),
+        call.show(sys.stderr, "test debug", use_timestamp=True, ephemeral=False),
     ]
 
 
@@ -383,11 +383,11 @@ def test_handler_emit_trace(handler):
     logger.log(5, "test custom sub-debug")
 
     assert handler.printer.mock_calls == [
-        call.show(sys.stderr, "test error", use_timestamp=True),
-        call.show(sys.stderr, "test warning", use_timestamp=True),
-        call.show(sys.stderr, "test info", use_timestamp=True),
-        call.show(sys.stderr, "test debug", use_timestamp=True),
-        call.show(sys.stderr, "test custom sub-debug", use_timestamp=True),
+        call.show(sys.stderr, "test error", use_timestamp=True, ephemeral=False),
+        call.show(sys.stderr, "test warning", use_timestamp=True, ephemeral=False),
+        call.show(sys.stderr, "test info", use_timestamp=True, ephemeral=False),
+        call.show(sys.stderr, "test debug", use_timestamp=True, ephemeral=False),
+        call.show(sys.stderr, "test custom sub-debug", use_timestamp=True, ephemeral=False),
     ]
 
 
