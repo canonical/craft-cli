@@ -199,7 +199,7 @@ class Printer:
 
         if message.use_timestamp:
             timestamp_str = message.created_at.isoformat(sep=" ", timespec="milliseconds")
-            text = timestamp_str + " " + text
+            text = f"{timestamp_str} {text}"
 
         if spintext:
             # forced to overwrite the previous message to present the spinner

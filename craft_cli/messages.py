@@ -322,9 +322,10 @@ class _Handler(logging.Handler):
     def __init__(self, printer: Printer, streaming_brief: bool = False):
         """
         :param printer:
+            The Printer to emit captured log messages.
         :param bool streaming_brief:
-            Whether sys.stderr should be used as the stream when handling record
-            above DEBUG in BRIEF mode.
+            Whether log records of levels higher than DEBUG should be print (ephemerally)
+            when in BRIEF mode.
         """
         super().__init__()
         self.printer = printer
@@ -418,15 +419,15 @@ class Emitter:
 
     # pylint: disable=too-many-instance-attributes
 
-    def __init__(self):
+    def __init__(self) -> None:
         # these attributes will be set at "real init time", with the `init` method below
-        self._greeting = None
-        self._printer = None
-        self._mode = None
+        self._greeting: str = None  # type: ignore[assignment]
+        self._printer: Printer = None  # type: ignore[assignment]
+        self._mode: EmitterMode = None  # type: ignore[assignment]
         self._initiated = False
         self._stopped = False
-        self._log_filepath = None
-        self._log_handler = None
+        self._log_filepath: pathlib.Path = None  # type: ignore[assignment]
+        self._log_handler: _Handler = None  # type: ignore[assignment]
         self._streaming_brief = False
 
     def init(
@@ -440,8 +441,8 @@ class Emitter:
     ):
         """Initialize the emitter; this must be called once and before emitting any messages.
 
-        :param streaming_brief: Whether "informational" messages should be "streamed" with
-            progress messages when using BRIEF mode.
+        :param streaming_brief: Whether informational messages should be streamed with
+            progress messages when using BRIEF mode (see example 29).
         """
         if self._initiated:
             if TESTMODE:
@@ -588,17 +589,15 @@ class Emitter:
         """
         stream, use_timestamp, ephemeral = self._get_progress_params(permanent)
 
-        printer = cast(Printer, self._printer)
-
         if self._streaming_brief:
             # Clear the "new thing" prefix, as this is a new progress message.
-            printer.set_terminal_prefix("")
+            self._printer.set_terminal_prefix("")
 
-        printer.show(stream, text, ephemeral=ephemeral, use_timestamp=use_timestamp)  # type: ignore
+        self._printer.show(stream, text, ephemeral=ephemeral, use_timestamp=use_timestamp)
 
         if self._mode == EmitterMode.BRIEF and ephemeral and self._streaming_brief:
             # Set the "progress prefix" for upcoming non-permanent messages.
-            printer.set_terminal_prefix(text)
+            self._printer.set_terminal_prefix(text)
 
     @_active_guard()
     def progress_bar(self, text: str, total: Union[int, float], delta: bool = True) -> _Progresser:
