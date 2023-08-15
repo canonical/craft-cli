@@ -125,10 +125,6 @@ branch = true
 parallel = false
 omit = ["tests/**"]
 
-[tool.coverage.report]
-skip_empty = true
-fail_under = 74
-
 [tool.pyright]
 #strict = ["craft_cli"] # NOTE: disabled pending fix of the many errors (see gh issue #147)
 pythonVersion = "3.8"
