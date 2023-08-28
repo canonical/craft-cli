@@ -123,7 +123,7 @@ class BaseCommand:
     """Do not show in help texts, useful for aliases or deprecated commands (defaults
       to False)."""
 
-    def __init__(self, config: Optional[Dict[str, Any]]):
+    def __init__(self, config: Optional[Dict[str, Any]]) -> None:
         self.config = config
 
         # validate attributes
@@ -153,13 +153,13 @@ class BaseCommand:
         :param parsed_args: The parsed arguments that were defined in :meth:`fill_parser`.
         :return: This method should return ``None`` or the desired process' return code.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class _CustomArgumentParser(argparse.ArgumentParser):
     """ArgumentParser with custom error manager.."""
 
-    def __init__(self, help_builder, *args, **kwargs):
+    def __init__(self, help_builder, *args, **kwargs) -> None:
         self._help_builder = help_builder
         super().__init__(*args, **kwargs)
 
@@ -205,7 +205,7 @@ class Dispatcher:  # pylint: disable=too-many-instance-attributes
         summary: str = "",
         extra_global_args: Optional[List[GlobalArgument]] = None,
         default_command: Optional[Type[BaseCommand]] = None,
-    ):
+    ) -> None:
         self._default_command = default_command
         self._help_builder = HelpBuilder(appname, summary, commands_groups)
 

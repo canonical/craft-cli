@@ -72,7 +72,7 @@ class RecordingEmitter:
     which provides an instance of this class with context properly set up.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.interactions = []
         self.paused = False
 
@@ -168,7 +168,7 @@ class RecordingEmitter:
                 raise AssertionError("Expected no call but really got:\n" + show_interactions)
             return
 
-        for pos, stored_call in enumerate(self.interactions):
+        for _pos, stored_call in enumerate(self.interactions):
             if stored_call == expected_call_list[0]:
                 break
         else:
@@ -180,7 +180,7 @@ class RecordingEmitter:
 
 
 class _RecordingProgresser:
-    def __init__(self, recording_emitter):
+    def __init__(self, recording_emitter) -> None:
         self.recording_emitter = recording_emitter
 
     def __enter__(self):

@@ -166,8 +166,6 @@ src = ["craft_cli", "tests"]
 extend-exclude = [
     "docs",
     "__pycache__",
-    # NOTE: disabling ruff to handle in a separate issue (#146)
-    "craft_cli",
     "examples.py",
     "tests",
 ]
@@ -246,6 +244,8 @@ ignore = [
 
     # Ignored due to common usage in current code
     "TRY003",  # Avoid specifying long messages outside the exception class
+
+    "PT001",  # Add parentheses to parameter-less pytest.fixture
 ]
 
 [tool.ruff.per-file-ignores]

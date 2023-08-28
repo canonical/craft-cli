@@ -29,9 +29,9 @@ except ImportError:  # pragma: no cover
 
 # names included here only to be exposed as external API; the particular order of imports
 # is to break cyclic dependencies
-from .messages import EmitterMode, emit  # noqa: F401 ; isort:skip
-from .dispatcher import BaseCommand, CommandGroup, Dispatcher, GlobalArgument  # noqa: F401
-from .errors import ArgumentParsingError, CraftError, ProvideHelpException  # noqa: F401
+from .messages import EmitterMode, emit  # isort:skip
+from .dispatcher import BaseCommand, CommandGroup, Dispatcher, GlobalArgument
+from .errors import ArgumentParsingError, CraftError, ProvideHelpException
 from .helptexts import HIDDEN  # noqa: F401
 
 __all__ = [
