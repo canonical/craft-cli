@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 # value, the argument will not be shown in help messages; the default is to support the
 # non-documented argparse attribute (so if users were using it, will just work) in a secure way
 # in case it disappears in the future.
-HIDDEN = getattr(argparse, "SUPPRESS")
+HIDDEN = argparse.SUPPRESS
 
 # max columns used in the terminal
 TERMINAL_WIDTH = 72
@@ -119,7 +119,7 @@ def process_overview_for_markdown(text: str) -> str:
 class HelpBuilder:
     """Produce the different help texts."""
 
-    def __init__(self, appname: str, general_summary: str, command_groups: List["CommandGroup"]):
+    def __init__(self, appname: str, general_summary: str, command_groups: List["CommandGroup"]) -> None:
         self.appname = appname
         self.general_summary = general_summary
         self.command_groups = command_groups
@@ -135,10 +135,7 @@ class HelpBuilder:
 
         The error message is the specific problem in the given parameters.
         """
-        if command:
-            full_command = f"{self.appname} {command}"
-        else:
-            full_command = self.appname
+        full_command = f"{self.appname} {command}" if command else self.appname
         return USAGE.format(
             appname=self.appname, full_command=full_command, error_message=error_message
         )

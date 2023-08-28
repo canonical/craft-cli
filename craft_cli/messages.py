@@ -31,7 +31,7 @@ import threading
 import traceback
 from contextlib import contextmanager
 from datetime import datetime
-from typing import Any, Callable, cast, Dict, Literal, Optional, TextIO, TypeVar, Union
+from typing import Any, Callable, Dict, Literal, Optional, TextIO, TypeVar, Union, cast
 
 import platformdirs
 
@@ -113,7 +113,7 @@ class _Progresser:  # pylint: disable=too-many-instance-attributes
         delta: bool,
         use_timestamp: bool,
         ephemeral_context: bool,
-    ):
+    ) -> None:
         self.printer = printer
         self.total = total
         self.text = text
@@ -172,7 +172,7 @@ class _PipeReaderThread(threading.Thread):
     # byte used to unblock the reading (under Windows)
     UNBLOCK_BYTE = b"\x00"
 
-    def __init__(self, printer: Printer, stream: Optional[TextIO], printer_flags: Dict[str, bool]):
+    def __init__(self, printer: Printer, stream: Optional[TextIO], printer_flags: Dict[str, bool]) -> None:
         super().__init__()
         self.printer_flags = printer_flags
 
@@ -291,7 +291,7 @@ class _StreamContextManager:
         stream: Optional[TextIO],
         use_timestamp: bool,
         ephemeral_mode: bool,
-    ):
+    ) -> None:
         # prepare the printer flags for the initial message and everything produced
         # by the pipe reader
         printer_flags = {
@@ -319,9 +319,8 @@ class _StreamContextManager:
 class _Handler(logging.Handler):
     """A logging handler that emits messages through the core Printer."""
 
-    def __init__(self, printer: Printer, streaming_brief: bool = False):
-        """
-        :param printer:
+    def __init__(self, printer: Printer, streaming_brief: bool = False) -> None:
+        """:param printer:
             The Printer to emit captured log messages.
         :param bool streaming_brief:
             Whether log records of levels higher than DEBUG should be print (ephemerally)
@@ -385,7 +384,7 @@ def _active_guard(ignore_when_stopped: bool = False) -> Callable[..., Any]:
                 raise RuntimeError("Emitter needs to be initiated first")
             if self._stopped:  # pylint: disable=protected-access
                 if ignore_when_stopped:
-                    return
+                    return None
                 raise RuntimeError("Emitter is stopped already")
             return wrapped_func(self, *args, **kwargs)
 

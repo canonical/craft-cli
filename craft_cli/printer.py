@@ -84,7 +84,7 @@ class _Spinner(threading.Thread):
     the spinner.
     """
 
-    def __init__(self, printer: "Printer"):
+    def __init__(self, printer: "Printer") -> None:
         super().__init__()
         # special flag used to stop the spinner thread
         self.stop_flag = object()

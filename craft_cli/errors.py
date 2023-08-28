@@ -62,7 +62,7 @@ class CraftError(Exception):
         logpath_report: bool = True,
         reportable: bool = True,
         retcode: int = 1,
-    ):
+    ) -> None:
         super().__init__(message)
         self.details = details
         self.resolution = resolution
