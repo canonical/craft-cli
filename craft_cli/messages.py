@@ -15,6 +15,8 @@
 
 """Support for all messages, ok or after errors, to screen and log file."""
 
+from __future__ import annotations
+
 __all__ = [
     "EmitterMode",
     "TESTMODE",
@@ -31,19 +33,26 @@ import threading
 import traceback
 from contextlib import contextmanager
 from datetime import datetime
-from typing import Any, Callable, Dict, Literal, Optional, TextIO, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Generator, Literal, TextIO, TypeVar, cast
 
 import platformdirs
 
 try:
-    import win32pipe  # type: ignore
+    import win32pipe
 
     _WINDOWS_MODE = True
 except ImportError:
     _WINDOWS_MODE = False
 
-from craft_cli import errors
 from craft_cli.printer import Printer
+
+if TYPE_CHECKING:
+    from types import TracebackType
+
+    from typing_extensions import Self
+
+    from craft_cli import errors
+
 
 EmitterMode = enum.Enum("EmitterMode", "QUIET BRIEF VERBOSE DEBUG TRACE")
 """The different modes the Emitter can be set."""
@@ -93,7 +102,7 @@ def _get_log_filepath(appname: str) -> pathlib.Path:
     return basedir / filename
 
 
-def _get_traceback_lines(exc: BaseException):
+def _get_traceback_lines(exc: BaseException) -> Generator[str, None, None]:
     """Get the traceback lines (if any) from an exception."""
     tback_lines = traceback.format_exception(type(exc), exc, exc.__traceback__)
     for tback_line in tback_lines:
@@ -104,20 +113,20 @@ def _get_traceback_lines(exc: BaseException):
 class _Progresser:  # pylint: disable=too-many-instance-attributes
     """A context manager to follow progress on any specific action."""
 
-    def __init__(  # pylint: disable=too-many-arguments
+    def __init__(  # noqa: PLR0913 (too many arguments)
         self,
         printer: Printer,
-        total: Union[int, float],
+        total: float,
         text: str,
-        stream: Optional[TextIO],
-        delta: bool,
-        use_timestamp: bool,
-        ephemeral_context: bool,
+        stream: TextIO | None,
+        delta: bool,  # noqa: FBT001 (boolean positional arg)
+        use_timestamp: bool,  # noqa: FBT001 (boolean positional arg)
+        ephemeral_context: bool,  # noqa: FBT001 (boolean positional arg)
     ) -> None:
         self.printer = printer
         self.total = total
         self.text = text
-        self.accumulated: Union[int, float] = 0
+        self.accumulated: int | float = 0
         self.stream = stream
         self.delta = delta
         self.use_timestamp = use_timestamp
@@ -126,21 +135,26 @@ class _Progresser:  # pylint: disable=too-many-instance-attributes
         # is always ephemeral
         self.ephemeral_context = ephemeral_context
 
-    def __enter__(self) -> "_Progresser":
+    def __enter__(self) -> Self:
         text = f"{self.text} (--->)"
         self.printer.show(
             self.stream, text, ephemeral=self.ephemeral_context, use_timestamp=self.use_timestamp
         )
         return self
 
-    def __exit__(self, *exc_info) -> Literal[False]:
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> Literal[False]:
         text = f"{self.text} (<---)"
         self.printer.show(
             self.stream, text, ephemeral=self.ephemeral_context, use_timestamp=self.use_timestamp
         )
         return False  # do not consume any exception
 
-    def advance(self, amount: Union[int, float]) -> None:
+    def advance(self, amount: float) -> None:
         """Show a progress bar according to the informed advance."""
         if amount < 0:
             raise ValueError("The advance amount cannot be negative")
@@ -172,7 +186,9 @@ class _PipeReaderThread(threading.Thread):
     # byte used to unblock the reading (under Windows)
     UNBLOCK_BYTE = b"\x00"
 
-    def __init__(self, printer: Printer, stream: Optional[TextIO], printer_flags: Dict[str, bool]) -> None:
+    def __init__(
+        self, printer: Printer, stream: TextIO | None, printer_flags: dict[str, bool]
+    ) -> None:
         super().__init__()
         self.printer_flags = printer_flags
 
@@ -186,7 +202,7 @@ class _PipeReaderThread(threading.Thread):
             # ignoring the type of the first parameter below, as documentation allows to use None
             # to make it use a NULL security descriptor:
             #     https://www.markjour.com/docs/pywin32-docs/PySECURITY_ATTRIBUTES.html
-            self.read_pipe, self.write_pipe = win32pipe.FdCreatePipe(None, 0, binary_mode)  # type: ignore
+            self.read_pipe, self.write_pipe = win32pipe.FdCreatePipe(None, 0, binary_mode)
         else:
             self.read_pipe, self.write_pipe = os.pipe()
 
@@ -284,13 +300,13 @@ class _PipeReaderThread(threading.Thread):
 class _StreamContextManager:
     """A context manager that provides a pipe for subprocess to write its output."""
 
-    def __init__(  # pylint: disable=too-many-arguments
+    def __init__(  # noqa: PLR0913 (too many arguments)
         self,
         printer: Printer,
         text: str,
-        stream: Optional[TextIO],
-        use_timestamp: bool,
-        ephemeral_mode: bool,
+        stream: TextIO | None,
+        use_timestamp: bool,  # noqa: FBT001 (boolean positional arg)
+        ephemeral_mode: bool,  # noqa: FBT001 (boolean positional arg)
     ) -> None:
         # prepare the printer flags for the initial message and everything produced
         # by the pipe reader
@@ -307,11 +323,16 @@ class _StreamContextManager:
         # enable the thread to read and show what comes through the provided pipe
         self.pipe_reader = _PipeReaderThread(printer, stream, printer_flags)
 
-    def __enter__(self):
+    def __enter__(self) -> int:
         self.pipe_reader.start()
         return self.pipe_reader.write_pipe
 
-    def __exit__(self, *exc_info):
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> Literal[False]:
         self.pipe_reader.stop()
         return False  # do not consume any exception
 
@@ -319,8 +340,12 @@ class _StreamContextManager:
 class _Handler(logging.Handler):
     """A logging handler that emits messages through the core Printer."""
 
-    def __init__(self, printer: Printer, streaming_brief: bool = False) -> None:
-        """:param printer:
+    def __init__(
+        self, printer: Printer, streaming_brief: bool = False  # noqa: FBT001, FBT002
+    ) -> None:
+        """Init the handler.
+
+        :param printer:
             The Printer to emit captured log messages.
         :param bool streaming_brief:
             Whether log records of levels higher than DEBUG should be print (ephemerally)
@@ -368,7 +393,7 @@ class _Handler(logging.Handler):
 FuncT = TypeVar("FuncT", bound=Callable[..., Any])
 
 
-def _active_guard(ignore_when_stopped: bool = False) -> Callable[..., Any]:
+def _active_guard(ignore_when_stopped: bool = False) -> Callable[..., Any]:  # noqa: FBT001, FBT002
     """Decorate Emitter methods to be called when active.
 
     It will check that the emitter is initiated and that is not stopped (except when
@@ -378,7 +403,7 @@ def _active_guard(ignore_when_stopped: bool = False) -> Callable[..., Any]:
 
     def decorator(wrapped_func: FuncT) -> FuncT:
         def func(  # pylint: disable=inconsistent-return-statements
-            self, *args: Any, **kwargs: Any
+            self: Emitter, *args: Any, **kwargs: Any
         ) -> Any:
             if not self._initiated:  # pylint: disable=protected-access
                 raise RuntimeError("Emitter needs to be initiated first")
@@ -429,15 +454,15 @@ class Emitter:
         self._log_handler: _Handler = None  # type: ignore[assignment]
         self._streaming_brief = False
 
-    def init(
+    def init(  # noqa: PLR0913 (too many arguments)
         self,
         mode: EmitterMode,
         appname: str,
         greeting: str,
-        log_filepath: Optional[pathlib.Path] = None,
+        log_filepath: pathlib.Path | None = None,
         *,
         streaming_brief: bool = False,
-    ):
+    ) -> None:
         """Initialize the emitter; this must be called once and before emitting any messages.
 
         :param streaming_brief: Whether informational messages should be streamed with
@@ -470,13 +495,13 @@ class Emitter:
     @_active_guard()
     def get_mode(self) -> EmitterMode:
         """Return the mode of the emitter."""
-        return self._mode  # type: ignore
+        return self._mode
 
     @_active_guard()
     def set_mode(self, mode: EmitterMode) -> None:
         """Set the mode of the emitter."""
         self._mode = mode
-        self._log_handler.mode = mode  # type: ignore
+        self._log_handler.mode = mode
 
         if mode in (EmitterMode.VERBOSE, EmitterMode.DEBUG, EmitterMode.TRACE):
             use_timestamp = mode in (EmitterMode.DEBUG, EmitterMode.TRACE)
@@ -487,7 +512,7 @@ class Emitter:
                 f"Logging execution to {str(self._log_filepath)!r}",
             ]
             for msg in msgs:
-                self._printer.show(  # type: ignore
+                self._printer.show(
                     sys.stderr, msg, use_timestamp=use_timestamp, avoid_logging=True, end_line=True
                 )
 
@@ -498,7 +523,7 @@ class Emitter:
         Normally used as the final message, to show the result of a command.
         """
         stream = None if self._mode == EmitterMode.QUIET else sys.stdout
-        self._printer.show(stream, text)  # type: ignore
+        self._printer.show(stream, text)
 
     @_active_guard()
     def verbose(self, text: str) -> None:
@@ -516,7 +541,7 @@ class Emitter:
         else:
             stream = sys.stderr
             use_timestamp = True
-        self._printer.show(stream, text, use_timestamp=use_timestamp)  # type: ignore
+        self._printer.show(stream, text, use_timestamp=use_timestamp)
 
     @_active_guard()
     def debug(self, text: str) -> None:
@@ -530,7 +555,7 @@ class Emitter:
             stream = None
         else:
             stream = sys.stderr
-        self._printer.show(stream, text, use_timestamp=True)  # type: ignore
+        self._printer.show(stream, text, use_timestamp=True)
 
     @_active_guard()
     def trace(self, text: str) -> None:
@@ -548,9 +573,11 @@ class Emitter:
         # machinery as much as possible, because potentially there will be huge number
         # of trace calls.
         if self._mode == EmitterMode.TRACE:
-            self._printer.show(sys.stderr, text, use_timestamp=True)  # type: ignore
+            self._printer.show(sys.stderr, text, use_timestamp=True)
 
-    def _get_progress_params(self, permanent: bool):
+    def _get_progress_params(
+        self, permanent: bool  # noqa: FBT001 (boolean positional arg)
+    ) -> tuple[TextIO | None, bool, bool]:
         """Calculate the different parameters for progress information."""
         if self._mode == EmitterMode.QUIET:
             # will not be shown in the screen (always logged to the file)
@@ -575,7 +602,7 @@ class Emitter:
         return stream, use_timestamp, ephemeral
 
     @_active_guard()
-    def progress(self, text: str, permanent: bool = False) -> None:
+    def progress(self, text: str, permanent: bool = False) -> None:  # noqa: FBT001, FBT002
         """Progress information for a multi-step command.
 
         This is normally used to present several separated text messages.
@@ -599,7 +626,9 @@ class Emitter:
             self._printer.set_terminal_prefix(text)
 
     @_active_guard()
-    def progress_bar(self, text: str, total: Union[int, float], delta: bool = True) -> _Progresser:
+    def progress_bar(
+        self, text: str, total: float, delta: bool = True  # noqa: FBT001, FBT002
+    ) -> _Progresser:
         """Progress information for a potentially long-running single step of a command.
 
         E.g. a download or provisioning step.
@@ -609,10 +638,10 @@ class Emitter:
         pass the total so far).
         """
         stream, use_timestamp, ephemeral = self._get_progress_params(permanent=False)
-        return _Progresser(self._printer, total, text, stream, delta, use_timestamp, ephemeral)  # type: ignore
+        return _Progresser(self._printer, total, text, stream, delta, use_timestamp, ephemeral)
 
     @_active_guard()
-    def open_stream(self, text: str):
+    def open_stream(self, text: str) -> _StreamContextManager:
         """Open a stream context manager to get messages from subprocesses."""
         if self._mode == EmitterMode.QUIET:
             # no third party stream
@@ -633,35 +662,34 @@ class Emitter:
             stream = sys.stderr
             ephemeral = False
             use_timestamp = True
-        manager = _StreamContextManager(
-            self._printer,  # type: ignore
+        return _StreamContextManager(
+            self._printer,
             text,
             stream=stream,
             use_timestamp=use_timestamp,
             ephemeral_mode=ephemeral,
         )
-        return manager
 
     @_active_guard()
     @contextmanager
-    def pause(self):
+    def pause(self) -> Generator[None, None, None]:
         """Context manager that pauses and resumes the control of the terminal.
 
         Note that no messages will be collected while paused, not even for logging.
         """
         self.debug("Emitter: Pausing control of the terminal")
-        self._printer.stop()  # type: ignore
+        self._printer.stop()
         self._stopped = True
         try:
             yield
         finally:
             self._stopped = False
-            self._printer = self._log_handler.printer = Printer(self._log_filepath)  # type: ignore
+            self._printer = self._log_handler.printer = Printer(self._log_filepath)
             self.debug("Emitter: Resuming control of the terminal")
 
     def _stop(self) -> None:
         """Do all the stopping."""
-        self._printer.stop()  # type: ignore
+        self._printer.stop()
         self._stopped = True
 
     @_active_guard(ignore_when_stopped=True)
@@ -679,28 +707,28 @@ class Emitter:
             full_stream = sys.stderr
 
         # the initial message
-        self._printer.show(sys.stderr, str(error), use_timestamp=use_timestamp, end_line=True)  # type: ignore
+        self._printer.show(sys.stderr, str(error), use_timestamp=use_timestamp, end_line=True)
 
         # detailed information and/or original exception
         if error.details:
             text = f"Detailed information: {error.details}"
-            self._printer.show(full_stream, text, use_timestamp=use_timestamp, end_line=True)  # type: ignore
+            self._printer.show(full_stream, text, use_timestamp=use_timestamp, end_line=True)
         if error.__cause__:
             for line in _get_traceback_lines(error.__cause__):
-                self._printer.show(full_stream, line, use_timestamp=use_timestamp, end_line=True)  # type: ignore
+                self._printer.show(full_stream, line, use_timestamp=use_timestamp, end_line=True)
 
         # hints for the user to know more
         if error.resolution:
             text = f"Recommended resolution: {error.resolution}"
-            self._printer.show(sys.stderr, text, use_timestamp=use_timestamp, end_line=True)  # type: ignore
+            self._printer.show(sys.stderr, text, use_timestamp=use_timestamp, end_line=True)
         if error.docs_url:
             text = f"For more information, check out: {error.docs_url}"
-            self._printer.show(sys.stderr, text, use_timestamp=use_timestamp, end_line=True)  # type: ignore
+            self._printer.show(sys.stderr, text, use_timestamp=use_timestamp, end_line=True)
 
         # expose the logfile path only if indicated
         if error.logpath_report:
             text = f"Full execution log: {str(self._log_filepath)!r}"
-            self._printer.show(sys.stderr, text, use_timestamp=use_timestamp, end_line=True)  # type: ignore
+            self._printer.show(sys.stderr, text, use_timestamp=use_timestamp, end_line=True)
 
     @_active_guard(ignore_when_stopped=True)
     def error(self, error: errors.CraftError) -> None:

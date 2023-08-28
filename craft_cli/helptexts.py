@@ -15,11 +15,13 @@
 
 """Provide all help texts."""
 
+from __future__ import annotations
+
 import argparse
 import enum
 import textwrap
 from operator import attrgetter
-from typing import TYPE_CHECKING, List, Tuple
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from craft_cli.dispatcher import BaseCommand, CommandGroup
@@ -52,7 +54,7 @@ Error: {error_message}
 OutputFormat = enum.Enum("OutputFormat", "plain markdown")
 
 
-def _build_item_plain(title: str, text: str, title_space: int) -> List[str]:
+def _build_item_plain(title: str, text: str, title_space: int) -> list[str]:
     """Prepare an item for the help in plain format, generically a title and a text aligned.
 
     This is how the plain mode is built:
@@ -91,7 +93,7 @@ def process_overview_for_markdown(text: str) -> str:
 
     # group all the lines in different blocks, each holding what would be a
     # paragraph (detected by the empty line that separates them)
-    blocks: List[List[str]] = [[]]
+    blocks: list[list[str]] = [[]]
     for line in lines:
         if line:
             blocks[-1].append(line)
@@ -99,7 +101,7 @@ def process_overview_for_markdown(text: str) -> str:
             blocks.append([])
 
     # convert each of the block/paragraph into their markdown representation
-    result: List[str] = []
+    result: list[str] = []
     for block in blocks:
         if block and block[0] and block[0][0] == " ":
             # it is indented! dedent and wrap with backticks
@@ -119,7 +121,9 @@ def process_overview_for_markdown(text: str) -> str:
 class HelpBuilder:
     """Produce the different help texts."""
 
-    def __init__(self, appname: str, general_summary: str, command_groups: List["CommandGroup"]) -> None:
+    def __init__(
+        self, appname: str, general_summary: str, command_groups: list[CommandGroup]
+    ) -> None:
         self.appname = appname
         self.general_summary = general_summary
         self.command_groups = command_groups
@@ -140,7 +144,7 @@ class HelpBuilder:
             appname=self.appname, full_command=full_command, error_message=error_message
         )
 
-    def get_full_help(self, global_options: List[Tuple[str, str]]) -> str:
+    def get_full_help(self, global_options: list[tuple[str, str]]) -> str:
         """Produce the text for the default help.
 
         - global_options: options defined at application level (not in the commands),
@@ -208,10 +212,9 @@ class HelpBuilder:
         )
 
         # join all stripped blocks, leaving ONE empty blank line between
-        text = "\n\n".join(block.strip() for block in textblocks) + "\n"
-        return text
+        return "\n\n".join(block.strip() for block in textblocks) + "\n"
 
-    def get_detailed_help(self, global_options: List[Tuple[str, str]]) -> str:
+    def get_detailed_help(self, global_options: list[tuple[str, str]]) -> str:
         """Produce the text for the detailed help.
 
         - global_options: options defined at application level (not in the commands),
@@ -266,10 +269,15 @@ class HelpBuilder:
         )
 
         # join all stripped blocks, leaving ONE empty blank line between
-        text = "\n\n".join(block.strip() for block in textblocks) + "\n"
-        return text
+        return "\n\n".join(block.strip() for block in textblocks) + "\n"
 
-    def _build_plain_command_help(self, usage, overview, options, other_command_names):
+    def _build_plain_command_help(
+        self,
+        usage: str,
+        overview: str,
+        options: list[tuple[str, str]],
+        other_command_names: list[str],
+    ) -> list[str]:
         """Build the command help in its plain version.
 
         The help text has the following structure:
@@ -317,7 +325,13 @@ class HelpBuilder:
 
         return textblocks
 
-    def _build_markdown_command_help(self, usage, overview, options, other_command_names):
+    def _build_markdown_command_help(
+        self,
+        usage: str,
+        overview: str,
+        options: list[tuple[str, str]],
+        other_command_names: list[str],
+    ) -> list[str]:
         """Build the command help in its markdown version.
 
         The help text has the following structure:
@@ -363,8 +377,8 @@ class HelpBuilder:
 
     def get_command_help(
         self,
-        command: "BaseCommand",
-        arguments: List[Tuple[str, str]],
+        command: BaseCommand,
+        arguments: list[tuple[str, str]],
         output_format: OutputFormat,
     ) -> str:
         """Produce the text for each command's help in any output format.
@@ -412,5 +426,4 @@ class HelpBuilder:
         textblocks = builder(usage, command.overview, options, other_command_names)
 
         # join all stripped blocks, leaving ONE empty blank line between
-        text = "\n\n".join(block.strip() for block in textblocks) + "\n"
-        return text
+        return "\n\n".join(block.strip() for block in textblocks) + "\n"

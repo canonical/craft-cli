@@ -15,9 +15,11 @@
 
 """Argument processing and command dispatching functionality."""
 
+from __future__ import annotations
+
 import argparse
 import difflib
-from typing import Any, Dict, List, Literal, NamedTuple, Optional, Sequence, Tuple, Type
+from typing import Any, Literal, NamedTuple, Sequence
 
 from craft_cli import EmitterMode, emit
 from craft_cli.errors import ArgumentParsingError, ProvideHelpException
@@ -34,7 +36,7 @@ class CommandGroup(NamedTuple):
     name: str
     """The identifier of the command group (to be used in help texts)."""
 
-    commands: Sequence[Type["BaseCommand"]]
+    commands: Sequence[type[BaseCommand]]
     """A list of the commands belonging in this group."""
 
 
@@ -49,7 +51,7 @@ class GlobalArgument(NamedTuple):
     """The argument type: ``flag`` for arguments that are set to ``True`` if specified
       (``False`` by default), or ``option`` if a value is needed after it."""
 
-    short_option: Optional[str]
+    short_option: str | None
     """The short form of the argument (a dash with a letter, e.g. ``-s``); it can be None
       if the option does not have a short form."""
 
@@ -123,7 +125,7 @@ class BaseCommand:
     """Do not show in help texts, useful for aliases or deprecated commands (defaults
       to False)."""
 
-    def __init__(self, config: Optional[Dict[str, Any]]) -> None:
+    def __init__(self, config: dict[str, Any] | None) -> None:
         self.config = config
 
         # validate attributes
@@ -134,7 +136,7 @@ class BaseCommand:
         if self.common and self.hidden:
             raise ValueError("Common commands can not be hidden.")
 
-    def fill_parser(self, parser: "_CustomArgumentParser") -> None:
+    def fill_parser(self, parser: _CustomArgumentParser) -> None:
         """Specify command's specific parameters.
 
         Each command parameters are independent of other commands, but note there are some
@@ -145,7 +147,7 @@ class BaseCommand:
         :param parser: The object to fill with this command's parameters.
         """
 
-    def run(self, parsed_args: argparse.Namespace) -> Optional[int]:
+    def run(self, parsed_args: argparse.Namespace) -> int | None:
         """Execute command's actual functionality.
 
         It must be overridden by the command implementation.
@@ -157,21 +159,26 @@ class BaseCommand:
 
 
 class _CustomArgumentParser(argparse.ArgumentParser):
-    """ArgumentParser with custom error manager.."""
+    """ArgumentParser with custom error manager."""
 
-    def __init__(self, help_builder, *args, **kwargs) -> None:
+    def __init__(
+        self,
+        help_builder: HelpBuilder,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
         self._help_builder = help_builder
         super().__init__(*args, **kwargs)
 
-    def error(self, message: str):
+    def error(self, message: str) -> None:
         """Show the usage, the error message, and no more."""
         full_msg = self._help_builder.get_usage_message(message, command=self.prog)
         raise ArgumentParsingError(full_msg)
 
 
-def _get_commands_info(commands_groups: List[CommandGroup]) -> Dict[str, Type[BaseCommand]]:
+def _get_commands_info(commands_groups: list[CommandGroup]) -> dict[str, type[BaseCommand]]:
     """Process the commands groups structure for easier programmatic access."""
-    commands: Dict[str, Type[BaseCommand]] = {}
+    commands: dict[str, type[BaseCommand]] = {}
     for command_group in commands_groups:
         for _cmd_class in command_group.commands:
             if _cmd_class.name in commands:
@@ -197,14 +204,14 @@ class Dispatcher:  # pylint: disable=too-many-instance-attributes
     :param default_command: the command to run if none was specified in the command line
     """
 
-    def __init__(
+    def __init__(  # noqa: PLR0913 (too many arguments)
         self,
         appname: str,
-        commands_groups: List[CommandGroup],
+        commands_groups: list[CommandGroup],
         *,
         summary: str = "",
-        extra_global_args: Optional[List[GlobalArgument]] = None,
-        default_command: Optional[Type[BaseCommand]] = None,
+        extra_global_args: list[GlobalArgument] | None = None,
+        default_command: type[BaseCommand] | None = None,
     ) -> None:
         self._default_command = default_command
         self._help_builder = HelpBuilder(appname, summary, commands_groups)
@@ -214,10 +221,10 @@ class Dispatcher:  # pylint: disable=too-many-instance-attributes
             self.global_arguments.extend(extra_global_args)
 
         self.commands = _get_commands_info(commands_groups)
-        self._command_class: Optional[Type[BaseCommand]] = None
-        self._command_args: Optional[List[str]] = None
-        self._loaded_command: Optional[BaseCommand] = None
-        self._parsed_command_args: Optional[argparse.Namespace] = None
+        self._command_class: type[BaseCommand] | None = None
+        self._command_args: list[str] | None = None
+        self._loaded_command: BaseCommand | None = None
+        self._parsed_command_args: argparse.Namespace | None = None
 
     def load_command(self, app_config: Any) -> BaseCommand:
         """Load a command."""
@@ -234,7 +241,7 @@ class Dispatcher:  # pylint: disable=too-many-instance-attributes
         emit.trace(f"Command parsed sysargs: {self._parsed_command_args}")
         return self._loaded_command
 
-    def _get_global_options(self) -> List[Tuple[str, str]]:
+    def _get_global_options(self) -> list[tuple[str, str]]:
         """Return the global flags ready to present in the help messages as options."""
         options = []
         for arg in self.global_arguments:
@@ -245,7 +252,7 @@ class Dispatcher:  # pylint: disable=too-many-instance-attributes
             options.append((indicator, arg.help_message))
         return options
 
-    def _get_general_help(self, *, detailed):
+    def _get_general_help(self, *, detailed: bool) -> str:
         """Produce the general application help."""
         options = self._get_global_options()
         if detailed:
@@ -254,13 +261,13 @@ class Dispatcher:  # pylint: disable=too-many-instance-attributes
             help_text = self._help_builder.get_full_help(options)
         return help_text
 
-    def _build_usage_exc(self, text):
+    def _build_usage_exc(self, text: str) -> ArgumentParsingError:
         """Build an ArgumentParsingError exception with the usage message from the given text."""
         return ArgumentParsingError(self._help_builder.get_usage_message(text))
 
-    def _get_requested_help(
-        self, parameters
-    ):  # pylint: disable=too-many-locals disable=too-many-branches
+    def _get_requested_help(  # noqa: PLR0912 (too many branches)
+        self, parameters: list[str]
+    ) -> str:
         """Produce the requested help depending on the rest of the command line params."""
         if len(parameters) == 0:
             # provide a general text when help was requested without parameters
@@ -289,7 +296,7 @@ class Dispatcher:  # pylint: disable=too-many-instance-attributes
         except KeyError:
             allowed = (repr(of.name) for of in OutputFormat)
             msg = f"Invalid value for --format; allowed are: {', '.join(sorted(allowed))}"
-            raise self._build_usage_exc(msg)  # pylint: disable=raise-missing-from
+            raise self._build_usage_exc(msg)  # noqa: TRY200 (Use `raise from`)
 
         if len(filtered_params) == 1:
             # at this point the remaining parameter should be a command
@@ -307,7 +314,7 @@ class Dispatcher:  # pylint: disable=too-many-instance-attributes
             cmd_class = self.commands[cmdname]
         except KeyError:
             msg = f"command {cmdname!r} not found to provide help for"
-            raise self._build_usage_exc(msg)  # pylint: disable=raise-missing-from
+            raise self._build_usage_exc(msg)  # noqa: TRY200 (Use `raise from`)
 
         # instantiate the command and fill its arguments
         command = cmd_class(None)
@@ -325,12 +332,12 @@ class Dispatcher:  # pylint: disable=too-many-instance-attributes
                 if action.metavar is None:
                     dest = action.dest
                 else:
-                    assert isinstance(action.metavar, str)  # may be a tuple, but only for options
+                    # may be a tuple, but only for options
+                    assert isinstance(action.metavar, str)  # noqa: S101 (use of assert)
                     dest = action.metavar
                 options.append((dest, help_text))
 
-        help_text = self._help_builder.get_command_help(command, options, output_format)
-        return help_text
+        return self._help_builder.get_command_help(command, options, output_format)
 
     def _build_no_command_error(self, missing_command: str) -> str:
         """Build the error help text for missing command, providing options."""
@@ -348,12 +355,12 @@ class Dispatcher:  # pylint: disable=too-many-instance-attributes
         msg = f"no such command {missing_command!r}{extra_similar}"
         return self._help_builder.get_usage_message(msg)
 
-    def _parse_options(
-        self, defined_arguments: List[GlobalArgument], sysargs: List[str]
-    ):  # pylint: disable=too-many-branches
+    def _parse_options(  # noqa: PLR0912 (too many branches)
+        self, defined_arguments: list[GlobalArgument], sysargs: list[str]
+    ) -> tuple[dict[str, Any], list[str]]:
         """Parse arguments."""
         # get all arguments (default to what's specified) and those per options, to filter sysargs
-        global_args: Dict[str, Any] = {}
+        global_args: dict[str, Any] = {}
         arg_per_option = {}
         options_with_equal = []
         for arg in defined_arguments:
@@ -380,7 +387,7 @@ class Dispatcher:  # pylint: disable=too-many-instance-attributes
                         global_args[arg.name] = next(sysargs_it)
                     except StopIteration:
                         msg = f"The {arg.name!r} option expects one argument."
-                        raise self._build_usage_exc(msg)  # pylint: disable=raise-missing-from
+                        raise self._build_usage_exc(msg)  # noqa: TRY200 (use 'raise from')
             elif sysarg.startswith(tuple(options_with_equal)):
                 option, value = sysarg.split("=", 1)
                 arg = arg_per_option[option]
@@ -391,7 +398,7 @@ class Dispatcher:  # pylint: disable=too-many-instance-attributes
                 filtered_sysargs.append(sysarg)
         return global_args, filtered_sysargs
 
-    def pre_parse_args(self, sysargs: List[str]):
+    def pre_parse_args(self, sysargs: list[str]) -> dict[str, Any]:
         """Pre-parse sys args.
 
         Several steps:
@@ -417,7 +424,7 @@ class Dispatcher:  # pylint: disable=too-many-instance-attributes
             try:
                 verbosity_level = EmitterMode[global_args["verbosity"].upper()]
             except KeyError:
-                raise self._build_usage_exc(  # pylint: disable=raise-missing-from
+                raise self._build_usage_exc(  # noqa: TRY200 (use 'raise from')
                     "Bad verbosity level; valid values are "
                     "'quiet', 'brief', 'verbose', 'debug' and 'trace'."
                 )
@@ -435,7 +442,8 @@ class Dispatcher:  # pylint: disable=too-many-instance-attributes
                 help_text = self._get_general_help(detailed=False)
                 raise ArgumentParsingError(help_text)
             emit.trace(f"Using default command: {self._default_command.name!r}")
-            assert self._default_command.name is not None  # validated by BaseCommand
+            # validated by BaseCommand
+            assert self._default_command.name is not None  # noqa: S101 (use of assert)
             filtered_sysargs.insert(0, self._default_command.name)
 
         command = filtered_sysargs[0]
@@ -451,14 +459,14 @@ class Dispatcher:  # pylint: disable=too-many-instance-attributes
             self._command_class = self.commands[command]
         except KeyError:
             help_text = self._build_no_command_error(command)
-            raise ArgumentParsingError(help_text)  # pylint: disable=raise-missing-from
+            raise ArgumentParsingError(help_text)  # noqa: TRY200 (use raise from)
 
         emit.trace(f"General parsed sysargs: command={ command!r} args={cmd_args}")
         return global_args
 
-    def run(self) -> Optional[int]:
+    def run(self) -> int | None:
         """Really run the command."""
         if self._loaded_command is None:
             raise RuntimeError("Need to load the command (call 'load_command') before running it.")
-        assert self._parsed_command_args is not None
+        assert self._parsed_command_args is not None  # noqa: S101 (use of assert)
         return self._loaded_command.run(self._parsed_command_args)

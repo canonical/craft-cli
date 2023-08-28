@@ -50,7 +50,7 @@ FAKE_LOGNAME = "testapp-ignored.log"
 def prepare_environment(tmp_path, monkeypatch):
     """Prepare environment to all the tests in this module."""
     # provide a fake log filepath, outside of user's appdir
-    fake_logpath = str(tmp_path / FAKE_LOGNAME)
+    fake_logpath = tmp_path / FAKE_LOGNAME
     monkeypatch.setattr(messages, "_get_log_filepath", lambda appname: fake_logpath)
 
     # set a very big terminal width so messages are briefly not wrapped
@@ -866,7 +866,7 @@ def test_simple_errors_quietly(capsys, mode):
 
     expected = [
         Line("Cannot find config file 'somepath'."),
-        Line(f"Full execution log: {emit._log_filepath!r}"),
+        Line(f"Full execution log: {str(emit._log_filepath)!r}"),
     ]
     assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)
 
@@ -890,7 +890,7 @@ def test_simple_errors_debugish(capsys, mode):
 
     expected = [
         Line("Cannot find config file 'somepath'.", timestamp=True),
-        Line(f"Full execution log: {emit._log_filepath!r}", timestamp=True),
+        Line(f"Full execution log: {str(emit._log_filepath)!r}", timestamp=True),
     ]
     assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)
 
@@ -912,11 +912,14 @@ def test_error_api_quietly(capsys, mode):
     error = CraftError("Invalid channel.", details=str(full_error))
     emit.error(error)
 
-    expected_err = [Line("Invalid channel."), Line(f"Full execution log: {emit._log_filepath!r}")]
+    expected_err = [
+        Line("Invalid channel."),
+        Line(f"Full execution log: {str(emit._log_filepath)!r}"),
+    ]
     expected_log = [
         Line("Invalid channel."),
         Line(f"Detailed information: {full_error}"),
-        Line(f"Full execution log: {emit._log_filepath!r}"),
+        Line(f"Full execution log: {str(emit._log_filepath)!r}"),
     ]
     assert_outputs(capsys, emit, expected_err=expected_err, expected_log=expected_log)
 
@@ -940,7 +943,7 @@ def test_error_api_debugish(capsys, mode):
     expected = [
         Line("Invalid channel.", timestamp=True),
         Line(f"Detailed information: {full_error}", timestamp=True),
-        Line(f"Full execution log: {emit._log_filepath!r}", timestamp=True),
+        Line(f"Full execution log: {str(emit._log_filepath)!r}", timestamp=True),
     ]
     assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)
 
@@ -966,12 +969,15 @@ def test_error_unexpected_quietly(capsys, mode):
         with patch("craft_cli.messages._get_traceback_lines", return_value=["foo", "bar"]):
             emit.error(error)
 
-    expected_err = [Line("First message."), Line(f"Full execution log: {emit._log_filepath!r}")]
+    expected_err = [
+        Line("First message."),
+        Line(f"Full execution log: {str(emit._log_filepath)!r}"),
+    ]
     expected_log = [
         Line("First message."),
         Line("foo"),
         Line("bar"),
-        Line(f"Full execution log: {emit._log_filepath!r}"),
+        Line(f"Full execution log: {str(emit._log_filepath)!r}"),
     ]
     assert_outputs(capsys, emit, expected_err=expected_err, expected_log=expected_log)
 
@@ -1000,7 +1006,7 @@ def test_error_unexpected_debugish(capsys, mode):
         Line("First message.", timestamp=True),
         Line("foo", timestamp=True),
         Line("bar", timestamp=True),
-        Line(f"Full execution log: {emit._log_filepath!r}", timestamp=True),
+        Line(f"Full execution log: {str(emit._log_filepath)!r}", timestamp=True),
     ]
     assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)
 
@@ -1104,7 +1110,7 @@ def test_initial_messages_quiet_mode(capsys, monkeypatch, tmp_path):
     """Check the initial messages are sent when setting the mode to QUIET."""
     # use different greeting and file logpath so we can actually test them
     different_greeting = "different greeting to not be ignored"
-    different_logpath = str(tmp_path / "otherfile.log")
+    different_logpath = tmp_path / "otherfile.log"
     monkeypatch.setattr(messages, "_get_log_filepath", lambda appname: different_logpath)
 
     emit = Emitter()
@@ -1130,7 +1136,7 @@ def test_initial_messages_brief_mode(capsys, monkeypatch, tmp_path):
     """Check the initial messages are sent when setting the mode to BRIEF."""
     # use different greeting and file logpath so we can actually test them
     different_greeting = "different greeting to not be ignored"
-    different_logpath = str(tmp_path / "otherfile.log")
+    different_logpath = tmp_path / "otherfile.log"
     monkeypatch.setattr(messages, "_get_log_filepath", lambda appname: different_logpath)
 
     emit = Emitter()
@@ -1156,7 +1162,7 @@ def test_initial_messages_verbose(capsys, tmp_path, monkeypatch):
     """Check the initial messages are sent when setting the mode to VERBOSE."""
     # use different greeting and file logpath so we can actually test them
     different_greeting = "different greeting to not be ignored"
-    different_logpath = str(tmp_path / "otherfile.log")
+    different_logpath = tmp_path / "otherfile.log"
     monkeypatch.setattr(messages, "_get_log_filepath", lambda appname: different_logpath)
 
     emit = Emitter()
@@ -1168,7 +1174,7 @@ def test_initial_messages_verbose(capsys, tmp_path, monkeypatch):
 
     expected_err = [
         Line(different_greeting),
-        Line(f"Logging execution to {different_logpath!r}"),
+        Line(f"Logging execution to {str(different_logpath)!r}"),
         Line("second message"),
     ]
     expected_log = [
@@ -1191,7 +1197,7 @@ def test_initial_messages_developer_modes(capsys, tmp_path, monkeypatch, mode):
     """Check the initial messages are sent when setting developer modes."""
     # use different greeting and file logpath so we can actually test them
     different_greeting = "different greeting to not be ignored"
-    different_logpath = str(tmp_path / "otherfile.log")
+    different_logpath = tmp_path / "otherfile.log"
     monkeypatch.setattr(messages, "_get_log_filepath", lambda appname: different_logpath)
 
     emit = Emitter()

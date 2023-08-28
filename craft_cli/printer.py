@@ -15,9 +15,10 @@
 
 """The output (for different destinations) handler and helper functions."""
 
+from __future__ import annotations
+
 import itertools
 import math
-import pathlib
 import queue
 import shutil
 import threading
@@ -25,7 +26,10 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime
 from functools import lru_cache
-from typing import Any, Optional, TextIO, Union
+from typing import TYPE_CHECKING, Any, TextIO
+
+if TYPE_CHECKING:
+    import pathlib
 
 # the char used to draw the progress bar ('FULL BLOCK')
 _PROGRESS_BAR_SYMBOL = "█"
@@ -45,11 +49,11 @@ TESTMODE = False
 class _MessageInfo:  # pylint: disable=too-many-instance-attributes
     """Comprehensive information for a message that may go to screen and log."""
 
-    stream: Union[TextIO, None]
+    stream: TextIO | None
     text: str
     ephemeral: bool = False
-    bar_progress: Union[int, float, None] = None
-    bar_total: Union[int, float, None] = None
+    bar_progress: int | float | None = None
+    bar_total: int | float | None = None
     use_timestamp: bool = False
     end_line: bool = False
     created_at: datetime = field(default_factory=datetime.now)
@@ -57,7 +61,7 @@ class _MessageInfo:  # pylint: disable=too-many-instance-attributes
 
 
 @lru_cache
-def _stream_is_terminal(stream: Union[TextIO, None]) -> bool:
+def _stream_is_terminal(stream: TextIO | None) -> bool:
     is_a_terminal = getattr(stream, "isatty", lambda: False)()
     return is_a_terminal and _get_terminal_width() > 0
 
@@ -84,7 +88,7 @@ class _Spinner(threading.Thread):
     the spinner.
     """
 
-    def __init__(self, printer: "Printer") -> None:
+    def __init__(self, printer: Printer) -> None:
         super().__init__()
         # special flag used to stop the spinner thread
         self.stop_flag = object()
@@ -130,7 +134,7 @@ class _Spinner(threading.Thread):
             prv_msg = new_msg
             t_init = time.time()
 
-    def supervise(self, message: Optional[_MessageInfo]) -> None:
+    def supervise(self, message: _MessageInfo | None) -> None:
         """Supervise a message to spin it if it remains too long."""
         self.queue.put(message)
         # (maybe) wait for the spinner to exit spinning state (which does some cleaning)
@@ -154,13 +158,13 @@ class Printer:
         self.stopped = False
 
         # holder of the previous message
-        self.prv_msg: Optional[_MessageInfo] = None
+        self.prv_msg: _MessageInfo | None = None
 
         # open the log file (will be closed explicitly later)
-        self.log = open(log_filepath, "at", encoding="utf8")  # pylint: disable=consider-using-with
+        self.log = log_filepath.open("at", encoding="utf8")
 
         # keep account of output terminal streams with unfinished lines
-        self.unfinished_stream: Optional[TextIO] = None
+        self.unfinished_stream: TextIO | None = None
 
         self.terminal_prefix = ""
 
@@ -272,7 +276,7 @@ class Printer:
             print(flush=True, file=self.prv_msg.stream)
 
         numerical_progress = f"{message.bar_progress}/{message.bar_total}"
-        bar_percentage = min(message.bar_progress / message.bar_total, 1)  # type: ignore
+        bar_percentage = min(message.bar_progress / message.bar_total, 1)
 
         # terminal size minus the text and numerical progress, and 5 (the cursor at the end,
         # two spaces before and after the bar, and two surrounding brackets)
@@ -308,7 +312,7 @@ class Printer:
             write_line = self._write_line_terminal
             write_bar = self._write_bar_terminal
         else:
-            write_line = self._write_line_captured  # type: ignore
+            write_line = self._write_line_captured
             write_bar = self._write_bar_captured
 
         if msg.bar_progress is None:
@@ -336,9 +340,9 @@ class Printer:
         if _stream_is_terminal(message.stream):
             self._write_line_terminal(message, spintext=spintext)
 
-    def show(
+    def show(  # noqa: PLR0913 (too many parameters)
         self,
-        stream: Optional[TextIO],
+        stream: TextIO | None,
         text: str,
         *,
         ephemeral: bool = False,
@@ -362,13 +366,13 @@ class Printer:
         if not avoid_logging:
             self._log(msg)
 
-    def progress_bar(
+    def progress_bar(  # noqa: PLR0913
         self,
-        stream: Optional[TextIO],
+        stream: TextIO | None,
         text: str,
         *,
-        progress: Union[int, float],
-        total: Union[int, float],
+        progress: float,
+        total: float,
         use_timestamp: bool,
     ) -> None:
         """Show a progress bar to the given stream."""
@@ -394,12 +398,12 @@ class Printer:
             self.spinner.stop()
         if self.unfinished_stream is not None:
             # With unfinished_stream set, the prv_msg object is valid.
-            if self.prv_msg.ephemeral:  # type: ignore
+            if self.prv_msg.ephemeral:
                 # If the last printed message is of 'ephemeral' type, the stop
                 # request must clean and reset the line.
                 cleaner = " " * (_get_terminal_width() - 1)
                 line = "\r" + cleaner + "\r"
-                print(line, end="", flush=True, file=self.prv_msg.stream)  # type: ignore
+                print(line, end="", flush=True, file=self.prv_msg.stream)
             else:
                 # The last printed message is permanent. Leave the cursor on
                 # the next clean line.

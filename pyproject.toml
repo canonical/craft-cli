@@ -56,7 +56,7 @@ lint = [
     "pylint==2.17.5",
     "pylint-fixme-info==1.0.3",
     "pylint-pytest==1.1.2",
-    "ruff==0.0.269",
+    "ruff==0.0.285",
     "yamllint==1.32.0"
 ]
 types = [
@@ -124,6 +124,11 @@ branch = true
 # Disable parallel coverage to preserve the data-file name so that 'coverage xml' finds it
 parallel = false
 omit = ["tests/**"]
+
+[tool.coverage.report]
+exclude_also = [
+    "if TYPE_CHECKING:",
+]
 
 [tool.pyright]
 #strict = ["craft_cli"] # NOTE: disabled pending fix of the many errors (see gh issue #147)
@@ -246,10 +251,13 @@ ignore = [
     "TRY003",  # Avoid specifying long messages outside the exception class
 
     "PT001",  # Add parentheses to parameter-less pytest.fixture
+    "PT004",  # Fixture {function} does not return anything, add leading underscore
+
+    "ANN401", # Disallow Any in parameters (reason: too restrictive)
 ]
 
 [tool.ruff.per-file-ignores]
-"tests/**.py" = [  # Some things we want for the moin project are unnecessary in tests.
+"tests/**.py" = [  # Some things we want for the main project are unnecessary in tests.
     "D",  # Ignore docstring rules in tests
     "ANN", # Ignore type annotations in tests
     "S101",  # Allow assertions in tests
@@ -259,3 +267,8 @@ ignore = [
 ]
 # isort leaves init files alone by default, this makes ruff ignore them too.
 "__init__.py" = ["I001"]
+"craft_cli/pytest_plugin.py" = [
+    "ANN",    # Ignore type annotations in tests
+    "FBT002", # Boolean default value in function definition (preserving for backwards-comp)
+    "S101",  # Use of `assert` detected
+]
