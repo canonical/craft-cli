@@ -52,7 +52,7 @@ class CraftError(Exception):
     retcode: int
     """The code to return when the application finishes."""
 
-    def __init__(
+    def __init__(  # noqa: PLR0913 (too many arguments)
         self,
         message: str,
         *,
@@ -71,7 +71,7 @@ class CraftError(Exception):
         self.reportable = reportable
         self.retcode = retcode
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, CraftError):
             return all(
                 [
@@ -91,5 +91,5 @@ class ArgumentParsingError(Exception):
     """Exception used when an argument parsing error is found."""
 
 
-class ProvideHelpException(Exception):
+class ProvideHelpException(Exception):  # noqa: N818 (Exception should have an Error suffix)
     """Exception used to provide help to the user."""
