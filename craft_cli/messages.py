@@ -110,7 +110,7 @@ def _get_traceback_lines(exc: BaseException) -> Generator[str, None, None]:
             yield real_line
 
 
-class _Progresser:  # pylint: disable=too-many-instance-attributes
+class _Progresser:
     """A context manager to follow progress on any specific action."""
 
     def __init__(  # noqa: PLR0913 (too many arguments)
@@ -202,7 +202,7 @@ class _PipeReaderThread(threading.Thread):
         # on the platform
         if _WINDOWS_MODE:
             # parameters: default security, default buffer size, binary mode
-            binary_mode = os.O_BINARY  # pylint: disable=no-member  # (it does exist in Windows!)
+            binary_mode = os.O_BINARY
             # ignoring the type of the first parameter below, as documentation allows to use None
             # to make it use a NULL security descriptor:
             #     https://www.markjour.com/docs/pywin32-docs/PySECURITY_ATTRIBUTES.html
@@ -406,12 +406,10 @@ def _active_guard(ignore_when_stopped: bool = False) -> Callable[..., Any]:  # n
     """
 
     def decorator(wrapped_func: FuncT) -> FuncT:
-        def func(  # pylint: disable=inconsistent-return-statements
-            self: Emitter, *args: Any, **kwargs: Any
-        ) -> Any:
-            if not self._initiated:  # pylint: disable=protected-access
+        def func(self: Emitter, *args: Any, **kwargs: Any) -> Any:
+            if not self._initiated:
                 raise RuntimeError("Emitter needs to be initiated first")
-            if self._stopped:  # pylint: disable=protected-access
+            if self._stopped:
                 if ignore_when_stopped:
                     return None
                 raise RuntimeError("Emitter is stopped already")
@@ -444,8 +442,6 @@ class Emitter:
     - `trace`: for all the messages that may used by the *developers* to do any debugging on
     the application behaviour and/or logs forensics.
     """
-
-    # pylint: disable=too-many-instance-attributes
 
     def __init__(self) -> None:
         # these attributes will be set at "real init time", with the `init` method below

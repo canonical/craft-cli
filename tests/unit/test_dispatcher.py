@@ -117,9 +117,10 @@ def test_dispatcher_command_execution_ok():
 
         help_msg = "some help"
         overview = "fake overview"
+        _executed = []
 
         def run(self, parsed_args):
-            self._executed.append(parsed_args)  # type: ignore  # pylint: disable=no-member
+            self._executed.append(parsed_args)
 
     class MyCommand1(MyCommandControl):
         """Specifically defined command."""
@@ -470,7 +471,7 @@ def test_dispatcher_commands_are_not_loaded_if_not_needed():
         help_msg = "some help"
         overview = "fake overview"
 
-        def __init__(self, *args):  # pylint: disable=super-init-not-called
+        def __init__(self, *args):
             raise AssertionError
 
         def fill_parser(self, parser):
@@ -552,7 +553,7 @@ def test_basecommand_fill_parser_optional():
 def test_basecommand_run_mandatory():
     """BaseCommand subclasses must override run."""
 
-    class TestCommand(BaseCommand):  # pylint: disable=abstract-method  # yes, 'run' is not there
+    class TestCommand(BaseCommand):
         """Specifically defined command."""
 
         help_msg = "help message"

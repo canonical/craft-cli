@@ -53,9 +53,6 @@ dev = [
 lint = [
     "black==23.7.0",
     "codespell[toml]==2.2.5",
-    "pylint==2.17.5",
-    "pylint-fixme-info==1.0.3",
-    "pylint-pytest==1.1.2",
     "ruff==0.0.285",
     "yamllint==1.32.0"
 ]

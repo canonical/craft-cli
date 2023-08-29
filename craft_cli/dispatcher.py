@@ -191,7 +191,7 @@ def _get_commands_info(commands_groups: list[CommandGroup]) -> dict[str, type[Ba
     return commands
 
 
-class Dispatcher:  # pylint: disable=too-many-instance-attributes
+class Dispatcher:
     """Set up infrastructure and let the needed command run.
 
     ♪♫"Leeeeeet, the command ruuun"♪♫ https://www.youtube.com/watch?v=cv-0mmVnxPA
@@ -323,7 +323,7 @@ class Dispatcher:  # pylint: disable=too-many-instance-attributes
 
         # produce the complete help message for the command
         command_options = self._get_global_options()
-        for action in parser._actions:  # pylint: disable=protected-access
+        for action in parser._actions:
             # store the different options if present, otherwise it's just the dest
             help_text = "" if action.help is None else action.help
             if action.option_strings:

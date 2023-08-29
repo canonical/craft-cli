@@ -673,7 +673,7 @@ def test_show_defaults_no_stream(recording_printer):
     recording_printer.show(None, "test text")
 
     # check message logged
-    (msg,) = recording_printer.logged  # pylint: disable=unbalanced-tuple-unpacking
+    (msg,) = recording_printer.logged
     assert msg.stream is None
     assert msg.text == "test text"
     assert msg.use_timestamp is False
@@ -706,7 +706,7 @@ def test_show_defaults_terminal(stream, monkeypatch, recording_printer):
     assert not recording_printer.written_terminal_bars
     assert not recording_printer.written_captured_bars
     assert not recording_printer.written_captured_lines
-    (msg,) = recording_printer.written_terminal_lines  # pylint: disable=unbalanced-tuple-unpacking
+    (msg,) = recording_printer.written_terminal_lines
     assert msg.stream == stream
     assert msg.text == "test text"
     assert msg.use_timestamp is False
@@ -738,7 +738,7 @@ def test_show_defaults_captured(stream, monkeypatch, recording_printer):
     assert not recording_printer.written_terminal_bars
     assert not recording_printer.written_captured_bars
     assert not recording_printer.written_terminal_lines
-    (msg,) = recording_printer.written_captured_lines  # pylint: disable=unbalanced-tuple-unpacking
+    (msg,) = recording_printer.written_captured_lines
     assert msg.stream == stream
     assert msg.text == "test text"
     assert msg.use_timestamp is False
@@ -763,7 +763,7 @@ def test_show_use_timestamp(recording_printer, monkeypatch):
     """Control on message's use_timestamp flag."""
     monkeypatch.setattr(sys.stdout, "isatty", lambda: True)
     recording_printer.show(sys.stdout, "test text", use_timestamp=True)
-    (msg,) = recording_printer.written_terminal_lines  # pylint: disable=unbalanced-tuple-unpacking
+    (msg,) = recording_printer.written_terminal_lines
     assert msg.use_timestamp is True
 
 
@@ -771,7 +771,7 @@ def test_show_end_line(recording_printer, monkeypatch):
     """Control on message's end_line flag."""
     monkeypatch.setattr(sys.stdout, "isatty", lambda: True)
     recording_printer.show(sys.stdout, "test text", end_line=True)
-    (msg,) = recording_printer.written_terminal_lines  # pylint: disable=unbalanced-tuple-unpacking
+    (msg,) = recording_printer.written_terminal_lines
     assert msg.end_line is True
 
 
@@ -785,7 +785,7 @@ def test_show_ephemeral(recording_printer, monkeypatch):
     """Control if some message is ephemeral."""
     monkeypatch.setattr(sys.stdout, "isatty", lambda: True)
     recording_printer.show(sys.stdout, "test text", ephemeral=True)
-    (msg,) = recording_printer.written_terminal_lines  # pylint: disable=unbalanced-tuple-unpacking
+    (msg,) = recording_printer.written_terminal_lines
     assert msg.ephemeral is True
 
 
@@ -807,7 +807,7 @@ def test_progress_bar_valid_streams_terminal(stream, recording_printer, monkeypa
     assert not recording_printer.written_captured_lines
     assert not recording_printer.written_captured_bars
     assert not recording_printer.logged
-    (msg,) = recording_printer.written_terminal_bars  # pylint: disable=unbalanced-tuple-unpacking
+    (msg,) = recording_printer.written_terminal_bars
     assert msg.stream == stream
     assert msg.text == "test text"
     assert msg.bar_progress == 20
@@ -842,7 +842,7 @@ def test_progress_bar_valid_streams_captured(stream, recording_printer, monkeypa
     assert not recording_printer.written_captured_lines
     assert not recording_printer.written_terminal_bars
     assert not recording_printer.logged
-    (msg,) = recording_printer.written_captured_bars  # pylint: disable=unbalanced-tuple-unpacking
+    (msg,) = recording_printer.written_captured_bars
     assert msg.stream == stream
     assert msg.text == "test text"
     assert msg.bar_progress == 20

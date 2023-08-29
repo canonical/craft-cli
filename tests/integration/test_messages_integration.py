@@ -163,7 +163,6 @@ def assert_outputs(capsys, emit, expected_out=None, expected_err=None, expected_
 @pytest.mark.parametrize("output_is_terminal", [None])
 def test_exposed_api():
     """Verify names are properly exposed."""
-    # pylint: disable=import-outside-toplevel
     from craft_cli import emit
 
     assert isinstance(emit, messages.Emitter)

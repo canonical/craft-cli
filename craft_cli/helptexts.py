@@ -414,9 +414,7 @@ class HelpBuilder:
         else:
             raise RuntimeError("Internal inconsistency in commands groups")
         other_command_names = [
-            c.name
-            for c in command_group.commands  # pylint: disable=undefined-loop-variable
-            if not isinstance(command, c)
+            c.name for c in command_group.commands if not isinstance(command, c)
         ]
 
         if output_format == OutputFormat.markdown:

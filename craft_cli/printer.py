@@ -46,7 +46,7 @@ TESTMODE = False
 
 
 @dataclass
-class _MessageInfo:  # pylint: disable=too-many-instance-attributes
+class _MessageInfo:
     """Comprehensive information for a message that may go to screen and log."""
 
     stream: TextIO | None
@@ -138,7 +138,7 @@ class _Spinner(threading.Thread):
         """Supervise a message to spin it if it remains too long."""
         self.queue.put(message)
         # (maybe) wait for the spinner to exit spinning state (which does some cleaning)
-        self.lock.acquire()  # pylint: disable=consider-using-with
+        self.lock.acquire()
         self.lock.release()
 
     def stop(self) -> None:

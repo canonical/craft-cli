@@ -877,7 +877,7 @@ def test_tool_exec_command_dash_help_reverse(help_option):
 def test_tool_exec_command_dash_help_missing_params(help_option):
     """Execute a command (which needs params) asking for help."""
 
-    def fill_parser(self, parser):  # pylint: disable=unused-argument
+    def fill_parser(self, parser):
         parser.add_argument("mandatory")
 
     cmd = create_command("somecommand", "This command does that.")
@@ -931,7 +931,7 @@ def test_tool_exec_command_wrong_option():
 def test_tool_exec_command_bad_option_type():
     """Execute a correct command but giving the valid option a bad value."""
 
-    def fill_parser(self, parser):  # pylint: disable=unused-argument
+    def fill_parser(self, parser):
         parser.add_argument("--number", type=int)
 
     cmd = create_command("somecommand", "This command does that.")
@@ -1012,7 +1012,7 @@ def test_tool_exec_help_command_on_command_format_markdown():
 def test_tool_exec_help_command_on_command_complex():
     """Execute the app asking for help on a command with parameters and options."""
 
-    def fill_parser(self, parser):  # pylint: disable=unused-argument
+    def fill_parser(self, parser):
         parser.add_argument("param1", help="help on param1")
         parser.add_argument("param2", help="help on param2")
         parser.add_argument("param3", metavar="transformed3", help="help on param2")
@@ -1057,7 +1057,7 @@ def test_tool_exec_help_command_on_command_complex():
 def test_tool_exec_help_command_on_command_no_help():
     """Execute the app asking for help on a command with an options and params without help."""
 
-    def fill_parser(self, parser):  # pylint: disable=unused-argument
+    def fill_parser(self, parser):
         parser.add_argument("param")
         parser.add_argument("--option")
 
