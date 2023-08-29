@@ -80,7 +80,7 @@ def test_streamcm_init_with_stream(recording_printer, stream):
     )
 
     # initial message
-    (msg,) = recording_printer.written_terminal_lines  # pylint: disable=unbalanced-tuple-unpacking
+    (msg,) = recording_printer.written_terminal_lines
     assert msg.stream == stream
     assert msg.text == "initial text"
     assert msg.use_timestamp is False
@@ -108,7 +108,7 @@ def test_streamcm_init_with_stream_and_timestamp(recording_printer, stream):
     )
 
     # initial message
-    (msg,) = recording_printer.written_terminal_lines  # pylint: disable=unbalanced-tuple-unpacking
+    (msg,) = recording_printer.written_terminal_lines
     assert msg.stream == stream
     assert msg.text == "initial text"
     assert msg.use_timestamp is True
@@ -136,7 +136,7 @@ def test_streamcm_init_with_stream_ephemeral(recording_printer, stream):
     )
 
     # initial message
-    (msg,) = recording_printer.written_terminal_lines  # pylint: disable=unbalanced-tuple-unpacking
+    (msg,) = recording_printer.written_terminal_lines
     assert msg.stream == stream
     assert msg.text == "initial text"
     assert msg.use_timestamp is False
@@ -196,7 +196,7 @@ def test_pipereader_simple(recording_printer, stream):
     os.write(prt.write_pipe, b"123\n")
     prt.stop()
 
-    (msg,) = recording_printer.written_terminal_lines  # pylint: disable=unbalanced-tuple-unpacking
+    (msg,) = recording_printer.written_terminal_lines
     assert msg.stream == stream
     assert msg.text == ":: 123"  # unicode, with the prefix, and without the newline
     assert msg.use_timestamp is False
@@ -215,7 +215,7 @@ def test_pipereader_with_timestamp(recording_printer, stream):
     os.write(prt.write_pipe, b"123\n")
     prt.stop()
 
-    (msg,) = recording_printer.written_terminal_lines  # pylint: disable=unbalanced-tuple-unpacking
+    (msg,) = recording_printer.written_terminal_lines
     assert msg.stream == stream
     assert msg.text == ":: 123"  # unicode, with the prefix, and without the newline
     assert msg.use_timestamp is True
@@ -234,7 +234,7 @@ def test_pipereader_ephemeral(recording_printer, stream):
     os.write(prt.write_pipe, b"123\n")
     prt.stop()
 
-    (msg,) = recording_printer.written_terminal_lines  # pylint: disable=unbalanced-tuple-unpacking
+    (msg,) = recording_printer.written_terminal_lines
     assert msg.stream == stream
     assert msg.text == ":: 123"  # unicode, with the prefix, and without the newline
     assert msg.use_timestamp is False
@@ -253,7 +253,7 @@ def test_pipereader_tabs(recording_printer, stream):
     os.write(prt.write_pipe, b"\t123\t456\n")
     prt.stop()
 
-    (msg,) = recording_printer.written_terminal_lines  # pylint: disable=unbalanced-tuple-unpacking
+    (msg,) = recording_printer.written_terminal_lines
     assert msg.text == "::   123  456"  # tabs expanded into 2 spaces
 
 

@@ -401,10 +401,7 @@ def test_traceback_lines_simple():
     except ValueError as err:
         tbacklines = list(_get_traceback_lines(err))
 
-    # disable 'black' here otherwise it complains about pylint comment (which we need for
-    # pylint to shut up about the false positive)
-    # fmt: off
-    assert tbacklines[0] == "Traceback (most recent call last):"  # pylint: disable=used-before-assignment
+    assert tbacklines[0] == "Traceback (most recent call last):"
     assert tbacklines[1].startswith("  File ")
     assert tbacklines[1].endswith(", in test_traceback_lines_simple")
     assert tbacklines[2] == '    raise ValueError("pumba")'

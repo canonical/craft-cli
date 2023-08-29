@@ -854,6 +854,7 @@ def test_reporterror_detailed_info_developer_modes(mode, get_initiated_emitter):
 def test_reporterror_chained_exception_final_user_modes(mode, get_initiated_emitter):
     """Report an error that was originated after other exception, in final user modes."""
     emitter = get_initiated_emitter(mode)
+    orig_exception = None
     try:
         try:
             raise ValueError("original")
@@ -865,7 +866,7 @@ def test_reporterror_chained_exception_final_user_modes(mode, get_initiated_emit
 
     with patch("craft_cli.messages._get_traceback_lines") as tblines_mock:
         tblines_mock.return_value = ["traceback line 1", "traceback line 2"]
-        emitter.error(error)  # pylint: disable=used-before-assignment
+        emitter.error(error)
 
     full_log_message = f"Full execution log: {repr(emitter._log_filepath)}"
     assert emitter.printer_calls == [
@@ -877,13 +878,14 @@ def test_reporterror_chained_exception_final_user_modes(mode, get_initiated_emit
     ]
 
     # check the traceback lines are generated using the original exception
-    tblines_mock.assert_called_with(orig_exception)  # type: ignore  # pylint: disable=used-before-assignment
+    tblines_mock.assert_called_with(orig_exception)
 
 
 @pytest.mark.parametrize("mode", [EmitterMode.DEBUG, EmitterMode.TRACE])
 def test_reporterror_chained_exception_developer_modes(mode, get_initiated_emitter):
     """Report an error that was originated after other exception, in developer intended modes."""
     emitter = get_initiated_emitter(mode)
+    orig_exception = None
     try:
         try:
             raise ValueError("original")
@@ -895,7 +897,7 @@ def test_reporterror_chained_exception_developer_modes(mode, get_initiated_emitt
 
     with patch("craft_cli.messages._get_traceback_lines") as tblines_mock:
         tblines_mock.return_value = ["traceback line 1", "traceback line 2"]
-        emitter.error(error)  # pylint: disable=used-before-assignment
+        emitter.error(error)
 
     full_log_message = f"Full execution log: {repr(emitter._log_filepath)}"
     assert emitter.printer_calls == [
@@ -907,7 +909,7 @@ def test_reporterror_chained_exception_developer_modes(mode, get_initiated_emitt
     ]
 
     # check the traceback lines are generated using the original exception
-    tblines_mock.assert_called_with(orig_exception)  # type: ignore  # pylint: disable=used-before-assignment
+    tblines_mock.assert_called_with(orig_exception)
 
 
 @pytest.mark.parametrize("mode", [EmitterMode.QUIET, EmitterMode.BRIEF, EmitterMode.VERBOSE])
@@ -994,7 +996,7 @@ def test_reporterror_full_complete(get_initiated_emitter):
 
     with patch("craft_cli.messages._get_traceback_lines") as tblines_mock:
         tblines_mock.return_value = ["traceback line 1", "traceback line 2"]
-        emitter.error(error)  # pylint: disable=used-before-assignment
+        emitter.error(error)
 
     full_log_message = f"Full execution log: {repr(emitter._log_filepath)}"
     full_docs_message = "For more information, check out: https://charmhub.io/docs/whatever"
