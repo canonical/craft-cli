@@ -176,6 +176,7 @@ class RecordingEmitter:
 
         for _pos, stored_call in enumerate(self.interactions):
             if stored_call == expected_call_list[0]:
+                pos = _pos
                 break
         else:
             pos = 0
