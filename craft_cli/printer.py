@@ -26,7 +26,7 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any, TextIO
+from typing import TYPE_CHECKING, Any, Callable, TextIO
 
 if TYPE_CHECKING:
     import pathlib
@@ -275,6 +275,10 @@ class Printer:
             maybe_cr = ""
             print(flush=True, file=self.prv_msg.stream)
 
+        if message.bar_progress is None or message.bar_total is None:  # pragma: no cover
+            # Should not happen as the caller checks the message
+            raise ValueError("Tried to write a bar message with invalid attributes")
+
         numerical_progress = f"{message.bar_progress}/{message.bar_total}"
         bar_percentage = min(message.bar_progress / message.bar_total, 1)
 
@@ -308,6 +312,7 @@ class Printer:
 
         # the writing functions depend on the final output: if the stream is captured or it's
         # a real terminal
+        write_line: Callable[[_MessageInfo], None]
         if _stream_is_terminal(msg.stream):
             write_line = self._write_line_terminal
             write_bar = self._write_bar_terminal
@@ -398,7 +403,7 @@ class Printer:
             self.spinner.stop()
         if self.unfinished_stream is not None:
             # With unfinished_stream set, the prv_msg object is valid.
-            if self.prv_msg.ephemeral:
+            if self.prv_msg is not None and self.prv_msg.ephemeral:
                 # If the last printed message is of 'ephemeral' type, the stop
                 # request must clean and reset the line.
                 cleaner = " " * (_get_terminal_width() - 1)
