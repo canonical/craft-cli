@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import argparse
 import difflib
-from typing import Any, Literal, NamedTuple, Sequence
+from typing import Any, Literal, NamedTuple, NoReturn, Sequence
 
 from craft_cli import EmitterMode, emit
 from craft_cli.errors import ArgumentParsingError, ProvideHelpException
@@ -170,7 +170,7 @@ class _CustomArgumentParser(argparse.ArgumentParser):
         self._help_builder = help_builder
         super().__init__(*args, **kwargs)
 
-    def error(self, message: str) -> None:
+    def error(self, message: str) -> NoReturn:
         """Show the usage, the error message, and no more."""
         full_msg = self._help_builder.get_usage_message(message, command=self.prog)
         raise ArgumentParsingError(full_msg)
@@ -322,12 +322,12 @@ class Dispatcher:  # pylint: disable=too-many-instance-attributes
         command.fill_parser(parser)
 
         # produce the complete help message for the command
-        options = self._get_global_options()
+        command_options = self._get_global_options()
         for action in parser._actions:  # pylint: disable=protected-access
             # store the different options if present, otherwise it's just the dest
             help_text = "" if action.help is None else action.help
             if action.option_strings:
-                options.append((", ".join(action.option_strings), help_text))
+                command_options.append((", ".join(action.option_strings), help_text))
             else:
                 if action.metavar is None:
                     dest = action.dest
@@ -335,9 +335,9 @@ class Dispatcher:  # pylint: disable=too-many-instance-attributes
                     # may be a tuple, but only for options
                     assert isinstance(action.metavar, str)  # noqa: S101 (use of assert)
                     dest = action.metavar
-                options.append((dest, help_text))
+                command_options.append((dest, help_text))
 
-        return self._help_builder.get_command_help(command, options, output_format)
+        return self._help_builder.get_command_help(command, command_options, output_format)
 
     def _build_no_command_error(self, missing_command: str) -> str:
         """Build the error help text for missing command, providing options."""

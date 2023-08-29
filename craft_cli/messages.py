@@ -38,7 +38,7 @@ from typing import TYPE_CHECKING, Any, Callable, Generator, Literal, TextIO, Typ
 import platformdirs
 
 try:
-    import win32pipe
+    import win32pipe  # type: ignore[import]
 
     _WINDOWS_MODE = True
 except ImportError:
@@ -191,6 +191,10 @@ class _PipeReaderThread(threading.Thread):
     ) -> None:
         super().__init__()
         self.printer_flags = printer_flags
+
+        # declare the types to satisfy mypy
+        self.read_pipe: int
+        self.write_pipe: int
 
         # prepare the pipe pair: the one to read (used in the thread core loop) and the
         # one which is to be written externally (and also used internally under windows

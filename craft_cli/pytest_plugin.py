@@ -15,16 +15,22 @@
 
 """Different fixtures for easier testability of Craft CLI services."""
 
+from __future__ import annotations
+
 import contextlib
 import os
 import pathlib
 import re
 import tempfile
+from typing import TYPE_CHECKING
 from unittest.mock import call
 
 import pytest
 
 from craft_cli import messages, printer
+
+if TYPE_CHECKING:
+    from unittest.mock import _Call
 
 
 @pytest.fixture(autouse=True)
@@ -73,7 +79,7 @@ class RecordingEmitter:
     """
 
     def __init__(self) -> None:
-        self.interactions = []
+        self.interactions: list[_Call] = []
         self.paused = False
 
     @contextlib.contextmanager
