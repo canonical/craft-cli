@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import argparse
 import difflib
-from typing import Any, Literal, NamedTuple, NoReturn, Sequence
+from typing import Any, Literal, NamedTuple, NoReturn, Optional, Sequence
 
 from craft_cli import EmitterMode, emit
 from craft_cli.errors import ArgumentParsingError, ProvideHelpException
@@ -147,7 +147,11 @@ class BaseCommand:
         :param parser: The object to fill with this command's parameters.
         """
 
-    def run(self, parsed_args: argparse.Namespace) -> int | None:
+    # NOTE: run() returns `Optional[int]` instead of `int | None` as the latter would
+    # be a breaking change for subclasses that override this with just `None` and
+    # use the `overrides.override` decorator. See:
+    # https://github.com/mkorpela/overrides/issues/115
+    def run(self, parsed_args: argparse.Namespace) -> Optional[int]:  # noqa: UP007
         """Execute command's actual functionality.
 
         It must be overridden by the command implementation.
