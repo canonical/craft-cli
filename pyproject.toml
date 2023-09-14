@@ -44,21 +44,21 @@ emitter = "craft_cli.pytest_plugin"
 
 [project.optional-dependencies]
 dev = [
-    "coverage[toml]==7.3.0",
-    "pytest==7.4.0",
+    "coverage[toml]==7.3.1",
+    "pytest==7.4.2",
     "pytest-cov==4.1.0",
     "pytest-mock==3.11.1",
     "pytest-subprocess"
 ]
 lint = [
-    "black==23.7.0",
+    "black==23.9.1",
     "codespell[toml]==2.2.5",
     "ruff==0.0.285",
     "yamllint==1.32.0"
 ]
 types = [
     "mypy[reports]==1.5.1",
-    "pyright==1.1.323",
+    "pyright==1.1.326",
 ]
 docs = [
     "furo==2023.9.10",
