@@ -59,6 +59,9 @@ lint = [
 types = [
     "mypy[reports]==1.5.1",
     "pyright==1.1.327",
+    "types-Pygments",
+    "types-colorama",
+    "types-setuptools",
 ]
 docs = [
     "furo==2023.9.10",
@@ -132,7 +135,9 @@ exclude_also = [
 pythonVersion = "3.8"
 pythonPlatform = "Linux"
 ignore = [
-    "docs/*"
+    "build/*",
+    "docs/*",
+    "craft_cli/_version.py",
 ]
 
 [tool.mypy]
