@@ -106,8 +106,7 @@ def _get_traceback_lines(exc: BaseException) -> Generator[str, None, None]:
     """Get the traceback lines (if any) from an exception."""
     tback_lines = traceback.format_exception(type(exc), exc, exc.__traceback__)
     for tback_line in tback_lines:
-        for real_line in tback_line.rstrip().split("\n"):
-            yield real_line
+        yield from tback_line.rstrip().split("\n")
 
 
 class _Progresser:
