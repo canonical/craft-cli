@@ -27,7 +27,7 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any, Callable, TextIO, Optional
+from typing import TYPE_CHECKING, Any, Callable, TextIO
 
 if TYPE_CHECKING:
     import pathlib
@@ -372,8 +372,8 @@ class Printer:
         if not avoid_logging:
             self._log(msg)
 
-    def set_titlebar(self, stream: Optional[TextIO], text: str) -> None:
-        """Sets 'text' as the window titlebar content"""
+    def set_titlebar(self, stream: TextIO | None, text: str) -> None:
+        """Set 'text' as the window titlebar content."""
         if _stream_is_terminal(stream):
             # Sends the text with the right ANSI codes:
             # ESC]2;textoBEL
