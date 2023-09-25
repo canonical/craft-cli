@@ -485,10 +485,12 @@ def _call_lib(logger, index):
     logger.debug(f"   {lib} DEBUG 2")
     time.sleep(2)
 
+
 def example_30(new_title):
     """Set the window title"""
     emit.progress(new_title, update_titlebar=True)
     time.sleep(1.5)
+
 
 def example_31():
     """Set the window title twice, to test if there is a delay when
@@ -497,6 +499,7 @@ def example_31():
     time.sleep(2)
     emit.progress("Changed the title twice", update_titlebar=True)
     time.sleep(2)
+
 
 # -- end of test cases
 
