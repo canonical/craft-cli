@@ -602,7 +602,9 @@ class Emitter:
         return stream, use_timestamp, ephemeral
 
     @_active_guard()
-    def progress(self, text: str, permanent: bool = False, update_titlebar: bool = False) -> None:  # noqa: FBT001, FBT002
+    def progress(
+        self, text: str, permanent: bool = False, update_titlebar: bool = False
+    ) -> None:  # noqa: FBT001, FBT002
         """Progress information for a multi-step command.
 
         This is normally used to present several separated text messages.
