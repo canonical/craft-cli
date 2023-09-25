@@ -603,8 +603,11 @@ class Emitter:
 
     @_active_guard()
     def progress(
-        self, text: str, permanent: bool = False, update_titlebar: bool = False
-    ) -> None:  # noqa: FBT001, FBT002
+        self,
+        text: str,
+        permanent: bool = False,  # noqa: FBT001, FBT002
+        update_titlebar: bool = False,  # noqa: FBT001, FBT002
+    ) -> None:
         """Progress information for a multi-step command.
 
         This is normally used to present several separated text messages.
@@ -631,7 +634,7 @@ class Emitter:
             self._printer.set_terminal_prefix(text)
 
         if update_titlebar:
-            self._printer.set_titlebar(stream, text)  # type: ignore
+            self._printer.set_titlebar(stream, text)
 
     @_active_guard()
     def progress_bar(
