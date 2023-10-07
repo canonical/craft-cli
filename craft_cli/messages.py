@@ -601,13 +601,21 @@ class Emitter:
         return stream, use_timestamp, ephemeral
 
     @_active_guard()
-    def progress(self, text: str, permanent: bool = False) -> None:  # noqa: FBT001, FBT002
+    def progress(
+        self,
+        text: str,
+        permanent: bool = False,  # noqa: FBT001, FBT002
+        update_titlebar: bool = False,  # noqa: FBT001, FBT002
+    ) -> None:
         """Progress information for a multi-step command.
 
         This is normally used to present several separated text messages.
 
         If a progress message is important enough that it should not be overwritten by the
         next ones, use 'permanent=True'.
+
+        If a progress message describes an important step that you want to be visible, use
+        'update_titlebar=True' to also set it as the titlebar text in the terminal window.
 
         These messages will be truncated to the terminal's width, and overwritten by the next
         line (unless verbose/trace mode).
@@ -623,6 +631,9 @@ class Emitter:
         if self._mode == EmitterMode.BRIEF and ephemeral and self._streaming_brief:
             # Set the "progress prefix" for upcoming non-permanent messages.
             self._printer.set_terminal_prefix(text)
+
+        if update_titlebar:
+            self._printer.set_titlebar(stream, text)
 
     @_active_guard()
     def progress_bar(
