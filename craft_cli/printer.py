@@ -168,6 +168,8 @@ class Printer:
 
         self.terminal_prefix = ""
 
+        self.secrets: list[str] = []
+
         # run the spinner supervisor
         self.spinner = _Spinner(self)
         if not TESTMODE:
@@ -359,13 +361,15 @@ class Printer:
         if self.stopped:
             return
 
+        text = self._apply_secrets(text)
+
         msg = _MessageInfo(
             stream=stream,
             text=text.rstrip(),
             ephemeral=ephemeral,
             use_timestamp=use_timestamp,
             end_line=end_line,
-            terminal_prefix=self.terminal_prefix,
+            terminal_prefix=self._apply_secrets(self.terminal_prefix),
         )
         self._show(msg)
         if not avoid_logging:
@@ -381,6 +385,8 @@ class Printer:
         use_timestamp: bool,
     ) -> None:
         """Show a progress bar to the given stream."""
+        text = self._apply_secrets(text)
+
         msg = _MessageInfo(
             stream=stream,
             text=text.rstrip(),
@@ -416,3 +422,12 @@ class Printer:
 
         self.log.close()
         self.stopped = True
+
+    def set_secrets(self, secrets: list[str]) -> None:
+        """Set the list of strings that should be masked out in all outputs."""
+        self.secrets = secrets[:]
+
+    def _apply_secrets(self, text: str) -> str:
+        for secret in self.secrets:
+            text = text.replace(secret, "*****")
+        return text
