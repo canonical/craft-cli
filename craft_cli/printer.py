@@ -425,7 +425,8 @@ class Printer:
 
     def set_secrets(self, secrets: list[str]) -> None:
         """Set the list of strings that should be masked out in all outputs."""
-        self.secrets = secrets[:]
+        # Keep a copy, to project against clients modifying the list on accident.
+        self.secrets = secrets.copy()
 
     def _apply_secrets(self, text: str) -> str:
         for secret in self.secrets:
