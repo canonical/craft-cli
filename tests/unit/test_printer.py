@@ -1140,6 +1140,54 @@ def test_secrets(capsys, log_filepath):
     assert stderr == expected
 
 
+def test_secrets_subwords(capsys, log_filepath):
+    printer = Printer(log_filepath)
+
+    secrets = ["range", "term"]
+
+    message = "apple banana orange watermelon"
+    # Secrets are replaced "dumbly": they are not expected to be "whole words".
+    expected = "apple banana o***** wa*****elon\n"
+
+    printer.set_secrets(secrets)
+    printer.show(sys.stderr, message, avoid_logging=True)
+
+    _, stderr = capsys.readouterr()
+    assert stderr == expected
+
+
+def test_secrets_repetitions(capsys, log_filepath):
+    printer = Printer(log_filepath)
+
+    secrets = ["range"]
+
+    message = "Free-range strange oranges"
+    # Secrets can be replaced multiple times on the same string
+    expected = "Free-***** st***** o*****s\n"
+
+    printer.set_secrets(secrets)
+    printer.show(sys.stderr, message, avoid_logging=True)
+
+    _, stderr = capsys.readouterr()
+    assert stderr == expected
+
+
+def test_secrets_non_ascii(capsys, log_filepath):
+    printer = Printer(log_filepath)
+
+    secrets = ["ação"]
+
+    message = "Ação reação coração"
+    # Secrets can be non-ascii words, and match case.
+    expected = "Ação re***** cor*****\n"
+
+    printer.set_secrets(secrets)
+    printer.show(sys.stderr, message, avoid_logging=True)
+
+    _, stderr = capsys.readouterr()
+    assert stderr == expected
+
+
 def test_secrets_copy(capsys, log_filepath):
     printer = Printer(log_filepath)
 
