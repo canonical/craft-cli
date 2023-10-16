@@ -1437,3 +1437,78 @@ def test_streaming_brief_spinner(capsys, logger, monkeypatch, init_emitter):
         Line("Done stage"),
     ]
     assert_outputs(capsys, emit, expected_err=expected_err, expected_log=expected_log)
+
+
+@pytest.mark.parametrize("output_is_terminal", [True])
+def test_secrets_integrated(capsys, logger, monkeypatch, init_emitter):
+    """Test the output of secrets through various input methods"""
+    monkeypatch.setattr(printer, "_get_terminal_width", lambda: 60)
+
+    emit = Emitter()
+    emit.init(EmitterMode.BRIEF, "testapp", GREETING, streaming_brief=True)
+
+    emit.set_secrets(["banana", "watermelon"])
+
+    # Regular message written through the emitter
+    emit.message("Apple banana orange watermelon version 1.0")
+
+    # A progress message
+    emit.progress("Begin stage: banana", permanent=False)
+    # A message stream, and its pipe
+    with emit.open_stream("Opening stream: watermelon") as write_pipe:
+        os.write(write_pipe, b"Info message: watermelon\n")
+    emit.progress("Done stage: banana", permanent=True)
+
+    # Log messages
+    logger.debug("Log message: apple")
+    logger.info("Log message: banana")
+    logger.warning("Log message: orange")
+    logger.error("Log message: watermelon")
+
+    # Print a string via regular "print". Two notes:
+    # 1) This string will NOT be secrets-masked because it completely bypasses the printer
+    # 2) We pad the string to 60 characters when printing to satisfy assert_outputs().
+    raw_string = "Raw print: apple banana orange watermelon"
+    print(raw_string + " " * (60 - len(raw_string) - 1))
+
+    with emit.pause():
+        # Emitter is paused: logged messages aren't printed/git logged (masked or otherwise).
+        logger.info("Paused emitter log message: apple banana")
+
+    emit.ended_ok()
+
+    expected_out = [
+        Line("Apple ***** orange ***** version 1.0", permanent=True),
+        Line("Raw print: apple banana orange watermelon", permanent=True),
+    ]
+
+    expected_err = [
+        Line("Begin stage: *****", permanent=False),
+        Line("Begin stage: ***** :: Opening stream: *****", permanent=False),
+        Line("Begin stage: ***** :: Info message: *****", permanent=False),
+        Line("Done stage: *****", permanent=True),
+        Line("Log message: *****", permanent=False),
+        Line("Log message: orange", permanent=False),
+        Line("Log message: *****", permanent=False),
+        Line("", permanent=False),
+    ]
+    expected_log = [
+        Line("Apple ***** orange ***** version 1.0"),
+        Line("Begin stage: *****"),
+        Line("Opening stream: *****"),
+        Line(":: Info message: *****"),
+        Line("Done stage: *****"),
+        Line("Log message: apple"),
+        Line("Log message: *****"),
+        Line("Log message: orange"),
+        Line("Log message: *****"),
+        Line("Emitter: Pausing control of the terminal"),
+        Line("Emitter: Resuming control of the terminal"),
+    ]
+    assert_outputs(
+        capsys,
+        emit,
+        expected_out=expected_out,
+        expected_err=expected_err,
+        expected_log=expected_log,
+    )

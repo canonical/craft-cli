@@ -735,6 +735,11 @@ class Emitter:
         self._report_error(error)
         self._stop()
 
+    @_active_guard()
+    def set_secrets(self, secrets: list[str]) -> None:
+        """Set the list of strings that should be masked out in all output."""
+        self._printer.set_secrets(secrets)
+
 
 # module-level instantiated Emitter; this is the instance all code shall use and Emitter
 # shall not be instantiated again for the process' run

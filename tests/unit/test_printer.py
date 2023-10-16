@@ -1123,3 +1123,148 @@ def test_spinner_silent_on_complete_messages(spinner, monkeypatch):
     time.sleep(0.05)
 
     assert spinner.printer.spinned == []
+
+
+def test_secrets(capsys, log_filepath):
+    printer = Printer(log_filepath)
+
+    secrets = ["banana", "watermelon"]
+
+    message = "apple banana orange watermelon"
+    expected = "apple ***** orange *****\n"
+
+    printer.set_secrets(secrets)
+    printer.show(sys.stderr, message, avoid_logging=True)
+
+    _, stderr = capsys.readouterr()
+    assert stderr == expected
+
+
+def test_secrets_subwords(capsys, log_filepath):
+    printer = Printer(log_filepath)
+
+    secrets = ["range", "term"]
+
+    message = "apple banana orange watermelon"
+    # Secrets are replaced "dumbly": they are not expected to be "whole words".
+    expected = "apple banana o***** wa*****elon\n"
+
+    printer.set_secrets(secrets)
+    printer.show(sys.stderr, message, avoid_logging=True)
+
+    _, stderr = capsys.readouterr()
+    assert stderr == expected
+
+
+def test_secrets_repetitions(capsys, log_filepath):
+    printer = Printer(log_filepath)
+
+    secrets = ["range"]
+
+    message = "Free-range strange oranges"
+    # Secrets can be replaced multiple times on the same string
+    expected = "Free-***** st***** o*****s\n"
+
+    printer.set_secrets(secrets)
+    printer.show(sys.stderr, message, avoid_logging=True)
+
+    _, stderr = capsys.readouterr()
+    assert stderr == expected
+
+
+def test_secrets_non_ascii(capsys, log_filepath):
+    printer = Printer(log_filepath)
+
+    secrets = ["ação"]
+
+    message = "Ação reação coração"
+    # Secrets can be non-ascii words, and match case.
+    expected = "Ação re***** cor*****\n"
+
+    printer.set_secrets(secrets)
+    printer.show(sys.stderr, message, avoid_logging=True)
+
+    _, stderr = capsys.readouterr()
+    assert stderr == expected
+
+
+def test_secrets_copy(capsys, log_filepath):
+    printer = Printer(log_filepath)
+
+    secrets = ["banana", "watermelon"]
+
+    message = "apple banana orange watermelon"
+    expected = "apple ***** orange *****\n" * 2
+
+    printer.set_secrets(secrets)
+    printer.show(sys.stderr, message, avoid_logging=True)
+
+    # Modify the client-side list to make sure it doesn't affect
+    # the printer
+    secrets.pop(0)
+    printer.show(sys.stderr, message, avoid_logging=True)
+
+    _, stderr = capsys.readouterr()
+    assert stderr == expected
+
+
+def test_secrets_log(log_filepath):
+    printer = Printer(log_filepath)
+
+    secrets = ["banana", "watermelon"]
+
+    message = "apple banana orange watermelon"
+    expected = "apple ***** orange *****\n"
+
+    printer.set_secrets(secrets)
+    printer.show(None, message, use_timestamp=False)
+
+    # Chop off the timestamp
+    obtained = log_filepath.read_text()
+    start = obtained.find("apple")
+
+    assert obtained[start:] == expected
+
+
+def test_secrets_progress_bar(capsys, log_filepath, monkeypatch):
+    stream = sys.stderr
+    monkeypatch.setattr(stream, "isatty", lambda: True)
+    printer = Printer(log_filepath)
+
+    secrets = ["banana", "watermelon"]
+
+    message = "apple banana orange watermelon"
+    expected = "apple ***** orange *****"
+
+    printer.set_secrets(secrets)
+    printer.progress_bar(stream, message, progress=0.0, total=1.0, use_timestamp=False)
+
+    _, stderr = capsys.readouterr()
+    assert stderr.startswith(expected)
+
+
+def test_secrets_terminal_prefix(capsys, log_filepath, monkeypatch):
+    stream = sys.stderr
+    monkeypatch.setattr(stream, "isatty", lambda: True)
+    printer = Printer(log_filepath)
+
+    message = "apple banana orange watermelon"
+
+    # Set secrets first, then prefix
+    printer.set_secrets(["watermelon"])
+    printer.set_terminal_prefix("banana watermelon")
+    printer.show(stream, message)
+
+    # Set prefix first, then secrets
+    printer.set_terminal_prefix("watermelon banana")
+    printer.set_secrets(["banana"])
+    printer.show(stream, message)
+
+    expected = [
+        "banana ***** :: apple banana orange *****",
+        "watermelon ***** :: apple ***** orange watermelon",
+    ]
+
+    _, stderr = capsys.readouterr()
+    obtained = [l.strip() for l in stderr.splitlines()]
+    assert obtained == expected
