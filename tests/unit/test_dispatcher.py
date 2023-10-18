@@ -60,6 +60,38 @@ def test_dispatcher_command_loading():
     assert command.config == "test-config"
 
 
+def test_dispatcher_parsed_args():
+    """Returns the correctly parsed args."""
+
+    class MyCommand(BaseCommand):
+        name = "somecommand"
+        help_msg = "some help"
+        overview = "fake overview"
+
+        def fill_parser(self, parser):
+            parser.add_argument("--option1")
+            parser.add_argument("--option2", action="store_true")
+            parser.add_argument("--option3", action="store_false")
+
+    groups = [CommandGroup("title", [MyCommand])]
+    dispatcher = Dispatcher("appname", groups)
+    dispatcher.pre_parse_args(["somecommand", "--option1", "1", "--option2", "--option3"])
+
+    # Before loading the command: parsed_args is empty.
+    parsed_before = dispatcher.parsed_args
+    assert not hasattr(parsed_before, "option1")
+    assert not hasattr(parsed_before, "option2")
+    assert not hasattr(parsed_before, "option3")
+
+    dispatcher.load_command("test-config")
+
+    # After loading the command: parsed_args is filled.
+    parsed_after = dispatcher.parsed_args
+    assert parsed_after.option1 == "1"
+    assert parsed_after.option2
+    assert not parsed_after.option3
+
+
 def test_dispatcher_command_default_simple():
     """Support for a default command when nothing is passed."""
     cmd1 = create_command("somecommand1")
