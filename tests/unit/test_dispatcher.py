@@ -77,16 +77,14 @@ def test_dispatcher_parsed_args():
     dispatcher = Dispatcher("appname", groups)
     dispatcher.pre_parse_args(["somecommand", "--option1", "1", "--option2", "--option3"])
 
-    # Before loading the command: parsed_args is empty.
-    parsed_before = dispatcher.parsed_args
-    assert not hasattr(parsed_before, "option1")
-    assert not hasattr(parsed_before, "option2")
-    assert not hasattr(parsed_before, "option3")
+    # Before loading the command: error
+    with pytest.raises(RuntimeError, match="Need to load the command"):
+        _ = dispatcher.parsed_args()
 
     dispatcher.load_command("test-config")
 
     # After loading the command: parsed_args is filled.
-    parsed_after = dispatcher.parsed_args
+    parsed_after = dispatcher.parsed_args()
     assert parsed_after.option1 == "1"
     assert parsed_after.option2
     assert not parsed_after.option3
