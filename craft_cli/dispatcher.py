@@ -245,6 +245,14 @@ class Dispatcher:
         emit.trace(f"Command parsed sysargs: {self._parsed_command_args}")
         return self._loaded_command
 
+    def parsed_args(self) -> argparse.Namespace:
+        """Get the parsed command-line arguments."""
+        if self._parsed_command_args is None:
+            raise RuntimeError(
+                "Need to load the command (call 'load_command') before retrieving the parsed arguments."
+            )
+        return self._parsed_command_args
+
     def _get_global_options(self) -> list[tuple[str, str]]:
         """Return the global flags ready to present in the help messages as options."""
         options = []
