@@ -172,7 +172,7 @@ def test_emitter_record_pause(emitter):
 
 def test_emitter_messages(emitter):
     """Can verify several calls to `message`."""
-    for result in range(3):  # simulated bunch of resuls
+    for result in range(3):  # simulated bunch of results
         messages.emit.message(f"Got: {result}")
     emitter.assert_messages(
         [
