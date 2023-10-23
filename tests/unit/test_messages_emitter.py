@@ -579,6 +579,28 @@ def test_openstream_in_developer_modes(get_initiated_emitter, mode):
     ]
 
 
+def test_openstream_no_text(get_initiated_emitter):
+    """Test open_stream() with no text parameter."""
+    emitter = get_initiated_emitter(EmitterMode.VERBOSE)
+
+    with patch("craft_cli.messages._StreamContextManager") as stream_context_manager_mock:
+        instantiated_cm = object()
+        stream_context_manager_mock.return_value = instantiated_cm
+        context_manager = emitter.open_stream()
+
+    assert emitter.printer_calls == []
+    assert context_manager is instantiated_cm
+    assert stream_context_manager_mock.mock_calls == [
+        call(
+            emitter._printer,
+            None,
+            stream=sys.stderr,
+            use_timestamp=False,
+            ephemeral_mode=False,
+        ),
+    ]
+
+
 @pytest.mark.parametrize(
     "mode",
     [

@@ -306,7 +306,7 @@ class _StreamContextManager:
     def __init__(  # noqa: PLR0913 (too many arguments)
         self,
         printer: Printer,
-        text: str,
+        text: str | None,
         stream: TextIO | None,
         use_timestamp: bool,  # noqa: FBT001 (boolean positional arg)
         ephemeral_mode: bool,  # noqa: FBT001 (boolean positional arg)
@@ -319,9 +319,10 @@ class _StreamContextManager:
             "end_line": not ephemeral_mode,
         }
 
-        # show the intended text (explicitly asking for a complete line) before passing the
-        # output command to the pip-reading thread
-        printer.show(stream, text, **printer_flags)
+        if text is not None:
+            # show the intended text (explicitly asking for a complete line) before
+            # passing the output command to the pipe-reading thread
+            printer.show(stream, text, **printer_flags)
 
         # enable the thread to read and show what comes through the provided pipe
         self.pipe_reader = _PipeReaderThread(printer, stream, printer_flags)
@@ -640,7 +641,7 @@ class Emitter:
         return _Progresser(self._printer, total, text, stream, delta, use_timestamp, ephemeral)
 
     @_active_guard()
-    def open_stream(self, text: str) -> _StreamContextManager:
+    def open_stream(self, text: str | None = None) -> _StreamContextManager:
         """Open a stream context manager to get messages from subprocesses."""
         if self._mode == EmitterMode.QUIET:
             # no third party stream
