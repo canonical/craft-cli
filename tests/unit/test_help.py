@@ -199,10 +199,26 @@ def test_detailed_help_text():
     [
         (
             [
-                CommandGroup("unordered", [create_command("b", "B comes after A, but only alphabetically"), create_command("a", "A comes before B")]),
-                CommandGroup("ordered", [create_command("first", "It's important this comes before the other command."), create_command("last", "This must come at the end of this command group.")], ordered=True)
+                CommandGroup(
+                    "unordered",
+                    [
+                        create_command("b", "B comes after A, but only alphabetically"),
+                        create_command("a", "A comes before B"),
+                    ],
+                ),
+                CommandGroup(
+                    "ordered",
+                    [
+                        create_command(
+                            "first", "It's important this comes before the other command."
+                        ),
+                        create_command("last", "This must come at the end of this command group."),
+                    ],
+                    ordered=True,
+                ),
             ],
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
             Usage:
                 testapp [help] <command>
 
@@ -218,9 +234,10 @@ def test_detailed_help_text():
 
             For more information about a command, run 'testapp help <command>'.
             For a summary of all commands, run 'testapp help --all'.
-            """)
+            """
+            ),
         )
-    ]
+    ],
 )
 def test_default_help_text_command_order(command_groups, expected_output):
     help_builder = HelpBuilder("testapp", "general summary", command_groups)
@@ -228,15 +245,32 @@ def test_default_help_text_command_order(command_groups, expected_output):
 
     assert actual_output == expected_output
 
+
 @pytest.mark.parametrize(
     ("command_groups", "expected_output"),
     [
         (
             [
-                CommandGroup("unordered", [create_command("b", "B comes after A, but only alphabetically"), create_command("a", "A comes before B")]),
-                CommandGroup("ordered", [create_command("first", "It's important this comes before the other command."), create_command("last", "This must come at the end of this command group.")], ordered=True)
+                CommandGroup(
+                    "unordered",
+                    [
+                        create_command("b", "B comes after A, but only alphabetically"),
+                        create_command("a", "A comes before B"),
+                    ],
+                ),
+                CommandGroup(
+                    "ordered",
+                    [
+                        create_command(
+                            "first", "It's important this comes before the other command."
+                        ),
+                        create_command("last", "This must come at the end of this command group."),
+                    ],
+                    ordered=True,
+                ),
             ],
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
             Usage:
                 testapp [help] <command>
 
@@ -255,9 +289,10 @@ def test_default_help_text_command_order(command_groups, expected_output):
                  last:  This must come at the end of this command group.
 
             For more information about a specific command, run 'testapp help <command>'.
-            """)
+            """
+            ),
         )
-    ]
+    ],
 )
 def test_detailed_help_text_command_order(command_groups, expected_output):
     help_builder = HelpBuilder("testapp", "general summary", command_groups)
