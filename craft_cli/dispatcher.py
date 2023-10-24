@@ -40,7 +40,7 @@ class CommandGroup(NamedTuple):
     """A list of the commands belonging in this group."""
 
     ordered: bool = False
-    """Whether this command group is already in the correct group (defaults to False)."""
+    """Whether the commands in this group are already in the correct order (defaults to False)."""
 
 
 class GlobalArgument(NamedTuple):
