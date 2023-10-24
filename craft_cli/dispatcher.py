@@ -39,6 +39,9 @@ class CommandGroup(NamedTuple):
     commands: Sequence[type[BaseCommand]]
     """A list of the commands belonging in this group."""
 
+    ordered: bool = False
+    """Whether the commands in this group are already in the correct order (defaults to False)."""
+
 
 class GlobalArgument(NamedTuple):
     """Definition of a global argument to be handled by the Dispatcher."""
