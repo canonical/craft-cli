@@ -1512,3 +1512,37 @@ def test_secrets_integrated(capsys, logger, monkeypatch, init_emitter):
         expected_err=expected_err,
         expected_log=expected_log,
     )
+
+
+@pytest.mark.parametrize("output_is_terminal", [True])
+def test_open_stream_no_text(capsys, logger, monkeypatch, init_emitter):
+    """Test emitter output when open_stream() has no `text` parameter"""
+    monkeypatch.setattr(printer, "_get_terminal_width", lambda: 200)
+
+    emit = Emitter()
+    emit.init(EmitterMode.VERBOSE, "testapp", GREETING)
+
+    emit.progress("Begin stage", permanent=False)
+
+    with emit.open_stream() as write_pipe:
+        os.write(write_pipe, b"Info message 1\n")
+        os.write(write_pipe, b"Info message 2\n")
+
+    emit.progress("End stage", permanent=False)
+    emit.ended_ok()
+
+    expected_err = [
+        Line("Begin stage"),
+        Line(":: Info message 1"),
+        Line(":: Info message 2"),
+        Line("End stage"),
+    ]
+    expected_log = expected_err
+
+    assert_outputs(
+        capsys,
+        emit,
+        expected_out=None,
+        expected_err=expected_err,
+        expected_log=expected_log,
+    )
