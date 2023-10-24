@@ -194,6 +194,78 @@ def test_detailed_help_text():
     assert text == expected
 
 
+@pytest.mark.parametrize(
+    ("command_groups", "expected_output"),
+    [
+        (
+            [
+                CommandGroup("unordered", [create_command("b", "B comes after A, but only alphabetically"), create_command("a", "A comes before B")]),
+                CommandGroup("ordered", [create_command("first", "It's important this comes before the other command."), create_command("last", "This must come at the end of this command group.")], ordered=True)
+            ],
+            textwrap.dedent("""\
+            Usage:
+                testapp [help] <command>
+
+            Summary:    general summary
+
+            Global options:
+
+            Starter commands:
+
+            Commands can be classified as follows:
+                  ordered:  first, last
+                unordered:  a, b
+
+            For more information about a command, run 'testapp help <command>'.
+            For a summary of all commands, run 'testapp help --all'.
+            """)
+        )
+    ]
+)
+def test_default_help_text_command_order(command_groups, expected_output):
+    help_builder = HelpBuilder("testapp", "general summary", command_groups)
+    actual_output = help_builder.get_full_help([])
+
+    assert actual_output == expected_output
+
+@pytest.mark.parametrize(
+    ("command_groups", "expected_output"),
+    [
+        (
+            [
+                CommandGroup("unordered", [create_command("b", "B comes after A, but only alphabetically"), create_command("a", "A comes before B")]),
+                CommandGroup("ordered", [create_command("first", "It's important this comes before the other command."), create_command("last", "This must come at the end of this command group.")], ordered=True)
+            ],
+            textwrap.dedent("""\
+            Usage:
+                testapp [help] <command>
+
+            Summary:    general summary
+
+            Global options:
+
+            Commands can be classified as follows:
+
+            unordered:
+                    b:  B comes after A, but only alphabetically
+                    a:  A comes before B
+
+            ordered:
+                first:  It's important this comes before the other command.
+                 last:  This must come at the end of this command group.
+
+            For more information about a specific command, run 'testapp help <command>'.
+            """)
+        )
+    ]
+)
+def test_detailed_help_text_command_order(command_groups, expected_output):
+    help_builder = HelpBuilder("testapp", "general summary", command_groups)
+    actual_output = help_builder.get_detailed_help([])
+
+    assert actual_output == expected_output
+
+
 @pytest.mark.parametrize("output_format", list(OutputFormat))
 def test_command_help_text_no_parameters(output_format):
     """All different parts for a specific command help that doesn't have parameters."""

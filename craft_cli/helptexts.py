@@ -194,11 +194,12 @@ class HelpBuilder:
 
         grouped_lines = ["Commands can be classified as follows:"]
         for command_group in sorted(self.command_groups, key=attrgetter("name")):
-            command_names = ", ".join(
-                sorted(cmd.name for cmd in command_group.commands if not cmd.hidden)
-            )
+            command_names = [cmd.name for cmd in command_group.commands if not cmd.hidden]
+            if not command_group.ordered:
+                command_names.sort()
+            command_names_str = ", ".join(command_names)
             grouped_lines.extend(
-                _build_item_plain(command_group.name, command_names, max_title_len)
+                _build_item_plain(command_group.name, command_names_str, max_title_len)
             )
         textblocks.append("\n".join(grouped_lines))
 
