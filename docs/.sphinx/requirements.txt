@@ -1,0 +1,19 @@
+furo
+linkify-it-py
+lxd-sphinx-extensions
+myst-parser
+pyspelling
+sphinx
+sphinx-autobuild
+sphinx-copybutton
+sphinx-design
+sphinx-notfound-page
+sphinx-reredirects
+sphinx-tabs
+sphinxcontrib-jquery
+sphinxext-opengraph
+# Extra, craft-cli-specific requirements for the docs
+sphinx-pydantic==0.1.1
+sphinx-toolbox==3.5.0
+sphinx-lint==0.8.1
+pytest>=7.0.0 # This is just because this is imported by the code
