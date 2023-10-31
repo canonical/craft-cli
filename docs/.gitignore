@@ -1,3 +1,12 @@
 craft_cli.rst
 craft_cli.*.rst
 modules.rst
+/*env*/
+.sphinx/venv/
+.sphinx/warnings.txt
+.sphinx/.wordlist.dic
+.sphinx/.doctrees/
+_build
+.DS_Store
+__pycache__
+.idea/

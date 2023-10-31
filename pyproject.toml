@@ -63,17 +63,6 @@ types = [
     "types-colorama",
     "types-setuptools",
 ]
-docs = [
-    "furo==2023.9.10",
-    "sphinx>=7.2.6,<7.3",
-    "sphinx-autobuild==2021.3.14",
-    "sphinx-autodoc-typehints",
-    "sphinx-copybutton==0.5.2",
-    "sphinx-design==0.5.0",
-    "sphinx-pydantic==0.1.1",
-    "sphinx-toolbox==3.5.0",
-    "sphinx-lint==0.8.1",
-]
 
 [build-system]
 requires = [
@@ -99,6 +88,7 @@ exclude = [
 [tool.black]
 target-version = ["py38"]
 line-length = 99
+extend-exclude = "docs/conf.py"
 
 [tool.codespell]
 ignore-words-list = "buildd,crate,keyserver,comandos,ro,dedent,dedented"

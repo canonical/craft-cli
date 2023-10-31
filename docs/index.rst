@@ -12,22 +12,22 @@ Welcome to Craft CLI's documentation!
 
 .. grid:: 1 1 2 2
 
-   .. grid-item-card:: :ref:`Tutorial <tutorials>`
+   .. grid-item-card:: :doc:`tutorials`
 
       **Get started** with hands-on introductions to Craft CLI
 
-   .. grid-item-card:: :ref:`How-to guides <howtos>`
+   .. grid-item-card:: :doc:`howtos`
 
       **Step-by-step guides** covering key operations and common tasks
 
 .. grid:: 1 1 2 2
    :reverse:
 
-   .. grid-item-card:: :ref:`Reference <reference>`
+   .. grid-item-card:: :doc:`reference`
 
       **Technical information** about Craft CLI
 
-   .. grid-item-card:: :ref:`Explanation <explanations>`
+   .. grid-item-card:: :doc:`explanations`
 
       **Discussion and clarification** of key topics
 
