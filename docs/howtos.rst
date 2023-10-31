@@ -125,7 +125,7 @@ Finally, if you want to build a hierarchy of errors in the application, you shou
 Define and use other global arguments
 =====================================
 
-To define more automatic global arguments than the ones provided automatically by ``Dispatcher`` (see :ref:`this explanation <expl_global_args>` for more information), use the ``GlobalArgument`` object to create all you need and pass them to the ``Dispatcher`` at instatiaton time.
+To define more automatic global arguments than the ones provided automatically by ``Dispatcher`` (see :ref:`this explanation <expl_global_args>` for more information), use the ``GlobalArgument`` object to create all you need and pass them to the ``Dispatcher`` at creation time.
 
 Check :class:`craft_cli.dispatcher.GlobalArgument` for more information about the parameters needed, but it's very straightforward to create these objects. E.g.::
 
@@ -175,7 +175,7 @@ Create unit tests for code that uses Craft CLI's Emitter
 
 The library provides two fixtures that simplifies the testing of code using the Emitter when using ``pytest``.
 
-One of the fixtures (``init_emitter``) is even set with ``autouse=True``, so it will automatically initialize the Emitter and tear it down after each test. This way there is nothing special you need to do in your code when testing it, just use it.
+One of the fixtures (``init_emitter``) is even set with ``autouse=True``, so it will automatically initialise the Emitter and tear it down after each test. This way there is nothing special you need to do in your code when testing it, just use it.
 
 The other fixture (``emitter``) is very useful to test code interaction with Emitter. It provides an internal recording emitter that has several methods which help to test its usage.
 

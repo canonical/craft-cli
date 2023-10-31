@@ -7,9 +7,9 @@ Explanations
 About the appropriate mode to initiate ``emit``
 ===============================================
 
-The first mandatory parameter of the ``emit`` object is ``mode``, which controls the initial verboseness level of the system.
+The first mandatory parameter of the ``emit`` object is ``mode``, which controls the initial verbosity level of the system.
 
-As the user can change the level later using global arguments when executing the application (this is the application default level), it's recommended to use ``EmitterMode.BRIEF``, unless the application needs to honor any external configuration or indication (e.g. a ``DEBUG`` environment variable).
+As the user can change the level later using global arguments when executing the application (this is the application default level), it's recommended to use ``EmitterMode.BRIEF``, unless the application needs to honour any external configuration or indication (e.g. a ``DEBUG`` environment variable).
 
 The values for ``mode`` are the following attributes of the ``EmitterMode`` enumerator:
 
@@ -39,7 +39,7 @@ Unless overridden when ``emit`` is initiated (see :ref:`how to do that <howto_ot
 Global and command specific arguments
 =====================================
 
-One of the functionalities that the Dispatcher provides is global arguments handling: options that will be recognized and used no matter the position in the command line because they are not specific to any command, but global to all commands and the application itself.
+One of the functionalities that the Dispatcher provides is global arguments handling: options that will be recognised and used no matter the position in the command line because they are not specific to any command, but global to all commands and the application itself.
 
 For example, all these application executions are equivalent:
 
@@ -230,7 +230,7 @@ E.g.::
         log_filepath=logpath,
     )
 
-It is only after this point that ``emit`` can be used for printing. Note that the mode is typically initialized to ``EmitterMode.BRIEF``. The user can control the emitter mode through global arguments. The ``Dispatcher``, as mentioned earlier, handles global arguments (including help). However, the ``Dispatcher`` only applies emitter mode changes during ``pre_parse_args()`` when parsing the global arguments (e.g. ``--verbosity=trace``) later on in the code.
+It is only after this point that ``emit`` can be used for printing. Note that the mode is typically initialised to ``EmitterMode.BRIEF``. The user can control the emitter mode through global arguments. The ``Dispatcher``, as mentioned earlier, handles global arguments (including help). However, the ``Dispatcher`` only applies emitter mode changes during ``pre_parse_args()`` when parsing the global arguments (e.g. ``--verbosity=trace``) later on in the code.
 
 E.g.::
 
