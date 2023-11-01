@@ -131,29 +131,7 @@ custom_extensions = [
     "sphinx_copybutton",
     "sphinx-pydantic",
     "sphinx.ext.autodoc",
-    # NOTE: we can't add sphinx_toolbox here because it enables autonamedtuple
-    # and that extension fails to parse future-like annotations, even if the
-    # file has the correct __future__ import.
-    # So instead, we manually enable every other extension that sphinx_toolbox
-    # has.
-    # "sphinx_toolbox",
-    "sphinx_toolbox.assets",
-    "sphinx_toolbox.changeset",
-    "sphinx_toolbox.code",
-    "sphinx_toolbox.collapse",
-    "sphinx_toolbox.confval",
-    "sphinx_toolbox.decorators",
-    "sphinx_toolbox.formatting",
-    "sphinx_toolbox.installation",
-    "sphinx_toolbox.issues",
-    "sphinx_toolbox.latex",
-    "sphinx_toolbox.rest_example",
-    "sphinx_toolbox.shields",
-    "sphinx_toolbox.sidebar_links",
-    "sphinx_toolbox.source",
-    "sphinx_toolbox.wikipedia",
-    "sphinx_toolbox.more_autodoc.autoprotocol",
-    "sphinx_toolbox.more_autodoc.autotypeddict",
+    "sphinx_toolbox",
 ]
 
 # Add MyST extensions
