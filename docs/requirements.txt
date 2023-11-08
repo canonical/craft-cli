@@ -1,0 +1,5 @@
+# craft-cli-specific requirements for the docs
+sphinx-toolbox==3.5.0
+sphinx-lint==0.9.1
+pytest>=7.0.0 # This is just because this is imported by the code
+canonical-sphinx@git+https://github.com/canonical/canonical-sphinx@CRAFT-2671-update-assets
