@@ -17,3 +17,4 @@ sphinx-pydantic==0.1.1
 sphinx-toolbox==3.5.0
 sphinx-lint==0.8.1
 pytest>=7.0.0 # This is just because this is imported by the code
+sphinx-starter-pack@git+https://github.com/tigarmo/sphinx-starter-pack
