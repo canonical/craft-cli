@@ -216,6 +216,11 @@ class Printer:
         elif self.prv_msg.ephemeral:
             # the last one was ephemeral, overwrite it
             maybe_cr = "\r"
+            if self.prv_msg.stream != message.stream:
+                # If the last message's stream is different from this new one,
+                # send the carriage return to the original stream only.
+                print(maybe_cr, flush=True, file=self.prv_msg.stream, end="")
+                maybe_cr = ""
         else:
             # complete the previous line, leaving that message ok
             maybe_cr = ""

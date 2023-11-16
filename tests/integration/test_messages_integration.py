@@ -1307,6 +1307,34 @@ def test_capture_delays(tmp_path, loops, sleep, max_repetitions):
 
 
 @pytest.mark.parametrize("output_is_terminal", [True])
+def test_progress_and_message(capsys, logger):
+    emit = Emitter()
+    emit.init(EmitterMode.BRIEF, "testapp", GREETING)
+    emit.progress("The meaning of life is 42.")
+    emit.progress("Another message.")
+    emit.message("Finished successfully.")
+    emit.ended_ok()
+
+    expected_term = [
+        Line("The meaning of life is 42.", permanent=False),
+        Line("Another message.", permanent=False),
+    ]
+    expected_out = [Line("Finished successfully.", permanent=True)]
+    expected_log = [
+        Line("The meaning of life is 42.", permanent=False),
+        Line("Another message.", permanent=False),
+        Line("Finished successfully.", permanent=False),
+    ]
+    assert_outputs(
+        capsys,
+        emit,
+        expected_err=expected_term,
+        expected_out=expected_out,
+        expected_log=expected_log,
+    )
+
+
+@pytest.mark.parametrize("output_is_terminal", [True])
 def test_streaming_brief(capsys, logger):
     """Test the overall behavior of the "streaming_brief" feature regarding the terminal
     and the generated logs."""
