@@ -34,7 +34,7 @@ from unittest.mock import patch
 
 import pytest
 
-from craft_cli import messages, printer
+from craft_cli import messages, printer, errors
 from craft_cli.errors import CraftError
 from craft_cli.messages import Emitter, EmitterMode
 
@@ -1419,6 +1419,63 @@ def test_streaming_brief_open_stream(capsys, logger):
         Line("Done stage"),
     ]
     assert_outputs(capsys, emit, expected_err=expected_err, expected_log=expected_log)
+
+
+@pytest.mark.parametrize("output_is_terminal", [True])
+def test_streaming_brief_messages(capsys, logger, monkeypatch):
+    """Test that emit.message() clears the "streaming_brief" prefix."""
+    emit = Emitter()
+    emit.init(EmitterMode.BRIEF, "testapp", GREETING, streaming_brief=True)
+
+    emit.progress("Doing process.", permanent=False)
+    emit.message("Process finished successfully.")
+
+    emit.ended_ok()
+
+    expected_err = [
+        Line("Doing process.", permanent=False),
+    ]
+    expected_out = [
+        Line("Process finished successfully.", permanent=True),
+    ]
+
+    expected_log = [
+        Line("Doing process."),
+        Line("Process finished successfully."),
+    ]
+    assert_outputs(
+        capsys,
+        emit,
+        expected_err=expected_err,
+        expected_out=expected_out,
+        expected_log=expected_log,
+    )
+
+
+@pytest.mark.parametrize("output_is_terminal", [True])
+def test_streaming_brief_error(capsys, logger, monkeypatch):
+    """Test that emit.error() clears the "streaming_brief" prefix."""
+    emit = Emitter()
+    emit.init(EmitterMode.BRIEF, "testapp", GREETING, streaming_brief=True)
+
+    emit.progress("Doing process.", permanent=False)
+
+    error = errors.CraftError(message="An error happened!", resolution="Detailed resolution.")
+    emit.error(error)
+
+    expected_err = [
+        Line("Doing process.", permanent=False),
+        Line("An error happened!", permanent=True),
+        Line("Recommended resolution: Detailed resolution.", permanent=True),
+        Line(f"Full execution log: {str(emit._log_filepath)!r}"),
+    ]
+    expected_log = expected_err
+    assert_outputs(
+        capsys,
+        emit,
+        expected_err=expected_err,
+        expected_log=expected_log,
+    )
 
 
 @pytest.fixture

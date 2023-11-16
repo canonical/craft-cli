@@ -523,6 +523,9 @@ class Emitter:
         Normally used as the final message, to show the result of a command.
         """
         stream = None if self._mode == EmitterMode.QUIET else sys.stdout
+        if self._streaming_brief:
+            # Clear the message prefix, as this message stands alone
+            self._printer.set_terminal_prefix("")
         self._printer.show(stream, text)
 
     @_active_guard()
@@ -733,6 +736,9 @@ class Emitter:
     @_active_guard(ignore_when_stopped=True)
     def error(self, error: errors.CraftError) -> None:
         """Handle the system's indicated error and stop machinery."""
+        if self._streaming_brief:
+            # Clear the message prefix, as this error stands alone
+            self._printer.set_terminal_prefix("")
         self._report_error(error)
         self._stop()
 
