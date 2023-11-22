@@ -131,7 +131,7 @@ extensions = [
     "sphinx-pydantic",
     "sphinx.ext.autodoc",
     "sphinx_toolbox",
-    "sphinx_starter_pack",
+    "canonical_sphinx",
 ]
 
 # Add MyST extensions
