@@ -129,7 +129,6 @@ custom_extensions = [
     "sphinx.ext.doctest",
     "sphinx_design",
     "sphinx_copybutton",
-    "sphinx-pydantic",
     "sphinx.ext.autodoc",
     "sphinx_toolbox",
 ]
