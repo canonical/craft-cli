@@ -7,7 +7,6 @@ authors = [
 ]
 dependencies = [
     "platformdirs",
-    "pydantic",
     "pyyaml",
     "pywin32; sys_platform == 'win32'"
 ]
