@@ -364,6 +364,82 @@ def test_writelineterminal_spintext_length_just_exceeded(capsys, monkeypatch, lo
     assert out == "\r0x1x2x3x4x… * 3.15s"
 
 
+@pytest.mark.parametrize("test_text", ["", "Some test text."])
+def test_writelineterminal_ephemeral_spam(capsys, monkeypatch, log_filepath, test_text):
+    """Spam _write_line_terminal with the same message over and over."""
+    monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
+    printer = Printer(log_filepath)
+
+    for _ in range(10):
+        # Recreate the message here so we're checking equality, not just identity.
+        msg = _MessageInfo(sys.stdout, test_text, end_line=False, ephemeral=True)
+        printer._write_line_terminal(msg)
+        printer.prv_msg = msg
+
+    assert printer.unfinished_stream == sys.stdout
+
+    out, err = capsys.readouterr()
+    assert not err
+
+    # output completes the terminal width (leaving space for the cursor), and
+    # without a finishing newline
+    # There will only be one copy of the text.
+    assert out == test_text[:40] + " " * (39 - len(test_text))
+
+
+@pytest.mark.parametrize(("ephemeral", "end_line"), [(False, False), (False, True), (True, True)])
+@pytest.mark.parametrize("text", ["", "Some test text"])
+def test_writelineterminal_rewrites_same_message(
+    capsys, monkeypatch, log_filepath, text, ephemeral, end_line
+):
+    """Spam _write_line_terminal with the same message and ensure it keeps writing."""
+    monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
+    printer = Printer(log_filepath)
+
+    for _ in range(10):
+        message = _MessageInfo(sys.stdout, text, ephemeral=ephemeral, end_line=end_line)
+        printer._write_line_terminal(message)
+        printer.prv_msg = message
+
+    out, err = capsys.readouterr()
+    assert not err
+
+    # output completes the terminal width (leaving space for the cursor), and
+    # without a finishing newline
+    assert out.strip() == "\n".join([text + " " * (39 - len(text))] * 10).strip()
+
+
+@pytest.mark.parametrize("ephemeral", [True, False])
+@pytest.mark.parametrize("text", ["", "Some test text"])
+@pytest.mark.parametrize(
+    "spintext",
+    [
+        "!!!!!!!!!!",
+        "\\|/-",
+        "1234567890",
+    ],
+)
+def test_writelineterminal_rewrites_same_message_with_spintext(
+    capsys, monkeypatch, log_filepath, text, spintext, ephemeral
+):
+    """Spam _write_line_terminal with the same message over and over."""
+    monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
+    printer = Printer(log_filepath)
+
+    for spin in spintext:
+        message = _MessageInfo(sys.stdout, text, ephemeral=ephemeral, end_line=False)
+        printer._write_line_terminal(message, spintext=spin)
+        printer.prv_msg = message
+
+    out, err = capsys.readouterr()
+    assert not err
+
+    # output completes the terminal width (leaving space for the cursor), and
+    # without a finishing newline
+    expected = "\r".join(text + s + " " * (39 - len(text) - len(s)) for s in spintext)
+    assert out.strip() == expected.strip()
+
+
 # -- tests for the writing line (captured version) function
 
 
@@ -1041,6 +1117,46 @@ def test_spinner_working_simple(spinner, monkeypatch):
     # check the initial messages complete the "spinner drawing" also showing elapsed time
     spinned_messages, spinned_texts = list(zip(*to_check))
     assert all(spinned_msg is msg for spinned_msg in spinned_messages)
+    expected_texts = (
+        r" - \(\d\.\ds\)",
+        r" \\ \(\d\.\ds\)",
+        r" | \(\d\.\ds\)",
+        r" / \(\d\.\ds\)",
+        r" - \(\d\.\ds\)",
+    )
+    for expected, real in list(zip(expected_texts, spinned_texts)):
+        assert re.match(expected, real)
+
+    # the last message should clean the spinner
+    assert spinner.printer.spinned[-1] == (msg, " ")
+
+
+def test_spinner_spam(spinner, monkeypatch):
+    """Test that the spinner works properly when spamming the same message.
+
+    The expected behaviour is to ignore the existence of the fresh message and just
+    write when the spinner needs to update.
+    """
+    # set absurdly low times so we can have several spin texts in the test
+    monkeypatch.setattr(printermod, "_SPINNER_THRESHOLD", 0.001)
+    monkeypatch.setattr(printermod, "_SPINNER_DELAY", 0.001)
+
+    # send a message, wait enough until we have enough spinned to test, and turn it off
+    msg = _MessageInfo(sys.stdout, "test msg")
+    for _ in range(100):
+        spinner.supervise(_MessageInfo(sys.stdout, "test msg"))
+    for _ in range(100):
+        if len(spinner.printer.spinned) >= 6:
+            break
+        time.sleep(0.01)
+    else:
+        pytest.fail("Waited too long for the _Spinner to generate messages")
+    spinner.supervise(None)
+    to_check = spinner.printer.spinned[:5]
+
+    # check the initial messages complete the "spinner drawing" also showing elapsed time
+    spinned_messages, spinned_texts = list(zip(*to_check))
+    assert all(spinned_msg == msg for spinned_msg in spinned_messages)
     expected_texts = (
         r" - \(\d\.\ds\)",
         r" \\ \(\d\.\ds\)",
