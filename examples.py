@@ -486,6 +486,33 @@ def _call_lib(logger, index):
     time.sleep(2)
 
 
+def example_30():
+    """Message spamming, noting the different spinner behaviour"""
+    emit.progress(
+        "Message spamming example. The same message will be spammed for 10s, but "
+        "it will appear as one message with a spinner.",
+        permanent=True,
+    )
+    end_time = time.monotonic() + 10
+    while time.monotonic() < end_time:
+        emit.progress("SPAM SPAM SPAM SPAM")
+        time.sleep(0.001)
+    emit.progress(
+        "Now two separate messages will be spammed and no spinner appear.", permanent=True
+    )
+    end_time = time.monotonic() + 10
+    while time.monotonic() < end_time:
+        emit.progress("SPAM SPAM SPAM SPAM")
+        time.sleep(0.01)
+        emit.progress("SPAM SPAM SPAM baked beans")
+        time.sleep(0.01)
+    emit.progress("And back to the first message!", permanent=True)
+    end_time = time.monotonic() + 10
+    while time.monotonic() < end_time:
+        emit.progress("SPAM SPAM SPAM SPAM")
+        time.sleep(0.001)
+
+
 # -- end of test cases
 
 if len(sys.argv) < 2:
