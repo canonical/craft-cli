@@ -187,8 +187,10 @@ autodoc_member_order = "bysource"
 
 # region Setup reference generation
 def run_apidoc(_):
+    from pathlib import Path
     from sphinx.ext.apidoc import main
     import os
+    import shutil
     import sys
 
     sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
@@ -196,6 +198,12 @@ def run_apidoc(_):
     module = os.path.join(cur_dir, "..", "craft_cli")
     exclude_patterns = ["*pytest_plugin*"]
     main(["-e", "--no-toc", "--force", "-o", cur_dir, module, *exclude_patterns])
+
+    # After calling apidoc, replace the one generated for the ``messages``
+    # module with our special one that spells out the items to document.
+    messages = Path(cur_dir) / "autodoc/craft_cli.messages.template"
+    assert messages.is_file()
+    shutil.copy(messages, Path(cur_dir) / "craft_cli.messages.rst")
 
 
 def no_namedtuple_attrib_docstring(app, what, name, obj, options, lines):
