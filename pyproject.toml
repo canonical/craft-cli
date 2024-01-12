@@ -42,6 +42,9 @@ Issues = "https://github.com/canonical/craft-cli/issues"
 emitter = "craft_cli.pytest_plugin"
 
 [project.optional-dependencies]
+completion = [
+    "jinja2",
+]
 dev = [
     "coverage[toml]==7.3.2",
     "pytest==7.4.3",
