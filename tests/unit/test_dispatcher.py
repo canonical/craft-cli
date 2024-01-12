@@ -322,7 +322,7 @@ def test_dispatcher_generic_setup_verbosity_levels_wrong():
         Usage: appname [options] command [args]...
         Try 'appname -h' for help.
 
-        Error: Bad verbosity level; valid values are 'quiet', 'brief', 'verbose', 'debug' and 'trace'.
+        Error: Bad verbosity 'yelling'; valid values are 'quiet', 'brief', 'verbose', 'debug' and 'trace'.
     """
     )
 
