@@ -257,6 +257,24 @@ def test_pipereader_tabs(recording_printer, stream):
     assert msg.text == "::   123  456"  # tabs expanded into 2 spaces
 
 
+@pytest.mark.parametrize(
+    ("invalid_text", "expected"),
+    [(b"\xf0\x28\x8c\xbc", "�(��"), (b"\xf0\x90\x28\xbc", "�(�"), (b"\xf0\x90\x8c\x28", "�(")],
+)
+def test_pipereader_invalid_utf8(recording_printer, invalid_text, expected):
+    """Check that bytes that aren't valid utf-8 text don't crash."""
+    invalid_bytes = b"valid prefix " + invalid_text + b" valid suffix\n"
+
+    flags = {"use_timestamp": False, "ephemeral": False, "end_line": True}
+    prt = _PipeReaderThread(recording_printer, sys.stdout, flags)
+    prt.start()
+    os.write(prt.write_pipe, invalid_bytes)
+    prt.stop()
+
+    (msg,) = recording_printer.written_terminal_lines
+    assert msg.text == f":: valid prefix {expected} valid suffix"
+
+
 def test_pipereader_chunk_assembler(recording_printer, monkeypatch):
     """Converts ok arbitrary chunks to lines."""
     monkeypatch.setattr(messages, "_PIPE_READER_CHUNK_SIZE", 5)
