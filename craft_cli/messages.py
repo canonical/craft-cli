@@ -239,8 +239,9 @@ class _PipeReaderThread(threading.Thread):
             useful_line = data[pointer:newline_position]
             pointer = newline_position + 1
 
-            # write the useful line to intended outputs
-            unicode_line = useful_line.decode("utf8")
+            # write the useful line to intended outputs. Decode with errors="replace"
+            # here because we don't know where this line is coming from.
+            unicode_line = useful_line.decode("utf8", errors="replace")
             # replace tabs with a set number of spaces so that the printer
             # can correctly count the characters.
             unicode_line = unicode_line.replace("\t", "  ")
