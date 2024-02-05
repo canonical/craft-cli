@@ -65,7 +65,7 @@ types = [
 
 [build-system]
 requires = [
-    "setuptools==67.8.0",
+    "setuptools==69.0.3",
     "setuptools_scm[toml]>=7.1"
 ]
 build-backend = "setuptools.build_meta"
