@@ -50,7 +50,7 @@ dev = [
     "pytest-subprocess"
 ]
 lint = [
-    "black==23.12.1",
+    "black==24.1.1",
     "codespell[toml]==2.2.6",
     "ruff==0.1.15",
     "yamllint==1.33.0"
