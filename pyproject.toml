@@ -43,23 +43,23 @@ emitter = "craft_cli.pytest_plugin"
 
 [project.optional-dependencies]
 dev = [
-    "coverage[toml]==7.3.2",
+    "coverage[toml]==7.4.1",
     "hypothesis==6.92.9",
-    "pytest==7.4.3",
+    "pytest==8.0.0",
     "pytest-check==2.2.4",
     "pytest-cov==4.1.0",
     "pytest-mock==3.12.0",
     "pytest-subprocess"
 ]
 lint = [
-    "black==23.11.0",
+    "black==24.1.1",
     "codespell[toml]==2.2.6",
-    "ruff==0.1.7",
+    "ruff==0.1.15",
     "yamllint==1.33.0"
 ]
 types = [
-    "mypy[reports]==1.7.1",
-    "pyright==1.1.337",
+    "mypy[reports]==1.8.0",
+    "pyright==1.1.349",
     "types-Pygments",
     "types-colorama",
     "types-setuptools",
@@ -67,7 +67,7 @@ types = [
 
 [build-system]
 requires = [
-    "setuptools==67.7.2",
+    "setuptools==69.0.3",
     "setuptools_scm[toml]>=7.1"
 ]
 build-backend = "setuptools.build_meta"
