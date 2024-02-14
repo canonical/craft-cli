@@ -124,8 +124,8 @@ exclude_also = [
 pythonVersion = "3.8"
 pythonPlatform = "Linux"
 ignore = [
-    "build/*",
-    "docs/*",
+    "build/**",
+    "docs/**",
     "craft_cli/_version.py",
 ]
 
