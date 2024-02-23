@@ -86,7 +86,7 @@ class Line:
     regex: bool = False  # if "text" is a regular expression instead of an exact string
 
 
-def compare_lines(expected_lines: Collection[Line], raw_stream, std_stream):
+def compare_lines(expected_lines: Collection[Line], raw_stream: str, std_stream):
     """Helper to compare expected lines to what was written to the terminal."""
     width = printer._get_terminal_width()
     terminal = printer._stream_is_terminal(std_stream)
@@ -94,13 +94,16 @@ def compare_lines(expected_lines: Collection[Line], raw_stream, std_stream):
         assert len(raw_stream) > 0
 
     if terminal:
-        # when showing to the terminal, it's completed always to screen width and terminated in
-        # different ways, so we split lines according to that length
-        assert (
-            len(raw_stream) % width == 0
-        ), f"Bad length {len(raw_stream)} ({width=}) {raw_stream=!r}"
-        args = [iter(raw_stream)] * width
-        lines = ["".join(x) for x in zip(*args)]  # pyright: ignore[reportGeneralTypeIssues]
+        if printer._supports_ansi_escape_sequences():
+            lines = raw_stream.replace("\033[K", "").splitlines(keepends=True)
+        else:
+            # If the terminal doesn't support ANSI escape sequences, we fill the screen
+            # width and don't terminate lines, so we split lines according to that length
+            assert (
+                len(raw_stream) % width == 0
+            ), f"Bad length {len(raw_stream)} ({width=}) {raw_stream=!r}"
+            args = [iter(raw_stream)] * width
+            lines = ["".join(x) for x in zip(*args)]  # pyright: ignore[reportGeneralTypeIssues]
     else:
         # when the output is captured, each line is simple and it should end in newline, so use
         # that for splitting (but don't lose the newline)

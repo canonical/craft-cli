@@ -19,6 +19,8 @@ from __future__ import annotations
 
 import itertools
 import math
+import os
+import platform
 import queue
 import shutil
 import threading
@@ -43,6 +45,8 @@ _SPINNER_DELAY = 0.1
 # set to true when running *application* tests so some behaviours change (see
 # craft_cli/pytest_plugin.py )
 TESTMODE = False
+
+ANSI_CLEAR_LINE_TO_END = "\033[K"  # ANSI escape code to clear the rest of the line.
 
 
 @dataclass
@@ -69,6 +73,25 @@ def _stream_is_terminal(stream: TextIO | None) -> bool:
 def _get_terminal_width() -> int:
     """Return the number of columns of the terminal."""
     return shutil.get_terminal_size().columns
+
+
+def _supports_ansi_escape_sequences() -> bool:
+    """Whether the current environment supports ANSI escape sequences."""
+    if platform.system() != "Windows":
+        return True
+    if os.getenv("WT_SESSION"):  # Windows Terminal supports ANSI escape sequences.
+        return True
+    return False
+
+
+def fill_line(text: str) -> str:
+    """Turn the input text into a line that will fill the terminal."""
+    if _supports_ansi_escape_sequences():
+        return text + ANSI_CLEAR_LINE_TO_END
+    width = _get_terminal_width()
+    # Fill the line but leave one character for the cursor.
+    n_spaces = width - len(text) % width - 1
+    return text + " " * n_spaces
 
 
 def _format_term_line(prefix: str, text: str, spintext: str, *, ephemeral: bool) -> str:
@@ -228,8 +251,8 @@ class Printer:
 
     def _write_line_terminal(self, message: _MessageInfo, *, spintext: str = "") -> None:
         """Write a simple line message to the screen."""
-        # prepare the text with (maybe) the timestamp
-        text = self._get_prefixed_message_text(message)
+        # prepare the text with (maybe) the timestamp and remove trailing spaces
+        text = self._get_prefixed_message_text(message).rstrip()
 
         if message.use_timestamp:
             timestamp_str = message.created_at.isoformat(sep=" ", timespec="milliseconds")
@@ -253,6 +276,21 @@ class Printer:
             # complete the previous line, leaving that message ok
             maybe_cr = ""
             print(flush=True, file=self.prv_msg.stream)
+
+        # fill with spaces until the very end, on one hand to clear a possible previous message,
+        # but also to always have the cursor at the very end
+        width = _get_terminal_width()
+        usable = width - len(spintext) - 1  # the 1 is the cursor itself
+        if len(text) > usable:
+            if message.ephemeral:
+                text = text[: usable - 1] + "…"
+            elif spintext:
+                # we need to rewrite the message with the spintext, use only the last line for
+                # multiline messages, and ensure (again) that the last real line fits
+                remaining_for_last_line = len(text) % width
+                text = text[-remaining_for_last_line:]
+                if len(text) > usable:
+                    text = text[: usable - 1] + "…"
 
         # We don't need to rewrite the same ephemeral message repeatedly.
         should_overwrite = spintext or message.end_line or not message.ephemeral
