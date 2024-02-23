@@ -60,7 +60,7 @@ class _MessageInfo:
     bar_total: int | float | None = None
     use_timestamp: bool = False
     end_line: bool = False
-    created_at: datetime = field(default_factory=datetime.now)
+    created_at: datetime = field(default_factory=datetime.now, compare=False)
     terminal_prefix: str = ""
 
 
@@ -92,6 +92,27 @@ def fill_line(text: str) -> str:
     # Fill the line but leave one character for the cursor.
     n_spaces = width - len(text) % width - 1
     return text + " " * n_spaces
+
+
+def _format_term_line(prefix: str, text: str, spintext: str, *, ephemeral: bool) -> str:
+    """Format a line to print to the terminal."""
+    # fill with spaces until the very end, on one hand to clear a possible previous message,
+    # but also to always have the cursor at the very end
+    width = _get_terminal_width()
+    usable = width - len(spintext) - 1  # the 1 is the cursor itself
+    if len(text) > usable:
+        if ephemeral:
+            text = text[: usable - 1] + "…"
+        elif spintext:
+            # we need to rewrite the message with the spintext, use only the last line for
+            # multiline messages, and ensure (again) that the last real line fits
+            remaining_for_last_line = len(text) % width
+            text = text[-remaining_for_last_line:]
+            if len(text) > usable:
+                text = text[: usable - 1] + "…"
+    cleaner = " " * (usable - len(text) % width)
+
+    return prefix + text + spintext + cleaner
 
 
 class _Spinner(threading.Thread):
@@ -128,6 +149,9 @@ class _Spinner(threading.Thread):
         # a lock to wait the spinner to stop spinning
         self.lock = threading.Lock()
 
+        # Keep the message under supervision available for examination.
+        self._under_supervision: _MessageInfo | None = None
+
     def run(self) -> None:
         prv_msg = None
         t_init = time.time()
@@ -159,6 +183,11 @@ class _Spinner(threading.Thread):
 
     def supervise(self, message: _MessageInfo | None) -> None:
         """Supervise a message to spin it if it remains too long."""
+        # Don't bother the spinner if we're repeating the same message
+        if message == self._under_supervision:
+            return
+
+        self._under_supervision = message
         self.queue.put(message)
         # (maybe) wait for the spinner to exit spinning state (which does some cleaning)
         self.lock.acquire()
@@ -263,8 +292,12 @@ class Printer:
                 if len(text) > usable:
                     text = text[: usable - 1] + "…"
 
-        line = maybe_cr + fill_line(text + spintext)
-        print(line, end="", flush=True, file=message.stream)
+        # We don't need to rewrite the same ephemeral message repeatedly.
+        should_overwrite = spintext or message.end_line or not message.ephemeral
+        if should_overwrite or message != self.prv_msg:
+            line = _format_term_line(maybe_cr, text, spintext, ephemeral=message.ephemeral)
+            print(line, end="", flush=True, file=message.stream)
+
         if message.end_line:
             # finish the just shown line, as we need a clean terminal for some external thing
             print(flush=True, file=message.stream)

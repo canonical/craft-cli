@@ -17,7 +17,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
       - name: Configure environment
@@ -48,7 +48,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Set up Python versions on ${{ matrix.platform }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: |
             3.8
@@ -67,13 +67,13 @@ jobs:
       - name: Test with tox
         run: tox run-parallel --parallel all --parallel-no-spinner --skip-pkg-install --result-json results/tox-${{ matrix.platform }}.json -m tests -- --no-header --quiet -rN
       - name: Upload code coverage
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           directory: ./results/
           files: coverage*.xml
       - name: Upload test results
         if: success() || failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: test-results-${{ matrix.platform }}
           path: results/

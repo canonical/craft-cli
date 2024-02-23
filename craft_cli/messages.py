@@ -24,6 +24,7 @@ __all__ = [
 ]
 
 import enum
+import functools
 import logging
 import os
 import pathlib
@@ -238,8 +239,9 @@ class _PipeReaderThread(threading.Thread):
             useful_line = data[pointer:newline_position]
             pointer = newline_position + 1
 
-            # write the useful line to intended outputs
-            unicode_line = useful_line.decode("utf8")
+            # write the useful line to intended outputs. Decode with errors="replace"
+            # here because we don't know where this line is coming from.
+            unicode_line = useful_line.decode("utf8", errors="replace")
             # replace tabs with a set number of spaces so that the printer
             # can correctly count the characters.
             unicode_line = unicode_line.replace("\t", "  ")
@@ -406,6 +408,7 @@ def _active_guard(ignore_when_stopped: bool = False) -> Callable[..., Any]:  # n
     """
 
     def decorator(wrapped_func: FuncT) -> FuncT:
+        @functools.wraps(wrapped_func)
         def func(self: Emitter, *args: Any, **kwargs: Any) -> Any:
             if not self._initiated:
                 raise RuntimeError("Emitter needs to be initiated first")
@@ -433,14 +436,14 @@ class Emitter:
     to show:
 
     - `message`: for the final output of the running command; if there is important information
-    that needs to be shown to the user in the middle of the execution (and not overwritten
-    by other messages) this method can be also used but passing intermediate=True.
+      that needs to be shown to the user in the middle of the execution (and not overwritten
+      by other messages) this method can be also used but passing intermediate=True.
 
     - `progress`: for all the progress messages intended to provide information that the
-    machinery is running and doing what.
+      machinery is running and doing what.
 
     - `trace`: for all the messages that may used by the *developers* to do any debugging on
-    the application behaviour and/or logs forensics.
+      the application behaviour and/or logs forensics.
     """
 
     def __init__(self) -> None:

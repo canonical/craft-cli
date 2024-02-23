@@ -311,7 +311,7 @@ class Dispatcher:
         except KeyError:
             allowed = (repr(of.name) for of in OutputFormat)
             msg = f"Invalid value for --format; allowed are: {', '.join(sorted(allowed))}"
-            raise self._build_usage_exc(msg)  # noqa: TRY200 (Use `raise from`)
+            raise self._build_usage_exc(msg) from None
 
         if len(filtered_params) == 1:
             # at this point the remaining parameter should be a command
@@ -329,7 +329,7 @@ class Dispatcher:
             cmd_class = self.commands[cmdname]
         except KeyError:
             msg = f"command {cmdname!r} not found to provide help for"
-            raise self._build_usage_exc(msg)  # noqa: TRY200 (Use `raise from`)
+            raise self._build_usage_exc(msg) from None
 
         # instantiate the command and fill its arguments
         command = cmd_class(None)
@@ -402,7 +402,7 @@ class Dispatcher:
                         global_args[arg.name] = next(sysargs_it)
                     except StopIteration:
                         msg = f"The {arg.name!r} option expects one argument."
-                        raise self._build_usage_exc(msg)  # noqa: TRY200 (use 'raise from')
+                        raise self._build_usage_exc(msg) from None
             elif sysarg.startswith(tuple(options_with_equal)):
                 option, value = sysarg.split("=", 1)
                 arg = arg_per_option[option]
@@ -439,10 +439,10 @@ class Dispatcher:
             try:
                 verbosity_level = EmitterMode[global_args["verbosity"].upper()]
             except KeyError:
-                raise self._build_usage_exc(  # noqa: TRY200 (use 'raise from')
+                raise self._build_usage_exc(
                     "Bad verbosity level; valid values are "
                     "'quiet', 'brief', 'verbose', 'debug' and 'trace'."
-                )
+                ) from None
             emit.set_mode(verbosity_level)
         emit.trace(f"Raw pre-parsed sysargs: args={global_args} filtered={filtered_sysargs}")
 
@@ -474,7 +474,7 @@ class Dispatcher:
             self._command_class = self.commands[command]
         except KeyError:
             help_text = self._build_no_command_error(command)
-            raise ArgumentParsingError(help_text)  # noqa: TRY200 (use raise from)
+            raise ArgumentParsingError(help_text) from None
 
         emit.trace(f"General parsed sysargs: command={ command!r} args={cmd_args}")
         return global_args

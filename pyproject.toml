@@ -7,7 +7,6 @@ authors = [
 ]
 dependencies = [
     "platformdirs",
-    "pydantic",
     "pyyaml",
     "pywin32; sys_platform == 'win32'"
 ]
@@ -44,21 +43,21 @@ emitter = "craft_cli.pytest_plugin"
 
 [project.optional-dependencies]
 dev = [
-    "coverage[toml]==7.3.2",
-    "pytest==7.4.2",
+    "coverage[toml]==7.4.1",
+    "pytest==8.0.0",
     "pytest-cov==4.1.0",
     "pytest-mock==3.12.0",
     "pytest-subprocess"
 ]
 lint = [
-    "black==23.10.0",
+    "black==24.2.0",
     "codespell[toml]==2.2.6",
-    "ruff==0.1.0",
-    "yamllint==1.32.0"
+    "ruff~=0.2.1",
+    "yamllint==1.34.0"
 ]
 types = [
-    "mypy[reports]==1.6.1",
-    "pyright==1.1.332",
+    "mypy[reports]==1.8.0",
+    "pyright==1.1.350",
     "types-Pygments",
     "types-colorama",
     "types-setuptools",
@@ -66,7 +65,7 @@ types = [
 
 [build-system]
 requires = [
-    "setuptools==67.7.2",
+    "setuptools==69.0.3",
     "setuptools_scm[toml]>=7.1"
 ]
 build-backend = "setuptools.build_meta"
@@ -125,8 +124,8 @@ exclude_also = [
 pythonVersion = "3.8"
 pythonPlatform = "Linux"
 ignore = [
-    "build/*",
-    "docs/*",
+    "build/**",
+    "docs/**",
     "craft_cli/_version.py",
 ]
 
@@ -211,6 +210,7 @@ extend-select = [
     "ANN0",  # Type annotations for arguments other than `self` and `cls`
     "ANN2",  # Return type annotations
     "B026",  # Keyword arguments must come after starred arguments
+    "B904",  # re-raising an exception should include a `from`.
     # flake8-bandit: security testing. https://github.com/charliermarsh/ruff#flake8-bandit-s
     # https://bandit.readthedocs.io/en/latest/plugins/index.html#complete-test-plugin-listing
     "S101", "S102",  # assert or exec
