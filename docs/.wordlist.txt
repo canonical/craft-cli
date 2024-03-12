@@ -33,6 +33,7 @@ RTD
 subdirectories
 subtree
 subfolders
+utils
 UI
 VM
 YAML
