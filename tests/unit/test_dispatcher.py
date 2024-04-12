@@ -30,6 +30,118 @@ from craft_cli.dispatcher import (
 from craft_cli.errors import ArgumentParsingError
 from tests.factory import create_command
 
+# --- Tests for global arguments
+
+
+@pytest.mark.parametrize(
+    ("params", "expected"),
+    [
+        pytest.param(
+            {"type": "flag"},
+            GlobalArgument(
+                name="my-arg",
+                short_option=None,
+                long_option="--long-option",
+                help_message="A global argument for testing",
+                type="flag",
+            ),
+            id="basic-flag",
+        ),
+        pytest.param(
+            {"type": "option"},
+            GlobalArgument(
+                name="my-arg",
+                short_option=None,
+                long_option="--long-option",
+                help_message="A global argument for testing",
+                type="option",
+            ),
+            id="basic-option",
+        ),
+        pytest.param(
+            {"type": "option", "choices": ["a", "b", "c"]},
+            GlobalArgument(
+                name="my-arg",
+                short_option=None,
+                long_option="--long-option",
+                help_message="A global argument for testing",
+                type="option",
+                choices=["a", "b", "c"],
+            ),
+            id="choices",
+        ),
+        pytest.param(
+            {"type": "option", "choices": "ABC", "case_sensitive": False},
+            GlobalArgument(
+                name="my-arg",
+                short_option=None,
+                long_option="--long-option",
+                help_message="A global argument for testing",
+                type="option",
+                choices=["a", "b", "c"],
+                case_sensitive=False,
+            ),
+            id="case-insensitive",
+        ),
+        pytest.param(
+            {"type": "option", "validator": int},
+            GlobalArgument(
+                name="my-arg",
+                short_option=None,
+                long_option="--long-option",
+                help_message="A global argument for testing",
+                type="option",
+                validator=int,
+            ),
+            id="int-validator",
+        ),
+        pytest.param(
+            {"type": "option", "choices": "123", "validator": int},
+            GlobalArgument(
+                name="my-arg",
+                short_option=None,
+                long_option="--long-option",
+                help_message="A global argument for testing",
+                type="option",
+                choices="123",
+                validator=int,
+            ),
+            id="limited-ints",
+        ),
+    ],
+)
+def test_global_argument_init_success(params, expected):
+    my_params = {
+        "name": "my-arg",
+        "short_option": None,
+        "long_option": "--long-option",
+        "help_message": "A global argument for testing",
+    }
+    my_params.update(params)
+    assert GlobalArgument(**my_params) == expected
+
+
+@pytest.mark.parametrize(
+    ("params", "match"),
+    [
+        (
+            {"type": "flag", "choices": "something"},
+            "A flag argument cannot have choices or a validator.",
+        )
+    ],
+)
+def test_global_argument_init_error(params, match):
+    my_params = {
+        "name": "my-arg",
+        "short_option": None,
+        "long_option": "--long-option",
+        "help_message": "A global argument for testing",
+    }
+    my_params.update(params)
+    with pytest.raises(TypeError, match=match):
+        GlobalArgument(**my_params)
+
+
 # --- Tests for the Dispatcher
 
 
@@ -322,7 +434,7 @@ def test_dispatcher_generic_setup_verbosity_levels_wrong():
         Usage: appname [options] command [args]...
         Try 'appname -h' for help.
 
-        Error: Bad verbosity level; valid values are 'quiet', 'brief', 'verbose', 'debug' and 'trace'.
+        Error: Bad verbosity 'yelling'; valid values are 'quiet', 'brief', 'verbose', 'debug' and 'trace'.
     """
     )
 
