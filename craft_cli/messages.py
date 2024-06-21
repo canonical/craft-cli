@@ -456,6 +456,7 @@ class Emitter:
         self._log_filepath: pathlib.Path = None  # type: ignore[assignment]
         self._log_handler: _Handler = None  # type: ignore[assignment]
         self._streaming_brief = False
+        self._docs_base_url: str | None = None
 
     def init(  # noqa: PLR0913 (too many arguments)
         self,
@@ -465,11 +466,14 @@ class Emitter:
         log_filepath: pathlib.Path | None = None,
         *,
         streaming_brief: bool = False,
+        docs_base_url: str | None = None,
     ) -> None:
         """Initialize the emitter; this must be called once and before emitting any messages.
 
         :param streaming_brief: Whether informational messages should be streamed with
             progress messages when using BRIEF mode (see example 29).
+        :param docs_base_url: The base address of the documentation, for error reporting
+            purposes.
         """
         if self._initiated:
             if TESTMODE:
@@ -479,6 +483,10 @@ class Emitter:
 
         self._greeting = greeting
         self._streaming_brief = streaming_brief
+
+        self._docs_base_url = docs_base_url
+        if docs_base_url and docs_base_url.endswith("/"):
+            self._docs_base_url = docs_base_url[:-1]
 
         # create a log file, bootstrap the printer, and before anything else send the greeting
         # to the file
@@ -727,8 +735,15 @@ class Emitter:
         if error.resolution:
             text = f"Recommended resolution: {error.resolution}"
             self._printer.show(sys.stderr, text, use_timestamp=use_timestamp, end_line=True)
+
+        doc_url = None
+        if self._docs_base_url and error.doc_slug:
+            doc_url = self._docs_base_url + error.doc_slug
         if error.docs_url:
-            text = f"For more information, check out: {error.docs_url}"
+            doc_url = error.docs_url
+
+        if doc_url:
+            text = f"For more information, check out: {doc_url}"
             self._printer.show(sys.stderr, text, use_timestamp=use_timestamp, end_line=True)
 
         # expose the logfile path only if indicated
