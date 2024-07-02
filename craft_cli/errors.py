@@ -42,6 +42,10 @@ class CraftError(Exception):
     docs_url: Optional[str]
     """An URL to point the user to documentation (to be shown together with ``message``)."""
 
+    doc_slug: Optional[str]
+    """The slug to the user documentation. Needs a base url to form a full address.
+      Note that ``docs_url`` has preference if it is set."""
+
     logpath_report: bool
     """Whether the location of the log filepath should be presented in the screen as the
      final message."""
@@ -62,6 +66,7 @@ class CraftError(Exception):
         logpath_report: bool = True,
         reportable: bool = True,
         retcode: int = 1,
+        doc_slug: Optional[str] = None,
     ) -> None:
         super().__init__(message)
         self.details = details
@@ -70,6 +75,9 @@ class CraftError(Exception):
         self.logpath_report = logpath_report
         self.reportable = reportable
         self.retcode = retcode
+        self.doc_slug = doc_slug
+        if doc_slug and not doc_slug.startswith("/"):
+            self.doc_slug = "/" + doc_slug
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, CraftError):
@@ -82,6 +90,7 @@ class CraftError(Exception):
                     self.logpath_report == other.logpath_report,
                     self.reportable == other.reportable,
                     self.retcode == other.retcode,
+                    self.doc_slug == other.doc_slug,
                 ]
             )
         return NotImplemented

@@ -9,6 +9,7 @@ Welcome to Craft CLI's documentation!
    howtos
    reference
    explanations
+   changelog
 
 .. grid:: 1 1 2 2
 

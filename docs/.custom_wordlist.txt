@@ -2,8 +2,10 @@ appname
 args
 ArgumentParser
 backend
+Changelog
 cli
 CLI's
+CraftError
 GlobalArgument
 helptexts
 logfile
@@ -18,4 +20,5 @@ subprocesses
 sysargs
 TOs
 tracebacks
+urls
 UX
