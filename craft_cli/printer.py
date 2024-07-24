@@ -75,13 +75,12 @@ def _get_terminal_width() -> int:
     return shutil.get_terminal_size().columns
 
 
+@lru_cache
 def _supports_ansi_escape_sequences() -> bool:
     """Whether the current environment supports ANSI escape sequences."""
     if platform.system() != "Windows":
         return True
-    if os.getenv("WT_SESSION"):  # Windows Terminal supports ANSI escape sequences.
-        return True
-    return False
+    return "WT_SESSION" in os.environ  # Windows Terminal supports ANSI escape sequences.
 
 
 def fill_line(text: str) -> str:
@@ -110,9 +109,8 @@ def _format_term_line(prefix: str, text: str, spintext: str, *, ephemeral: bool)
             text = text[-remaining_for_last_line:]
             if len(text) > usable:
                 text = text[: usable - 1] + "…"
-    cleaner = " " * (usable - len(text) % width)
 
-    return prefix + text + spintext + cleaner
+    return prefix + fill_line(text + spintext)
 
 
 class _Spinner(threading.Thread):
@@ -249,6 +247,20 @@ class Printer:
 
         return text
 
+    def _get_line_end(self, spintext: str) -> str:
+        """Get the end of line to use when writing a line to the terminal."""
+        if spintext:
+            # forced to overwrite the previous message to present the spinner
+            return "\r"
+        if self.prv_msg is None or self.prv_msg.end_line:
+            # first message, or previous message completed the line: start clean
+            return ""
+        if self.prv_msg.ephemeral:
+            # the last one was ephemeral, overwrite it
+            return "\r"
+        # Previous line was ended; complete it.
+        return "\n"
+
     def _write_line_terminal(self, message: _MessageInfo, *, spintext: str = "") -> None:
         """Write a simple line message to the screen."""
         # prepare the text with (maybe) the timestamp and remove trailing spaces
@@ -258,23 +270,14 @@ class Printer:
             timestamp_str = message.created_at.isoformat(sep=" ", timespec="milliseconds")
             text = f"{timestamp_str} {text}"
 
-        if spintext:
-            # forced to overwrite the previous message to present the spinner
-            maybe_cr = "\r"
-        elif self.prv_msg is None or self.prv_msg.end_line:
-            # first message, or previous message completed the line: start clean
-            maybe_cr = ""
-        elif self.prv_msg.ephemeral:
-            # the last one was ephemeral, overwrite it
-            maybe_cr = "\r"
-            if self.prv_msg.stream != message.stream:
-                # If the last message's stream is different from this new one,
-                # send the carriage return to the original stream only.
-                print(maybe_cr, flush=True, file=self.prv_msg.stream, end="")
-                maybe_cr = ""
-        else:
-            # complete the previous line, leaving that message ok
-            maybe_cr = ""
+        previous_line_end = self._get_line_end(spintext)
+        if self.prv_msg and self.prv_msg.ephemeral and self.prv_msg.stream != message.stream:
+            # If the last message's stream is different from this new one,
+            # send a carriage return to the original stream only.
+            print("\r", flush=True, file=self.prv_msg.stream, end="")
+            previous_line_end = ""
+        if self.prv_msg and previous_line_end == "\n":
+            previous_line_end = ""
             print(flush=True, file=self.prv_msg.stream)
 
         # fill with spaces until the very end, on one hand to clear a possible previous message,
@@ -295,7 +298,9 @@ class Printer:
         # We don't need to rewrite the same ephemeral message repeatedly.
         should_overwrite = spintext or message.end_line or not message.ephemeral
         if should_overwrite or message != self.prv_msg:
-            line = _format_term_line(maybe_cr, text, spintext, ephemeral=message.ephemeral)
+            line = _format_term_line(
+                previous_line_end, text, spintext, ephemeral=message.ephemeral
+            )
             print(line, end="", flush=True, file=message.stream)
 
         if message.end_line:

@@ -130,19 +130,25 @@ def test_streamisterminal_tty_yes_unusable(monkeypatch):
 
 def test_supports_ansi_escape_sequences_linux(monkeypatch):
     monkeypatch.setattr("platform.system", lambda: "Linux")
+    printermod._supports_ansi_escape_sequences.cache_clear()
     assert printermod._supports_ansi_escape_sequences()
+    printermod._supports_ansi_escape_sequences.cache_clear()
 
 
 def test_supports_ansi_escape_sequences_windows_terminal(monkeypatch):
     monkeypatch.setattr("platform.system", lambda: "Windows")
     monkeypatch.setenv("WT_SESSION", "yes")
+    printermod._supports_ansi_escape_sequences.cache_clear()
     assert printermod._supports_ansi_escape_sequences()
+    printermod._supports_ansi_escape_sequences.cache_clear()
 
 
 def test_supports_ansi_escape_sequences_windows_con(monkeypatch):
     monkeypatch.setattr("platform.system", lambda: "Windows")
     monkeypatch.delenv("WT_SESSION", raising=False)
+    printermod._supports_ansi_escape_sequences.cache_clear()
     assert not printermod._supports_ansi_escape_sequences()
+    printermod._supports_ansi_escape_sequences.cache_clear()
 
 
 @pytest.mark.parametrize("text", ["", "something"])
@@ -163,6 +169,7 @@ def test_fill_line_spaces(monkeypatch, text, expected):
 # -- tests for the writing line (terminal version) function
 
 
+@pytest.mark.usefixtures("ansi_escape_support")
 def test_writelineterminal_simple_complete(capsys, monkeypatch, log_filepath):
     """Complete verification of _write_line_terminal for a simple case."""
     monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
@@ -364,6 +371,8 @@ def test_writelineterminal_having_previous_message_ephemeral(capsys, monkeypatch
 def test_writelineterminal_spintext_simple(capsys, monkeypatch, log_filepath, prv_msg):
     """A message with spintext."""
     monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
+    if prv_msg:  # sys.stdout gets changed by capsys.
+        prv_msg.stream = sys.stdout
     printer = Printer(log_filepath)
     printer.prv_msg = prv_msg  # will overwrite previous message not matter what
 
@@ -426,7 +435,7 @@ def test_writelineterminal_ephemeral_spam(capsys, monkeypatch, log_filepath, tes
     # output completes the terminal width (leaving space for the cursor), and
     # without a finishing newline
     # There will only be one copy of the text.
-    assert out == test_text[:40] + " " * (39 - len(test_text))
+    assert out == printermod.fill_line(test_text)
 
 
 @pytest.mark.parametrize(("ephemeral", "end_line"), [(False, False), (False, True), (True, True)])
@@ -448,7 +457,7 @@ def test_writelineterminal_rewrites_same_message(
 
     # output completes the terminal width (leaving space for the cursor), and
     # without a finishing newline
-    assert out.strip() == "\n".join([text + " " * (39 - len(text))] * 10).strip()
+    assert out.strip() == "\n".join([printermod.fill_line(text)] * 10).strip()
 
 
 @pytest.mark.parametrize("ephemeral", [True, False])
@@ -478,7 +487,7 @@ def test_writelineterminal_rewrites_same_message_with_spintext(
 
     # output completes the terminal width (leaving space for the cursor), and
     # without a finishing newline
-    expected = "\r".join(text + s + " " * (39 - len(text) - len(s)) for s in spintext)
+    expected = "\r".join(printermod.fill_line(text + s) for s in spintext)
     assert out.strip() == expected.strip()
 
 
