@@ -304,7 +304,7 @@ class _PipeReaderThread(threading.Thread):
 class _StreamContextManager:
     """A context manager that provides a pipe for subprocess to write its output."""
 
-    def __init__(  # noqa: PLR0913 (too many arguments)
+    def __init__(
         self,
         printer: Printer,
         text: str | None,
