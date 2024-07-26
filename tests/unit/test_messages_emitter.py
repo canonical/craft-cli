@@ -23,7 +23,7 @@ from unittest.mock import call, patch
 import pytest
 
 from craft_cli import messages
-from craft_cli.errors import CraftError
+from craft_cli.errors import CraftError, CraftCommandError
 from craft_cli.messages import Emitter, EmitterMode, _Handler
 
 FAKE_LOG_NAME = "fakelog.log"
@@ -1106,5 +1106,37 @@ def test_reporterror_both_url_and_slug(get_initiated_emitter):
     assert emitter.printer_calls == [
         call().show(sys.stderr, "test message", use_timestamp=False, end_line=True),
         call().show(sys.stderr, full_docs_message, use_timestamp=False, end_line=True),
+        call().stop(),
+    ]
+
+
+def test_reporterror_command_error(get_initiated_emitter):
+    stderr = b":: an error occurred\n:: on this line ^^\n"
+    error = CraftCommandError("test message", stderr=stderr, logpath_report=False)
+
+    emitter = get_initiated_emitter(EmitterMode.BRIEF)
+    emitter.error(error)
+
+    expected = "Captured error:\n:: an error occurred\n:: on this line ^^\n"
+
+    assert emitter.printer_calls == [
+        call().show(sys.stderr, "test message", use_timestamp=False, end_line=True),
+        call().show(sys.stderr, expected, use_timestamp=False, end_line=True),
+        call().stop(),
+    ]
+
+
+@pytest.mark.parametrize("stderr", [None, "", b""])
+def test_reporterror_command_error_no_stderr(get_initiated_emitter, stderr):
+    error = CraftCommandError("test message", stderr=stderr, logpath_report=False)
+
+    emitter = get_initiated_emitter(EmitterMode.BRIEF)
+    emitter.error(error)
+
+    expected = "Captured error:\n:: an error occurred\n:: on this line ^^\n"
+
+    # No "Captured error (...)" output
+    assert emitter.printer_calls == [
+        call().show(sys.stderr, "test message", use_timestamp=False, end_line=True),
         call().stop(),
     ]
