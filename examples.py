@@ -513,6 +513,34 @@ def example_30():
         time.sleep(0.001)
 
 
+def example_31():
+    """Longer progress messages do not stray."""
+    emit.progress("Setting up computer for build...")
+    time.sleep(6)
+    emit.progress("Building computer...")
+    time.sleep(6)
+    emit.message("Done")
+
+def example_32():
+    """Multiline error message."""
+    emit.progress("Setting up computer for build...")
+    time.sleep(1)
+    emit.progress("Building computer...")
+    time.sleep(6)
+    raise CraftError("Setup failed\nfoo")
+
+
+def example_33():
+    """Stream messages don't clobber."""
+    emit.progress("Running multiple commands...")
+    emit.progress("Running multiple commands...")
+    with emit.open_stream() as stream:
+        subprocess.run(["ls", "-l"], stdout=stream, stderr=stream)
+    time.sleep(1)
+    emit.progress("Almost...")
+    time.sleep(1)
+    emit.message("Great!")
+
 # -- end of test cases
 
 if len(sys.argv) < 2:

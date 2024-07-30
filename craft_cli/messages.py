@@ -29,6 +29,7 @@ import logging
 import os
 import pathlib
 import select
+import shutil
 import sys
 import threading
 import traceback
@@ -720,6 +721,10 @@ class Emitter:
             full_stream = sys.stderr
 
         # the initial message
+        self._printer.spinner.stop()
+        cleaner = " " * (shutil.get_terminal_size().columns - 1)
+        line = "\r" + cleaner + "\r"
+        print(line, end="", flush=True, file=sys.stderr)
         self._printer.show(sys.stderr, str(error), use_timestamp=use_timestamp, end_line=True)
 
         if isinstance(error, errors.CraftCommandError):
