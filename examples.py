@@ -513,6 +513,17 @@ def example_30():
         time.sleep(0.001)
 
 
+def example_31():
+    """Git clone subprocess output passing"""
+    with emit.open_stream("Cloning:") as stream:
+        subprocess.run(
+            ["git", "clone", "https://github.com/astral-sh/ruff/"],
+            stdout=stream,
+            stderr=stream,
+            check=True,
+        )
+
+
 # -- end of test cases
 
 if len(sys.argv) < 2:
