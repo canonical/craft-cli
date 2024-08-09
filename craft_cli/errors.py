@@ -20,7 +20,7 @@ __all__ = [
     "CraftError",
 ]
 
-from typing import Optional
+from typing import Any, Optional, Union, cast
 
 
 class CraftError(Exception):
@@ -93,6 +93,37 @@ class CraftError(Exception):
                     self.doc_slug == other.doc_slug,
                 ]
             )
+        return NotImplemented
+
+
+class CraftCommandError(CraftError):
+    """A CraftError with precise error output from a command.
+
+    This exception class augments CraftError with the addition of a ``stderr``
+    parameter. This parameter is meant to hold the standard error contents of
+    the failed command - as such, it sits between the typically brief "message"
+    and the "details" parameters from the point of view of verbosity.
+
+    It's meant to be used in cases where the executed command's standard error
+    is helpful enough to the user to be worth the extra text output.
+    """
+
+    def __init__(
+        self, message: str, *, stderr: Optional[Union[str, bytes]], **kwargs: Any
+    ) -> None:
+        super().__init__(message, **kwargs)
+        self._stderr = stderr
+
+    @property
+    def stderr(self) -> Optional[str]:
+        if isinstance(self._stderr, bytes):
+            return self._stderr.decode("utf8", errors="replace")
+        # pyright needs the cast here
+        return cast(Optional[str], self._stderr)  # type: ignore[redundant-cast]
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, CraftCommandError):
+            return self._stderr == other._stderr and super().__eq__(other)
         return NotImplemented
 
 
