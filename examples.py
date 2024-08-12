@@ -517,7 +517,7 @@ def example_31():
     """Git clone subprocess output passing"""
     with emit.open_stream("Cloning:") as stream:
         subprocess.run(
-            ["git", "clone", "https://github.com/astral-sh/ruff/"],
+            ["git", "clone", "--progress", "https://github.com/astral-sh/ruff/"],
             stdout=stream,
             stderr=stream,
             check=True,
