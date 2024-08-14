@@ -1,6 +1,6 @@
 {
   // Configuration file for RenovateBot: https://docs.renovatebot.com/configuration-options
-  extends: ["config:recommended"],
+  extends: ["config:recommended", ":semanticCommitTypeAll(build)"],
   labels: ["dependencies"],  // For convenient searching in GitHub
   baseBranches: ["$default", "/^hotfix\\/.*/"],
   pip_requirements: {
@@ -26,7 +26,7 @@
       prPriority: 10,
       minimumReleaseAge: "0 seconds",
       schedule: ["at any time"],
-      matchBaseBranches: ["/^hotfix/.*/"],  // All hotfix branches
+      matchBaseBranches: ["/^hotfix\\/.*/"],  // All hotfix branches
     },
     {
       // Automerge patches, pin changes and digest changes.
