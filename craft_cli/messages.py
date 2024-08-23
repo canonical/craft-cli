@@ -45,14 +45,13 @@ try:
 except ImportError:
     _WINDOWS_MODE = False
 
+from craft_cli import errors
 from craft_cli.printer import Printer
 
 if TYPE_CHECKING:
     from types import TracebackType
 
     from typing_extensions import Self
-
-    from craft_cli import errors
 
 
 EmitterMode = enum.Enum("EmitterMode", "QUIET BRIEF VERBOSE DEBUG TRACE")
@@ -305,7 +304,7 @@ class _PipeReaderThread(threading.Thread):
 class _StreamContextManager:
     """A context manager that provides a pipe for subprocess to write its output."""
 
-    def __init__(  # noqa: PLR0913 (too many arguments)
+    def __init__(
         self,
         printer: Printer,
         text: str | None,
@@ -722,6 +721,12 @@ class Emitter:
 
         # the initial message
         self._printer.show(sys.stderr, str(error), use_timestamp=use_timestamp, end_line=True)
+
+        if isinstance(error, errors.CraftCommandError):
+            stderr = error.stderr
+            if stderr:
+                text = f"Captured error:\n{stderr}"
+                self._printer.show(sys.stderr, text, use_timestamp=use_timestamp, end_line=True)
 
         # detailed information and/or original exception
         if error.details:

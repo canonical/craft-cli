@@ -211,7 +211,7 @@ class Dispatcher:
     :param default_command: the command to run if none was specified in the command line
     """
 
-    def __init__(  # noqa: PLR0913 (too many arguments)
+    def __init__(
         self,
         appname: str,
         commands_groups: list[CommandGroup],

@@ -18,7 +18,7 @@
 
 import pytest
 
-from craft_cli.errors import CraftError
+from craft_cli.errors import CraftError, CraftCommandError
 
 
 def test_crafterror_is_comparable():
@@ -78,3 +78,30 @@ def test_compare_crafterror_with_identical_attribute_values(argument_name):
     setattr(error2, argument_name, "foo")
 
     assert error1 == error2
+
+
+@pytest.mark.parametrize(
+    ("stderr", "expected"), [(None, None), ("text", "text"), (b"text", "text")]
+)
+def test_command_error(stderr, expected):
+    err = CraftCommandError("message", stderr=stderr)
+    assert err.stderr == expected
+
+
+@pytest.mark.parametrize(
+    ("stderr1", "stderr2", "expected"),
+    [
+        (None, None, True),
+        ("text", "text", True),
+        (b"text", b"text", True),
+        (None, "text", False),
+        (None, b"text", False),
+        (b"text", "text", False),
+    ],
+)
+def test_compare_command_error(stderr1, stderr2, expected):
+    err1 = CraftCommandError("message", stderr=stderr1)
+    err2 = CraftCommandError("message", stderr=stderr2)
+
+    eq = err1 == err2
+    assert eq == expected
