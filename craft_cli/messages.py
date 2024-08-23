@@ -45,14 +45,13 @@ try:
 except ImportError:
     _WINDOWS_MODE = False
 
+from craft_cli import errors
 from craft_cli.printer import Printer
 
 if TYPE_CHECKING:
     from types import TracebackType
 
     from typing_extensions import Self
-
-    from craft_cli import errors
 
 
 EmitterMode = enum.Enum("EmitterMode", "QUIET BRIEF VERBOSE DEBUG TRACE")
@@ -305,7 +304,7 @@ class _PipeReaderThread(threading.Thread):
 class _StreamContextManager:
     """A context manager that provides a pipe for subprocess to write its output."""
 
-    def __init__(  # noqa: PLR0913 (too many arguments)
+    def __init__(
         self,
         printer: Printer,
         text: str | None,
@@ -456,6 +455,7 @@ class Emitter:
         self._log_filepath: pathlib.Path = None  # type: ignore[assignment]
         self._log_handler: _Handler = None  # type: ignore[assignment]
         self._streaming_brief = False
+        self._docs_base_url: str | None = None
 
     def init(  # noqa: PLR0913 (too many arguments)
         self,
@@ -465,11 +465,14 @@ class Emitter:
         log_filepath: pathlib.Path | None = None,
         *,
         streaming_brief: bool = False,
+        docs_base_url: str | None = None,
     ) -> None:
         """Initialize the emitter; this must be called once and before emitting any messages.
 
         :param streaming_brief: Whether informational messages should be streamed with
             progress messages when using BRIEF mode (see example 29).
+        :param docs_base_url: The base address of the documentation, for error reporting
+            purposes.
         """
         if self._initiated:
             if TESTMODE:
@@ -479,6 +482,10 @@ class Emitter:
 
         self._greeting = greeting
         self._streaming_brief = streaming_brief
+
+        self._docs_base_url = docs_base_url
+        if docs_base_url and docs_base_url.endswith("/"):
+            self._docs_base_url = docs_base_url[:-1]
 
         # create a log file, bootstrap the printer, and before anything else send the greeting
         # to the file
@@ -715,6 +722,12 @@ class Emitter:
         # the initial message
         self._printer.show(sys.stderr, str(error), use_timestamp=use_timestamp, end_line=True)
 
+        if isinstance(error, errors.CraftCommandError):
+            stderr = error.stderr
+            if stderr:
+                text = f"Captured error:\n{stderr}"
+                self._printer.show(sys.stderr, text, use_timestamp=use_timestamp, end_line=True)
+
         # detailed information and/or original exception
         if error.details:
             text = f"Detailed information: {error.details}"
@@ -727,8 +740,15 @@ class Emitter:
         if error.resolution:
             text = f"Recommended resolution: {error.resolution}"
             self._printer.show(sys.stderr, text, use_timestamp=use_timestamp, end_line=True)
+
+        doc_url = None
+        if self._docs_base_url and error.doc_slug:
+            doc_url = self._docs_base_url + error.doc_slug
         if error.docs_url:
-            text = f"For more information, check out: {error.docs_url}"
+            doc_url = error.docs_url
+
+        if doc_url:
+            text = f"For more information, check out: {doc_url}"
             self._printer.show(sys.stderr, text, use_timestamp=use_timestamp, end_line=True)
 
         # expose the logfile path only if indicated

@@ -23,7 +23,7 @@ from unittest.mock import call, patch
 import pytest
 
 from craft_cli import messages
-from craft_cli.errors import CraftError
+from craft_cli.errors import CraftError, CraftCommandError
 from craft_cli.messages import Emitter, EmitterMode, _Handler
 
 FAKE_LOG_NAME = "fakelog.log"
@@ -66,9 +66,9 @@ def get_initiated_emitter(tmp_path, monkeypatch):
     monkeypatch.setattr(messages, "_get_log_filepath", lambda appname: fake_logpath)
     with patch("craft_cli.messages.Printer", autospec=True) as mock_printer:
 
-        def func(mode, greeting="default greeting"):
+        def func(mode, *, greeting="default greeting", **kwargs):
             emitter = RecordingEmitter()
-            emitter.init(mode, "testappname", greeting)
+            emitter.init(mode, "testappname", greeting, **kwargs)
             emitter.printer_calls = mock_printer.mock_calls
             emitter.printer_calls.clear()
             return emitter
@@ -1062,5 +1062,81 @@ def test_reporterror_no_logpath(get_initiated_emitter):
 
     assert emitter.printer_calls == [
         call().show(sys.stderr, "test message", use_timestamp=True, end_line=True),
+        call().stop(),
+    ]
+
+
+@pytest.mark.parametrize(
+    ("docs_base_url", "doc_slug"),
+    [
+        ("https://documentation.ubuntu.com/testcraft", "reference/error.html"),
+        ("https://documentation.ubuntu.com/testcraft/", "reference/error.html"),
+        ("https://documentation.ubuntu.com/testcraft", "/reference/error.html"),
+        ("https://documentation.ubuntu.com/testcraft/", "/reference/error.html"),
+    ],
+)
+def test_reporterror_doc_slug(get_initiated_emitter, docs_base_url, doc_slug):
+    emitter = get_initiated_emitter(EmitterMode.BRIEF, docs_base_url=docs_base_url)
+    error = CraftError("test message", logpath_report=False, doc_slug=doc_slug)
+    emitter.error(error)
+
+    full_docs_message = (
+        "For more information, check out: "
+        "https://documentation.ubuntu.com/testcraft/reference/error.html"
+    )
+    assert emitter.printer_calls == [
+        call().show(sys.stderr, "test message", use_timestamp=False, end_line=True),
+        call().show(sys.stderr, full_docs_message, use_timestamp=False, end_line=True),
+        call().stop(),
+    ]
+
+
+def test_reporterror_both_url_and_slug(get_initiated_emitter):
+    docs_base_url = "https://base-url.ubuntu.com/testcraft"
+    doc_slug = "/slug"
+    full_url = "https://full-url.ubuntu.com/testcraft/full"
+    emitter = get_initiated_emitter(EmitterMode.BRIEF, docs_base_url=docs_base_url)
+
+    # An error with both docs_url and doc_slug
+    error = CraftError("test message", logpath_report=False, docs_url=full_url, doc_slug=doc_slug)
+    emitter.error(error)
+
+    full_docs_message = f"For more information, check out: {full_url}"
+
+    assert emitter.printer_calls == [
+        call().show(sys.stderr, "test message", use_timestamp=False, end_line=True),
+        call().show(sys.stderr, full_docs_message, use_timestamp=False, end_line=True),
+        call().stop(),
+    ]
+
+
+def test_reporterror_command_error(get_initiated_emitter):
+    stderr = b":: an error occurred\n:: on this line ^^\n"
+    error = CraftCommandError("test message", stderr=stderr, logpath_report=False)
+
+    emitter = get_initiated_emitter(EmitterMode.BRIEF)
+    emitter.error(error)
+
+    expected = "Captured error:\n:: an error occurred\n:: on this line ^^\n"
+
+    assert emitter.printer_calls == [
+        call().show(sys.stderr, "test message", use_timestamp=False, end_line=True),
+        call().show(sys.stderr, expected, use_timestamp=False, end_line=True),
+        call().stop(),
+    ]
+
+
+@pytest.mark.parametrize("stderr", [None, "", b""])
+def test_reporterror_command_error_no_stderr(get_initiated_emitter, stderr):
+    error = CraftCommandError("test message", stderr=stderr, logpath_report=False)
+
+    emitter = get_initiated_emitter(EmitterMode.BRIEF)
+    emitter.error(error)
+
+    expected = "Captured error:\n:: an error occurred\n:: on this line ^^\n"
+
+    # No "Captured error (...)" output
+    assert emitter.printer_calls == [
+        call().show(sys.stderr, "test message", use_timestamp=False, end_line=True),
         call().stop(),
     ]

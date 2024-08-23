@@ -396,7 +396,7 @@ class Printer:
         if not avoid_logging:
             self._log(msg)
 
-    def progress_bar(  # noqa: PLR0913
+    def progress_bar(
         self,
         stream: TextIO | None,
         text: str,
