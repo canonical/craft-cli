@@ -276,6 +276,7 @@ class HelpBuilder:
         self,
         usage: str,
         overview: str,
+        parameters: list[tuple[str, str]],
         options: list[tuple[str, str]],
         other_command_names: list[str],
     ) -> list[str]:
@@ -285,6 +286,7 @@ class HelpBuilder:
 
         - usage
         - summary
+        - positional arguments (only if parameters are not empty)
         - options
         - other related commands
         - footer
@@ -305,6 +307,13 @@ class HelpBuilder:
 
         # column alignment is dictated by longest options title
         max_title_len = max(len(title) for title, text in options)
+
+        if parameters:
+            # command positional arguments
+            positional_args_lines = ["Positional arguments:"]
+            for title, text in parameters:
+                positional_args_lines.extend(_build_item_plain(title, text, max_title_len))
+            textblocks.append("\n".join(positional_args_lines))
 
         # command options
         option_lines = ["Options:"]
@@ -330,6 +339,7 @@ class HelpBuilder:
         self,
         usage: str,
         overview: str,
+        parameters: list[tuple[str, str]],
         options: list[tuple[str, str]],
         other_command_names: list[str],
     ) -> list[str]:
@@ -339,6 +349,7 @@ class HelpBuilder:
 
         - usage
         - summary
+        - positional arguments (only if parameters are not empty)
         - options
         - other related commands
         - footer
@@ -358,6 +369,17 @@ class HelpBuilder:
 
         overview = process_overview_for_markdown(overview)
         textblocks.append(f"## Summary:\n\n{overview}")
+
+        if parameters:
+            parameters_lines = [
+                "## Positional arguments:",
+                "| | |",
+                "|-|-|",
+            ]
+            for title, text in parameters:
+                parameters_lines.append(f"| `{title}` | {text} |")
+
+            textblocks.append("\n".join(parameters_lines))
 
         option_lines = [
             "## Options:",
@@ -403,11 +425,11 @@ class HelpBuilder:
             if name[0] == "-":
                 options.append((name, title))
             else:
-                parameters.append(name)
+                parameters.append((name, title))
 
         usage = f"{self.appname} {command.name} [options]"
         if parameters:
-            usage += " " + " ".join(f"<{parameter}>" for parameter in parameters)
+            usage += " " + " ".join(f"<{parameter[0]}>" for parameter in parameters)
 
         for command_group in self.command_groups:
             if any(isinstance(command, command_class) for command_class in command_group.commands):
@@ -422,7 +444,7 @@ class HelpBuilder:
             builder = self._build_markdown_command_help
         else:
             builder = self._build_plain_command_help
-        textblocks = builder(usage, command.overview, options, other_command_names)
+        textblocks = builder(usage, command.overview, parameters, options, other_command_names)
 
         # join all stripped blocks, leaving ONE empty blank line between
         return "\n\n".join(block.strip() for block in textblocks) + "\n"

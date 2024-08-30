@@ -143,6 +143,9 @@ Ask help for specifically for the command::
 
         It will return successfully if the file was properly removed.
 
+    Positional arguments:
+             filepath:  The file to be removed
+
     Options:
            -h, --help:  Show this help message and exit
         -v, --verbose:  Show debug information and be more verbose
