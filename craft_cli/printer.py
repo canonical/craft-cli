@@ -83,7 +83,7 @@ def _supports_ansi_escape_sequences() -> bool:
     return "WT_SESSION" in os.environ  # Windows Terminal supports ANSI escape sequences.
 
 
-def fill_line(text: str) -> str:
+def _fill_line(text: str) -> str:
     """Turn the input text into a line that will fill the terminal."""
     if _supports_ansi_escape_sequences():
         return text + ANSI_CLEAR_LINE_TO_END
@@ -110,7 +110,7 @@ def _format_term_line(prefix: str, text: str, spintext: str, *, ephemeral: bool)
             if len(text) > usable:
                 text = text[: usable - 1] + "…"
 
-    return prefix + fill_line(text + spintext)
+    return prefix + _fill_line(text + spintext)
 
 
 class _Spinner(threading.Thread):
