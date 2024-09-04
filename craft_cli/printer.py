@@ -110,7 +110,7 @@ def _format_term_line(prefix: str, text: str, spintext: str, *, ephemeral: bool)
             if len(text) > usable:
                 text = text[: usable - 1] + "…"
 
-    return prefix + _fill_line(text + spintext)
+    return _fill_line(prefix + text + spintext)
 
 
 class _Spinner(threading.Thread):
