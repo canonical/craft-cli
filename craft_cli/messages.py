@@ -710,7 +710,7 @@ class Emitter:
         """Finish the messaging system gracefully."""
         self._stop()
 
-    def _report_error(self, error: errors.CraftError) -> None:
+    def _report_error(self, error: errors.CraftError) -> None:  # noqa: PLR0912 (too many branches)
         """Report the different message lines from a CraftError."""
         if self._mode in (EmitterMode.QUIET, EmitterMode.BRIEF, EmitterMode.VERBOSE):
             use_timestamp = False
@@ -719,8 +719,10 @@ class Emitter:
             use_timestamp = True
             full_stream = sys.stderr
 
-        # the initial message
-        self._printer.show(sys.stderr, str(error), use_timestamp=use_timestamp, end_line=True)
+        # The initial message. Print every line individually to correctly clear
+        # previous lines, if necessary.
+        for line in str(error).splitlines():
+            self._printer.show(sys.stderr, line, use_timestamp=use_timestamp, end_line=True)
 
         if isinstance(error, errors.CraftCommandError):
             stderr = error.stderr

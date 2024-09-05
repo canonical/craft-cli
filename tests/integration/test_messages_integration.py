@@ -1010,6 +1010,23 @@ def test_error_unexpected_debugish(capsys, mode):
     assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)
 
 
+@pytest.mark.parametrize("output_is_terminal", [True])
+def test_error_multiline_brief(capsys):
+    emit = Emitter()
+    emit.init(EmitterMode.BRIEF, "testapp", GREETING)
+    emit.progress("A very long message detailing the current task.")
+    error = CraftError("Error line 1.\nError line 2.", logpath_report=False)
+    emit.error(error)
+
+    expected = [
+        Line("A very long message detailing the current task.", permanent=False),
+        # The error message is split on two separate lines.
+        Line("Error line 1.", permanent=True),
+        Line("Error line 2.", permanent=True),
+    ]
+    assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)
+
+
 @pytest.mark.parametrize(
     "mode",
     [
