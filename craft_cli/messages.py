@@ -719,7 +719,7 @@ class Emitter:
             use_timestamp = True
             full_stream = sys.stderr
 
-        # the initial message. Print every line individually to correctly clear
+        # The initial message. Print every line individually to correctly clear
         # previous lines, if necessary.
         for line in str(error).splitlines():
             self._printer.show(sys.stderr, line, use_timestamp=use_timestamp, end_line=True)
