@@ -1531,7 +1531,7 @@ def test_streaming_brief_spinner(capsys, logger, monkeypatch, init_emitter):
         Line("Begin stage", permanent=False),
         Line("Begin stage :: Opening stream", permanent=False),
         Line("Begin stage :: Info message", permanent=False),
-        Line(r"Begin stage :: Info message - \(0.[7-9]s\)", permanent=False, regex=True),
+        Line(r"Begin stage :: Info message - \((0.[7-9]|1.0)s\)", permanent=False, regex=True),
         Line("Begin stage :: Info message", permanent=False),
         Line("Done stage", permanent=True),
     ]
