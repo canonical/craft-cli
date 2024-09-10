@@ -23,6 +23,7 @@ import os
 import platform
 import queue
 import shutil
+import sys
 import threading
 import time
 from dataclasses import dataclass, field
@@ -46,7 +47,9 @@ _SPINNER_DELAY = 0.1
 # craft_cli/pytest_plugin.py )
 TESTMODE = False
 
-ANSI_CLEAR_LINE_TO_END = "\033[K"  # ANSI escape code to clear the rest of the line.
+ANSI_CLEAR_LINE_TO_END = "\x1b[K"  # ANSI escape code to clear the rest of the line.
+ANSI_HIDE_CURSOR = "\x1b[?25l"
+ANSI_SHOW_CURSOR = "\x1b[?25h"
 
 
 @dataclass
@@ -224,6 +227,9 @@ class Printer:
         self.spinner = _Spinner(self)
         if not TESTMODE:
             self.spinner.start()
+            if _supports_ansi_escape_sequences() and _stream_is_terminal(sys.stderr):
+                # pass
+                print(ANSI_HIDE_CURSOR, end="", file=sys.stderr, flush=True)
 
     def set_terminal_prefix(self, prefix: str) -> None:
         """Set the string to be prepended to every message shown to the terminal."""
@@ -466,11 +472,14 @@ class Printer:
 
         In detail:
         - stop the spinner
+        - show the cursor
         - add a new line to the screen (if needed)
         - close the log file
         """
         if not TESTMODE:
             self.spinner.stop()
+            if _supports_ansi_escape_sequences() and _stream_is_terminal(sys.stderr):
+                print(ANSI_SHOW_CURSOR, end="", file=sys.stderr, flush=True)
         if self.unfinished_stream is not None:
             # With unfinished_stream set, the prv_msg object is valid.
             if self.prv_msg is not None and self.prv_msg.ephemeral:
@@ -483,7 +492,6 @@ class Printer:
                 # The last printed message is permanent. Leave the cursor on
                 # the next clean line.
                 print(flush=True, file=self.unfinished_stream)
-
         self.log.close()
         self.stopped = True
 
