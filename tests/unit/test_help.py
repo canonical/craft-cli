@@ -417,6 +417,10 @@ def test_command_help_text_with_parameters(output_format):
         Summary:
             Quite some long text.
 
+        Positional arguments:
+                      name:  The name of the charm.
+                extraparam:  Another parameter..
+
         Options:
                 -h, --help:  Show this help message and exit.
                 --revision:  The revision to release (defaults to latest).
@@ -438,6 +442,12 @@ def test_command_help_text_with_parameters(output_format):
         ## Summary:
 
         Quite some long text.
+
+        ## Positional arguments:
+        | | |
+        |-|-|
+        | `name` | The name of the charm. |
+        | `extraparam` | Another parameter.. |
 
         ## Options:
         | | |

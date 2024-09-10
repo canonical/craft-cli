@@ -513,6 +513,15 @@ def example_30():
         time.sleep(0.001)
 
 
+def example_31():
+    """Multiline error message."""
+    emit.progress("Setting up computer for build...")
+    time.sleep(1)
+    emit.progress("A long progress message")
+    time.sleep(6)
+    raise CraftError("Error 1\nError 2")
+
+
 # -- end of test cases
 
 if len(sys.argv) < 2:
