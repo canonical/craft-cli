@@ -93,7 +93,7 @@ def _fill_line(text: str) -> str:
     return text + " " * n_spaces
 
 
-def _format_term_line(prefix: str, text: str, spintext: str, *, ephemeral: bool) -> str:
+def _format_term_line(previous_line_end: str, text: str, spintext: str, *, ephemeral: bool) -> str:
     """Format a line to print to the terminal."""
     # fill with spaces until the very end, on one hand to clear a possible previous message,
     # but also to always have the cursor at the very end
@@ -110,7 +110,7 @@ def _format_term_line(prefix: str, text: str, spintext: str, *, ephemeral: bool)
             if len(text) > usable:
                 text = text[: usable - 1] + "…"
 
-    return _fill_line(prefix + text + spintext)
+    return previous_line_end + _fill_line(text + spintext)
 
 
 class _Spinner(threading.Thread):
