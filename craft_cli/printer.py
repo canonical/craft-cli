@@ -228,7 +228,6 @@ class Printer:
         if not TESTMODE:
             self.spinner.start()
             if _supports_ansi_escape_sequences() and _stream_is_terminal(sys.stderr):
-                # pass
                 print(ANSI_HIDE_CURSOR, end="", file=sys.stderr, flush=True)
 
     def set_terminal_prefix(self, prefix: str) -> None:
