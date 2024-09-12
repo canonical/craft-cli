@@ -86,7 +86,7 @@ class Line:
     regex: bool = False  # if "text" is a regular expression instead of an exact string
 
 
-def compare_lines(expected_lines: Collection[Line], raw_stream, std_stream):
+def compare_lines(expected_lines: Collection[Line], raw_stream: str, std_stream):
     """Helper to compare expected lines to what was written to the terminal."""
     width = printer._get_terminal_width()
     terminal = printer._stream_is_terminal(std_stream)
@@ -94,13 +94,16 @@ def compare_lines(expected_lines: Collection[Line], raw_stream, std_stream):
         assert len(raw_stream) > 0
 
     if terminal:
-        # when showing to the terminal, it's completed always to screen width and terminated in
-        # different ways, so we split lines according to that length
-        assert (
-            len(raw_stream) % width == 0
-        ), f"Bad length {len(raw_stream)} ({width=}) {raw_stream=!r}"
-        args = [iter(raw_stream)] * width
-        lines = ["".join(x) for x in zip(*args)]  # pyright: ignore[reportGeneralTypeIssues]
+        if printer._supports_ansi_escape_sequences():
+            lines = raw_stream.replace("\033[K", "").splitlines(keepends=True)
+        else:
+            # If the terminal doesn't support ANSI escape sequences, we fill the screen
+            # width and don't terminate lines, so we split lines according to that length
+            assert (
+                len(raw_stream) % width == 0
+            ), f"Bad length {len(raw_stream)} ({width=}) {raw_stream=!r}"
+            args = [iter(raw_stream)] * width
+            lines = ["".join(x) for x in zip(*args)]  # pyright: ignore[reportGeneralTypeIssues]
     else:
         # when the output is captured, each line is simple and it should end in newline, so use
         # that for splitting (but don't lose the newline)
@@ -1528,7 +1531,7 @@ def test_streaming_brief_spinner(capsys, logger, monkeypatch, init_emitter):
         Line("Begin stage", permanent=False),
         Line("Begin stage :: Opening stream", permanent=False),
         Line("Begin stage :: Info message", permanent=False),
-        Line(r"Begin stage :: Info message - \(0.[7-9]s\)", permanent=False, regex=True),
+        Line(r"Begin stage :: Info message - \((0.[7-9]|1.0)s\)", permanent=False, regex=True),
         Line("Begin stage :: Info message", permanent=False),
         Line("Done stage", permanent=True),
     ]

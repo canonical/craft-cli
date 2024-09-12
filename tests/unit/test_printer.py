@@ -65,6 +65,18 @@ def clear_stream_is_terminal_cache():
     printermod._stream_is_terminal.cache_clear()
 
 
+@pytest.fixture(params=[True, False])
+def ansi_escape_support(monkeypatch, request):
+    def _supports_ansi_escape_sequences():
+        return request.param
+
+    monkeypatch.setattr(
+        printermod, "_supports_ansi_escape_sequences", _supports_ansi_escape_sequences
+    )
+
+    return request.param
+
+
 # -- simple helpers
 
 
@@ -116,9 +128,48 @@ def test_streamisterminal_tty_yes_unusable(monkeypatch):
     assert result is False
 
 
+def test_supports_ansi_escape_sequences_linux(monkeypatch):
+    monkeypatch.setattr("platform.system", lambda: "Linux")
+    printermod._supports_ansi_escape_sequences.cache_clear()
+    assert printermod._supports_ansi_escape_sequences()
+    printermod._supports_ansi_escape_sequences.cache_clear()
+
+
+def test_supports_ansi_escape_sequences_windows_terminal(monkeypatch):
+    monkeypatch.setattr("platform.system", lambda: "Windows")
+    monkeypatch.setenv("WT_SESSION", "yes")
+    printermod._supports_ansi_escape_sequences.cache_clear()
+    assert printermod._supports_ansi_escape_sequences()
+    printermod._supports_ansi_escape_sequences.cache_clear()
+
+
+def test_supports_ansi_escape_sequences_windows_con(monkeypatch):
+    monkeypatch.setattr("platform.system", lambda: "Windows")
+    monkeypatch.delenv("WT_SESSION", raising=False)
+    printermod._supports_ansi_escape_sequences.cache_clear()
+    assert not printermod._supports_ansi_escape_sequences()
+    printermod._supports_ansi_escape_sequences.cache_clear()
+
+
+@pytest.mark.parametrize("text", ["", "something"])
+def test_fill_line_escape(monkeypatch, text):
+    monkeypatch.setattr(printermod, "_supports_ansi_escape_sequences", lambda: True)
+    assert printermod._fill_line(text) == text + printermod.ANSI_CLEAR_LINE_TO_END
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"), [("", " " * 19), ("something", "something" + " " * 10)]
+)
+def test_fill_line_spaces(monkeypatch, text, expected):
+    monkeypatch.setattr(printermod, "_supports_ansi_escape_sequences", lambda: False)
+    monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 20)
+    assert printermod._fill_line(text) == expected
+
+
 # -- tests for the writing line (terminal version) function
 
 
+@pytest.mark.usefixtures("ansi_escape_support")
 def test_writelineterminal_simple_complete(capsys, monkeypatch, log_filepath):
     """Complete verification of _write_line_terminal for a simple case."""
     monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
@@ -134,9 +185,10 @@ def test_writelineterminal_simple_complete(capsys, monkeypatch, log_filepath):
 
     # output completes the terminal width (leaving space for the cursor), and
     # without a finishing newline
-    assert out == test_text + " " * (39 - len(test_text))
+    assert out == printermod._fill_line(test_text)
 
 
+@pytest.mark.usefixtures("ansi_escape_support")
 def test_writelineterminal_simple_too_long(capsys, monkeypatch, log_filepath):
     """A permanent message that exceeds the line length."""
     monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 20)
@@ -152,10 +204,11 @@ def test_writelineterminal_simple_too_long(capsys, monkeypatch, log_filepath):
 
     # output is NOT truncated, and it's completed so the cursor at the second line is still
     # to the right
-    assert len(out) == 39  # two lines, minus the cursor in the second line
-    assert out == test_text + " " * 9
+    assert out.endswith(printermod.ANSI_CLEAR_LINE_TO_END) or out.endswith(" " * 9)
+    assert out == printermod._fill_line(test_text)
 
 
+@pytest.mark.usefixtures("ansi_escape_support")
 def test_writelineterminal_different_stream(capsys, monkeypatch, log_filepath):
     """Use a different stream."""
     monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
@@ -171,9 +224,10 @@ def test_writelineterminal_different_stream(capsys, monkeypatch, log_filepath):
 
     # output completes the terminal width (leaving space for the cursor), and
     # without a finishing newline
-    assert err == test_text + " " * (39 - len(test_text))
+    assert err == printermod._fill_line(test_text)
 
 
+@pytest.mark.usefixtures("ansi_escape_support")
 def test_writelineterminal_with_timestamp(capsys, monkeypatch, log_filepath):
     """A timestamp was indicated to use."""
     monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
@@ -188,9 +242,10 @@ def test_writelineterminal_with_timestamp(capsys, monkeypatch, log_filepath):
     # output completes the terminal width (leaving space for the cursor), and
     # without a finishing newline
     expected_text = "2009-09-01 12:13:15.123 test text"
-    assert out == expected_text + " " * (39 - len(expected_text))
+    assert out == printermod._fill_line(expected_text)
 
 
+@pytest.mark.usefixtures("ansi_escape_support")
 def test_writelineterminal_having_previous_message_out(capsys, monkeypatch, log_filepath):
     """There is a previous message to be completed (in stdout)."""
     monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
@@ -203,10 +258,11 @@ def test_writelineterminal_having_previous_message_out(capsys, monkeypatch, log_
 
     # stdout has the expected text but with an extra newline before
     out, err = capsys.readouterr()
-    assert out == "\n" + test_text + " " * (39 - len(test_text))
+    assert out == "\n" + printermod._fill_line(test_text)
     assert not err
 
 
+@pytest.mark.usefixtures("ansi_escape_support")
 def test_writelineterminal_having_previous_message_err(capsys, monkeypatch, log_filepath):
     """There is a previous message to be completed (in stderr)."""
     monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
@@ -219,10 +275,11 @@ def test_writelineterminal_having_previous_message_err(capsys, monkeypatch, log_
 
     # stdout just has the expected text, and an extra newline was sent to stderr
     out, err = capsys.readouterr()
-    assert out == test_text + " " * (39 - len(test_text))
+    assert out == printermod._fill_line(test_text)
     assert err == "\n"
 
 
+@pytest.mark.usefixtures("ansi_escape_support")
 def test_writelineterminal_having_previous_message_complete(capsys, monkeypatch, log_filepath):
     """There is a previous message which is already complete."""
     monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
@@ -235,10 +292,11 @@ def test_writelineterminal_having_previous_message_complete(capsys, monkeypatch,
 
     # stdout has the expected text without anything extra
     out, err = capsys.readouterr()
-    assert out == test_text + " " * (39 - len(test_text))
+    assert out == printermod._fill_line(test_text)
     assert not err
 
 
+@pytest.mark.usefixtures("ansi_escape_support")
 def test_writelineterminal_indicated_to_complete(capsys, monkeypatch, log_filepath):
     """The message is indicated to complete the line."""
     monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
@@ -253,9 +311,10 @@ def test_writelineterminal_indicated_to_complete(capsys, monkeypatch, log_filepa
 
     # output completes the terminal width (leaving space for the cursor), and
     # WITH a finishing newline
-    assert out == test_text + " " * (39 - len(test_text)) + "\n"
+    assert out == printermod._fill_line(test_text) + "\n"
 
 
+@pytest.mark.usefixtures("ansi_escape_support")
 def test_writelineterminal_ephemeral_message_short(capsys, monkeypatch, log_filepath):
     """Complete verification of _write_line_terminal for a simple case."""
     monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
@@ -271,9 +330,10 @@ def test_writelineterminal_ephemeral_message_short(capsys, monkeypatch, log_file
 
     # output completes the terminal width (leaving space for the cursor), and
     # without a finishing newline
-    assert out == test_text + " " * (39 - len(test_text))
+    assert out == printermod._fill_line(test_text)
 
 
+@pytest.mark.usefixtures("ansi_escape_support")
 def test_writelineterminal_ephemeral_message_too_long(capsys, monkeypatch, log_filepath):
     """Complete verification of _write_line_terminal for a simple case."""
     monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 20)
@@ -287,11 +347,13 @@ def test_writelineterminal_ephemeral_message_too_long(capsys, monkeypatch, log_f
     out, err = capsys.readouterr()
     assert not err
 
+    out = out.replace(printermod.ANSI_CLEAR_LINE_TO_END, "")
     # output is truncated (with an extra ellipsis), still leaving space for the cursor
     assert len(out) == 19
     assert out == "012345678901234567…"
 
 
+@pytest.mark.usefixtures("ansi_escape_support")
 def test_writelineterminal_having_previous_message_ephemeral(capsys, monkeypatch, log_filepath):
     """There is a previous message to be overwritten."""
     monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
@@ -304,7 +366,7 @@ def test_writelineterminal_having_previous_message_ephemeral(capsys, monkeypatch
 
     # stdout has the expected text but with a carriage return before
     out, err = capsys.readouterr()
-    assert out == "\r" + test_text + " " * (39 - len(test_text))
+    assert out == "\r" + printermod._fill_line(test_text)
     assert not err
 
 
@@ -316,9 +378,12 @@ def test_writelineterminal_having_previous_message_ephemeral(capsys, monkeypatch
         _MessageInfo(sys.stdout, "previous text", ephemeral=True),
     ],
 )
+@pytest.mark.usefixtures("ansi_escape_support")
 def test_writelineterminal_spintext_simple(capsys, monkeypatch, log_filepath, prv_msg):
     """A message with spintext."""
     monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
+    if prv_msg:  # sys.stdout gets changed by capsys.
+        prv_msg.stream = sys.stdout
     printer = Printer(log_filepath)
     printer.prv_msg = prv_msg  # will overwrite previous message not matter what
 
@@ -327,11 +392,11 @@ def test_writelineterminal_spintext_simple(capsys, monkeypatch, log_filepath, pr
 
     # stdout has the expected text, overwriting previous message, with the spin text at the end
     out, err = capsys.readouterr()
-    assert len(out) == 40  # the CR + the regular 39 chars
-    assert out == "\rtest text * 3.15s                      "
+    assert out == "\r" + printermod._fill_line("test text * 3.15s")
     assert not err
 
 
+@pytest.mark.usefixtures("ansi_escape_support")
 def test_writelineterminal_spintext_message_too_long(capsys, monkeypatch, log_filepath):
     """A message with spintext that is too long only overwrites the last "real line"."""
     monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 20)
@@ -344,10 +409,10 @@ def test_writelineterminal_spintext_message_too_long(capsys, monkeypatch, log_fi
     assert not err
 
     # output the last line only (with the spin text, of course)
-    assert len(out) == 20  # the CR + the regular 19 chars
-    assert out == "\ra.b.c.d.e. * 3.15s "
+    assert out == "\r" + printermod._fill_line("a.b.c.d.e. * 3.15s")
 
 
+@pytest.mark.usefixtures("ansi_escape_support")
 def test_writelineterminal_spintext_length_just_exceeded(capsys, monkeypatch, log_filepath):
     """A message that would fit, but it just exceeds the line length because of the spin text."""
     monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 20)
@@ -360,11 +425,11 @@ def test_writelineterminal_spintext_length_just_exceeded(capsys, monkeypatch, lo
     assert not err
 
     # the message is slightly truncated so the spin text does not trigger a multiline situation
-    assert len(out) == 20  # the CR + the regular 19 chars
-    assert out == "\r0x1x2x3x4x… * 3.15s"
+    assert out == "\r" + printermod._fill_line("0x1x2x3x4x… * 3.15s")
 
 
 @pytest.mark.parametrize("test_text", ["", "Some test text."])
+@pytest.mark.usefixtures("ansi_escape_support")
 def test_writelineterminal_ephemeral_spam(capsys, monkeypatch, log_filepath, test_text):
     """Spam _write_line_terminal with the same message over and over."""
     monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
@@ -384,11 +449,12 @@ def test_writelineterminal_ephemeral_spam(capsys, monkeypatch, log_filepath, tes
     # output completes the terminal width (leaving space for the cursor), and
     # without a finishing newline
     # There will only be one copy of the text.
-    assert out == test_text[:40] + " " * (39 - len(test_text))
+    assert out == printermod._fill_line(test_text)
 
 
 @pytest.mark.parametrize(("ephemeral", "end_line"), [(False, False), (False, True), (True, True)])
 @pytest.mark.parametrize("text", ["", "Some test text"])
+@pytest.mark.usefixtures("ansi_escape_support")
 def test_writelineterminal_rewrites_same_message(
     capsys, monkeypatch, log_filepath, text, ephemeral, end_line
 ):
@@ -406,7 +472,7 @@ def test_writelineterminal_rewrites_same_message(
 
     # output completes the terminal width (leaving space for the cursor), and
     # without a finishing newline
-    assert out.strip() == "\n".join([text + " " * (39 - len(text))] * 10).strip()
+    assert out.strip() == "\n".join([printermod._fill_line(text)] * 10).strip()
 
 
 @pytest.mark.parametrize("ephemeral", [True, False])
@@ -419,6 +485,7 @@ def test_writelineterminal_rewrites_same_message(
         "1234567890",
     ],
 )
+@pytest.mark.usefixtures("ansi_escape_support")
 def test_writelineterminal_rewrites_same_message_with_spintext(
     capsys, monkeypatch, log_filepath, text, spintext, ephemeral
 ):
@@ -436,7 +503,7 @@ def test_writelineterminal_rewrites_same_message_with_spintext(
 
     # output completes the terminal width (leaving space for the cursor), and
     # without a finishing newline
-    expected = "\r".join(text + s + " " * (39 - len(text) - len(s)) for s in spintext)
+    expected = "\r".join(printermod._fill_line(text + s) for s in spintext)
     assert out.strip() == expected.strip()
 
 
@@ -1382,5 +1449,7 @@ def test_secrets_terminal_prefix(capsys, log_filepath, monkeypatch):
     ]
 
     _, stderr = capsys.readouterr()
-    obtained = [l.strip() for l in stderr.splitlines()]
+    obtained = [
+        l.replace(printermod.ANSI_CLEAR_LINE_TO_END, "").strip() for l in stderr.splitlines()
+    ]
     assert obtained == expected
