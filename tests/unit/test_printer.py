@@ -29,6 +29,13 @@ import pytest
 from craft_cli import printer as printermod
 from craft_cli.printer import Printer, _MessageInfo, _Spinner
 
+pytestmark = [
+    # Always use capsys, giving the printer its own stdout and stderr.
+    # This is useful because the printer will print control characters
+    # directly to stderr.
+    pytest.mark.usefixtures("capsys"),
+]
+
 
 @pytest.fixture(autouse=True)
 def init_emitter():
@@ -75,6 +82,15 @@ def ansi_escape_support(monkeypatch, request):
     )
 
     return request.param
+
+
+def remove_control_characters(string: str) -> str:
+    """Strip the non-printing characters from an output string."""
+    return (
+        string.replace(printermod.ANSI_CLEAR_LINE_TO_END, "")
+        .replace(printermod.ANSI_HIDE_CURSOR, "")
+        .replace(printermod.ANSI_SHOW_CURSOR, "")
+    )
 
 
 # -- simple helpers
@@ -1423,7 +1439,7 @@ def test_secrets_progress_bar(capsys, log_filepath, monkeypatch):
     printer.progress_bar(stream, message, progress=0.0, total=1.0, use_timestamp=False)
 
     _, stderr = capsys.readouterr()
-    assert stderr.startswith(expected)
+    assert remove_control_characters(stderr).startswith(expected)
 
 
 def test_secrets_terminal_prefix(capsys, log_filepath, monkeypatch):
@@ -1449,7 +1465,5 @@ def test_secrets_terminal_prefix(capsys, log_filepath, monkeypatch):
     ]
 
     _, stderr = capsys.readouterr()
-    obtained = [
-        l.replace(printermod.ANSI_CLEAR_LINE_TO_END, "").strip() for l in stderr.splitlines()
-    ]
+    obtained = [remove_control_characters(l).rstrip() for l in stderr.splitlines()]
     assert obtained == expected

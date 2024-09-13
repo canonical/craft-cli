@@ -76,6 +76,15 @@ def logger():
     return logger
 
 
+def remove_control_characters(string: str) -> str:
+    """Strip the non-printing characters from an output string."""
+    return (
+        string.replace(printer.ANSI_CLEAR_LINE_TO_END, "")
+        .replace(printer.ANSI_HIDE_CURSOR, "")
+        .replace(printer.ANSI_SHOW_CURSOR, "")
+    )
+
+
 @dataclass
 class Line:
     """A line that is expected to be in the result."""
@@ -95,7 +104,7 @@ def compare_lines(expected_lines: Collection[Line], raw_stream: str, std_stream)
 
     if terminal:
         if printer._supports_ansi_escape_sequences():
-            lines = raw_stream.replace("\033[K", "").splitlines(keepends=True)
+            lines = remove_control_characters(raw_stream).splitlines(keepends=True)
         else:
             # If the terminal doesn't support ANSI escape sequences, we fill the screen
             # width and don't terminate lines, so we split lines according to that length
