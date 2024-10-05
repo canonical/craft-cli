@@ -65,7 +65,7 @@ docs = [
     "sphinx-toolbox==3.5.0",
     "sphinx-lint==0.9.1",
     "pytest>=7.0.0", # pytest is imported by the code, which is parsed for api gen.
-    "canonical-sphinx==0.1.0",
+    "canonical-sphinx==0.2.0",
 ]
 
 [build-system]
