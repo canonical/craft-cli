@@ -1,9 +1,16 @@
+:tocdepth: 2
+
 ***************
 Changelog
 ***************
 
 See the `Releases page`_ on GitHub for a complete list of commits that are
 included in each version.
+
+2.8.0 (2024-Oct-10)
+-------------------
+- Positional arguments are now displayed in 'help' outputs.
+- The terminal cursor is now hidden during execution.
 
 2.7.0 (2024-Sep-05)
 -------------------
