@@ -55,7 +55,7 @@ lint = [
     "yamllint==1.35.1"
 ]
 types = [
-    "mypy[reports]==1.11.2",
+    "mypy[reports]==1.12.0",
     "pyright==1.1.383",
     "types-Pygments",
     "types-colorama",
