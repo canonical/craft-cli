@@ -7,6 +7,12 @@ Changelog
 See the `Releases page`_ on GitHub for a complete list of commits that are
 included in each version.
 
+2.9.0 (2024-Oct-22)
+-------------------
+
+- The ``Dispatcher.pre_parse_args()`` method now accepts an ``app_config``
+  parameter, which is used to instantiate the command that will be validated.
+
 2.8.0 (2024-Oct-10)
 -------------------
 - Positional arguments are now displayed in 'help' outputs.

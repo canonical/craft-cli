@@ -14,12 +14,15 @@
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import argparse
+import re
 import textwrap
+from argparse import ArgumentParser
+from typing import Any, Dict
 from unittest.mock import patch
 
 import pytest
 
-from craft_cli import dispatcher as dispatcher_mod
+from craft_cli import dispatcher as dispatcher_mod, BaseCommand
 from craft_cli.dispatcher import CommandGroup, Dispatcher, GlobalArgument
 from craft_cli.errors import ArgumentParsingError, ProvideHelpException
 from craft_cli.helptexts import HIDDEN, HelpBuilder, OutputFormat, process_overview_for_markdown
@@ -1285,7 +1288,7 @@ def test_helprequested_no_parameters():
     parameters = []
     dispatcher = Dispatcher("testapp", [])
     with patch("craft_cli.dispatcher.Dispatcher._get_general_help") as mock:
-        dispatcher._get_requested_help(parameters)
+        dispatcher._get_requested_help(parameters, None)
     mock.assert_called_once_with(detailed=False)
 
 
@@ -1294,7 +1297,7 @@ def test_helprequested_too_many_parameters():
     parameters = ["foo", "bar"]
     dispatcher = Dispatcher("testapp", [])
     with pytest.raises(ArgumentParsingError) as raised:
-        dispatcher._get_requested_help(parameters)
+        dispatcher._get_requested_help(parameters, None)
     expected = textwrap.dedent(
         """\
         Usage: testapp [options] command [args]...
@@ -1311,7 +1314,7 @@ def test_helprequested_detailed_ok():
     parameters = ["--all"]
     dispatcher = Dispatcher("testapp", [])
     with patch("craft_cli.dispatcher.Dispatcher._get_general_help") as mock:
-        dispatcher._get_requested_help(parameters)
+        dispatcher._get_requested_help(parameters, None)
     mock.assert_called_once_with(detailed=True)
 
 
@@ -1326,7 +1329,7 @@ def test_helprequested_detailed_extra(parameters):
     """Detailed help requested but with extra stuff."""
     dispatcher = Dispatcher("testapp", [])
     with pytest.raises(ArgumentParsingError) as raised:
-        dispatcher._get_requested_help(parameters)
+        dispatcher._get_requested_help(parameters, None)
     expected = textwrap.dedent(
         """\
         Usage: testapp [options] command [args]...
@@ -1347,7 +1350,7 @@ def test_helprequested_specific_command():
     parameters = ["somecmd"]
     with patch("craft_cli.helptexts.HelpBuilder.get_command_help") as mock:
         with patch("craft_cli.dispatcher.Dispatcher._get_global_options", return_value=[]):
-            dispatcher._get_requested_help(parameters)
+            dispatcher._get_requested_help(parameters, None)
     args = mock.call_args[0]
     assert isinstance(args[0], cmd)
     assert args[1] == []
@@ -1369,7 +1372,7 @@ def test_helprequested_format_noncommand(parameters):
     """Output format is not allowed for non-command help."""
     dispatcher = Dispatcher("testapp", [])
     with pytest.raises(ArgumentParsingError) as raised:
-        dispatcher._get_requested_help(parameters)
+        dispatcher._get_requested_help(parameters, None)
     expected = textwrap.dedent(
         """\
         Usage: testapp [options] command [args]...
@@ -1402,7 +1405,7 @@ def test_helprequested_command_format_ok(parameters, expected_format):
 
     with patch("craft_cli.helptexts.HelpBuilder.get_command_help") as mock:
         with patch("craft_cli.dispatcher.Dispatcher._get_global_options", return_value=[]):
-            dispatcher._get_requested_help(parameters)
+            dispatcher._get_requested_help(parameters, None)
     args = mock.call_args[0]
     assert isinstance(args[0], cmd)
     assert args[1] == []
@@ -1422,7 +1425,7 @@ def test_helprequested_command_format_bad(parameters):
     """Help for a command with a wrong format."""
     dispatcher = Dispatcher("testapp", [])
     with pytest.raises(ArgumentParsingError) as raised:
-        dispatcher._get_requested_help(parameters)
+        dispatcher._get_requested_help(parameters, None)
     expected = textwrap.dedent(
         """\
         Usage: testapp [options] command [args]...
@@ -1448,7 +1451,7 @@ def test_helprequested_command_format_truncated(parameters):
     """Help for a command with a format not really specified."""
     dispatcher = Dispatcher("testapp", [])
     with pytest.raises(ArgumentParsingError) as raised:
-        dispatcher._get_requested_help(parameters)
+        dispatcher._get_requested_help(parameters, None)
     expected = textwrap.dedent(
         """\
         Usage: testapp [options] command [args]...
@@ -1458,3 +1461,69 @@ def test_helprequested_command_format_truncated(parameters):
     """
     )
     assert str(raised.value) == expected
+
+
+class AppConfigCommand(BaseCommand):
+
+    name: str = "app-config"
+    help_msg: str = "Help text"
+    overview: str = "Overview"
+
+    def fill_parser(self, parser: ArgumentParser) -> None:
+        assert isinstance(self.config, dict)
+
+        choices = self.config["choices"]
+        parser.add_argument(
+            "number",
+            choices=choices,
+            help=f"The number to use. Possible values are {choices}.",
+        )
+
+
+@pytest.mark.parametrize(
+    "sysargs",
+    [
+        "testapp app-config --help".split()[1:],
+        "testapp help app-config".split()[1:],
+    ],
+)
+def test_helprequested_command_app_config(sysargs):
+    command_groups = [CommandGroup("group", [AppConfigCommand])]
+    dispatcher = Dispatcher("testapp", command_groups)
+
+    app_config = {"choices": [1, 2, 3]}
+    expected_help = re.escape("number:  The number to use. Possible values are [1, 2, 3].")
+
+    with pytest.raises(ProvideHelpException, match=expected_help):
+        dispatcher.pre_parse_args(sysargs, app_config)
+
+
+class NoConfigCommand(BaseCommand):
+
+    name: str = "no-config"
+    help_msg: str = "Help text"
+    overview: str = "Overview"
+
+    def fill_parser(self, parser: ArgumentParser) -> None:
+        assert self.config is None
+
+        parser.add_argument(
+            "config",
+            help=f"Config was correctly None",
+        )
+
+
+@pytest.mark.parametrize(
+    "sysargs",
+    [
+        "testapp no-config --help".split()[1:],
+        "testapp help no-config".split()[1:],
+    ],
+)
+def test_helprequested_command_no_app_config(sysargs):
+    command_groups = [CommandGroup("group", [NoConfigCommand])]
+    dispatcher = Dispatcher("testapp", command_groups)
+
+    expected_help = "config:  Config was correctly None"
+    with pytest.raises(ProvideHelpException, match=expected_help):
+        dispatcher.pre_parse_args(sysargs)
