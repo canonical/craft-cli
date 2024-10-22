@@ -1480,7 +1480,14 @@ class AppConfigCommand(BaseCommand):
         )
 
 
-def test_helprequested_command_app_config():
+@pytest.mark.parametrize(
+    "sysargs",
+    [
+        "testapp app-config --help".split()[1:],
+        "testapp help app-config".split()[1:],
+    ],
+)
+def test_helprequested_command_app_config(sysargs):
     command_groups = [CommandGroup("group", [AppConfigCommand])]
     dispatcher = Dispatcher("testapp", command_groups)
 
@@ -1488,4 +1495,35 @@ def test_helprequested_command_app_config():
     expected_help = re.escape("number:  The number to use. Possible values are [1, 2, 3].")
 
     with pytest.raises(ProvideHelpException, match=expected_help):
-        dispatcher.pre_parse_args(["app-config", "--help"], app_config)
+        dispatcher.pre_parse_args(sysargs, app_config)
+
+
+class NoConfigCommand(BaseCommand):
+
+    name: str = "no-config"
+    help_msg: str = "Help text"
+    overview: str = "Overview"
+
+    def fill_parser(self, parser: ArgumentParser) -> None:
+        assert self.config is None
+
+        parser.add_argument(
+            "config",
+            help=f"Config was correctly None",
+        )
+
+
+@pytest.mark.parametrize(
+    "sysargs",
+    [
+        "testapp no-config --help".split()[1:],
+        "testapp help no-config".split()[1:],
+    ],
+)
+def test_helprequested_command_no_app_config(sysargs):
+    command_groups = [CommandGroup("group", [NoConfigCommand])]
+    dispatcher = Dispatcher("testapp", command_groups)
+
+    expected_help = "config:  Config was correctly None"
+    with pytest.raises(ProvideHelpException, match=expected_help):
+        dispatcher.pre_parse_args(sysargs)
