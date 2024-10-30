@@ -17,7 +17,6 @@ import argparse
 import re
 import textwrap
 from argparse import ArgumentParser
-from typing import Any, Dict
 from unittest.mock import patch
 
 import pytest
@@ -64,7 +63,23 @@ def test_get_usage_message_no_command():
 # -- building of the big help text outputs
 
 
-def test_default_help_text():
+@pytest.mark.parametrize(
+    ("docs_url", "expected"),
+    [
+        (None, None),
+        ("www.craft-app.com/docs/3.14159", "www.craft-app.com/docs/3.14159"),
+        ("www.craft-app.com/docs/3.14159/", "www.craft-app.com/docs/3.14159"),
+    ],
+)
+def test_trim_url(docs_url, expected):
+    """Remove the trailing slash for docs url."""
+    help_builder = HelpBuilder("testapp", "general summary", [], docs_url)
+
+    assert help_builder._docs_base_url == expected
+
+
+@pytest.mark.parametrize("docs_url", [None, "www.craft-app.com/docs/3.14159/"])
+def test_default_help_text(docs_url):
     """All different parts for the default help."""
     cmd1 = create_command("cmd1", "Cmd help which is very long but whatever.", common=True)
     cmd2 = create_command("command-2", "Cmd help.", common=True)
@@ -93,11 +108,11 @@ def test_default_help_text():
         ("--experimental-2", argparse.SUPPRESS),
     ]
 
-    help_builder = HelpBuilder("testapp", fake_summary, command_groups)
+    help_builder = HelpBuilder("testapp", fake_summary, command_groups, docs_url)
     text = help_builder.get_full_help(global_options)
 
     expected = textwrap.dedent(
-        """\
+        f"""\
         Usage:
             testapp [help] <command>
 
@@ -126,10 +141,15 @@ def test_default_help_text():
         For a summary of all commands, run 'testapp help --all'.
     """
     )
+    if docs_url:
+        expected += (
+            "For more information about testapp, check out: www.craft-app.com/docs/3.14159\n"
+        )
     assert text == expected
 
 
-def test_detailed_help_text():
+@pytest.mark.parametrize("docs_url", [None, "www.craft-app.com/docs/3.14159/"])
+def test_detailed_help_text(docs_url):
     """All different parts for the detailed help, showing all commands."""
     cmd1 = create_command("cmd1", "Cmd help which is very long but whatever.", common=True)
     cmd2 = create_command("command-2", "Cmd help.", common=True)
@@ -158,7 +178,7 @@ def test_detailed_help_text():
         ("--experimental-2", argparse.SUPPRESS),
     ]
 
-    help_builder = HelpBuilder("testapp", fake_summary, command_groups)
+    help_builder = HelpBuilder("testapp", fake_summary, command_groups, docs_url)
     text = help_builder.get_detailed_help(global_options)
 
     expected = textwrap.dedent(
@@ -194,6 +214,10 @@ def test_detailed_help_text():
         For more information about a specific command, run 'testapp help <command>'.
     """
     )
+    if docs_url:
+        expected += (
+            "For more information about testapp, check out: www.craft-app.com/docs/3.14159\n"
+        )
     assert text == expected
 
 
@@ -304,8 +328,9 @@ def test_detailed_help_text_command_order(command_groups, expected_output):
     assert actual_output == expected_output
 
 
+@pytest.mark.parametrize("docs_url", [None, "www.craft-app.com/docs/3.14159/"])
 @pytest.mark.parametrize("output_format", list(OutputFormat))
-def test_command_help_text_no_parameters(output_format):
+def test_command_help_text_no_parameters(docs_url, output_format):
     """All different parts for a specific command help that doesn't have parameters."""
     overview = textwrap.dedent(
         """
@@ -330,7 +355,7 @@ def test_command_help_text_no_parameters(output_format):
         ("--revision", "The revision to release (defaults to latest)."),
     ]
 
-    help_builder = HelpBuilder("testapp", "general summary", command_groups)
+    help_builder = HelpBuilder("testapp", "general summary", command_groups, docs_url)
     text = help_builder.get_command_help(cmd1(None), options, output_format)
 
     expected_plain = textwrap.dedent(
@@ -356,6 +381,11 @@ def test_command_help_text_no_parameters(output_format):
         For a summary of all commands, run 'testapp help --all'.
     """
     )
+    if docs_url:
+        expected_plain += (
+            "For more information, check out: "
+            "www.craft-app.com/docs/3.14159/reference/commands/somecommand\n"
+        )
     expected_markdown = textwrap.dedent(
         """\
         ## Usage:
@@ -385,8 +415,9 @@ def test_command_help_text_no_parameters(output_format):
     assert text == (expected_plain if output_format == OutputFormat.plain else expected_markdown)
 
 
+@pytest.mark.parametrize("docs_url", [None, "www.craft-app.com/docs/3.14159/"])
 @pytest.mark.parametrize("output_format", list(OutputFormat))
-def test_command_help_text_with_parameters(output_format):
+def test_command_help_text_with_parameters(docs_url, output_format):
     """All different parts for a specific command help that has parameters."""
     overview = textwrap.dedent(
         """
@@ -409,7 +440,7 @@ def test_command_help_text_with_parameters(output_format):
         ("--experimental-2", argparse.SUPPRESS),
     ]
 
-    help_builder = HelpBuilder("testapp", "general summary", command_groups)
+    help_builder = HelpBuilder("testapp", "general summary", command_groups, docs_url)
     text = help_builder.get_command_help(cmd1(None), options, output_format)
 
     expected_plain = textwrap.dedent(
@@ -435,6 +466,11 @@ def test_command_help_text_with_parameters(output_format):
         For a summary of all commands, run 'testapp help --all'.
     """
     )
+    if docs_url:
+        expected_plain += (
+            "For more information, check out: "
+            "www.craft-app.com/docs/3.14159/reference/commands/somecommand\n"
+        )
     expected_markdown = textwrap.dedent(
         """\
         ## Usage:
@@ -466,8 +502,9 @@ def test_command_help_text_with_parameters(output_format):
     assert text == (expected_plain if output_format == OutputFormat.plain else expected_markdown)
 
 
+@pytest.mark.parametrize("docs_url", [None, "www.craft-app.com/docs/3.14159/"])
 @pytest.mark.parametrize("output_format", list(OutputFormat))
-def test_command_help_text_complex_overview(output_format):
+def test_command_help_text_complex_overview(docs_url, output_format):
     """The overviews are processed in different ways."""
     overview = textwrap.dedent(
         """
@@ -499,7 +536,7 @@ def test_command_help_text_complex_overview(output_format):
         ("-q, --quiet", "Only show warnings and errors, not progress."),
     ]
 
-    help_builder = HelpBuilder("testapp", "general summary", command_groups)
+    help_builder = HelpBuilder("testapp", "general summary", command_groups, docs_url)
     text = help_builder.get_command_help(cmd1(None), options, output_format)
 
     expected_plain = textwrap.dedent(
@@ -530,6 +567,11 @@ def test_command_help_text_complex_overview(output_format):
         For a summary of all commands, run 'testapp help --all'.
     """
     )
+    if docs_url:
+        expected_plain += (
+            "For more information, check out: "
+            "www.craft-app.com/docs/3.14159/reference/commands/somecommand\n"
+        )
     expected_markdown = textwrap.dedent(
         """\
         ## Usage:
@@ -565,8 +607,9 @@ def test_command_help_text_complex_overview(output_format):
     assert text == (expected_plain if output_format == OutputFormat.plain else expected_markdown)
 
 
+@pytest.mark.parametrize("docs_url", [None, "www.craft-app.com/docs/3.14159/"])
 @pytest.mark.parametrize("output_format", list(OutputFormat))
-def test_command_help_text_loneranger(output_format):
+def test_command_help_text_loneranger(docs_url, output_format):
     """All different parts for a specific command that's the only one in its group."""
     overview = textwrap.dedent(
         """
@@ -585,7 +628,7 @@ def test_command_help_text_loneranger(output_format):
         ("-q, --quiet", "Only show warnings and errors, not progress."),
     ]
 
-    help_builder = HelpBuilder("testapp", "general summary", command_groups)
+    help_builder = HelpBuilder("testapp", "general summary", command_groups, docs_url)
     text = help_builder.get_command_help(cmd1(None), options, output_format)
 
     expected_plain = textwrap.dedent(
@@ -603,6 +646,11 @@ def test_command_help_text_loneranger(output_format):
         For a summary of all commands, run 'testapp help --all'.
     """
     )
+    if docs_url:
+        expected_plain += (
+            "For more information, check out: "
+            "www.craft-app.com/docs/3.14159/reference/commands/somecommand\n"
+        )
     expected_markdown = textwrap.dedent(
         """\
         ## Usage:

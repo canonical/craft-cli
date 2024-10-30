@@ -122,11 +122,25 @@ class HelpBuilder:
     """Produce the different help texts."""
 
     def __init__(
-        self, appname: str, general_summary: str, command_groups: list[CommandGroup]
+        self,
+        appname: str,
+        general_summary: str,
+        command_groups: list[CommandGroup],
+        docs_base_url: str | None = None,
     ) -> None:
+        """Initialize the help builder.
+
+        :param appname: The name of the application.
+        :param general_summary: A summary of the application.
+        :param command_groups: The CommandGroups for the application.
+        :param docs_base_url: The base URL for the documentation.
+        """
         self.appname = appname
         self.general_summary = general_summary
         self.command_groups = command_groups
+        self._docs_base_url = docs_base_url
+        if docs_base_url and docs_base_url.endswith("/"):
+            self._docs_base_url = docs_base_url[:-1]
 
     def get_usage_message(self, error_message: str, command: str = "") -> str:
         """Build a usage and error message.
@@ -156,7 +170,7 @@ class HelpBuilder:
         - summary
         - common commands listed and described shortly
         - all commands grouped, just listed
-        - more help
+        - more help and documentation
         """
         textblocks = []
 
@@ -207,10 +221,16 @@ class HelpBuilder:
             textwrap.dedent(
                 f"""
             For more information about a command, run '{self.appname} help <command>'.
-            For a summary of all commands, run '{self.appname} help --all'.
-        """
+            For a summary of all commands, run '{self.appname} help --all'."""
             )
         )
+
+        # append documentation links to block for more help
+        if self._docs_base_url:
+            textblocks[-1] += (
+                f"\nFor more information about {self.appname}, "
+                f"check out: {self._docs_base_url}"
+            )
 
         # join all stripped blocks, leaving ONE empty blank line between
         return "\n\n".join(block.strip() for block in textblocks) + "\n"
@@ -228,6 +248,7 @@ class HelpBuilder:
         - global options
         - all commands shown with description, grouped
         - more help
+        - more help and documentation
         """
         textblocks = []
 
@@ -264,18 +285,24 @@ class HelpBuilder:
         textblocks.append(
             textwrap.dedent(
                 f"""
-            For more information about a specific command, run '{self.appname} help <command>'.
-        """
+            For more information about a specific command, run '{self.appname} help <command>'."""
             )
         )
+
+        # append documentation links to block for more help
+        if self._docs_base_url:
+            textblocks[-1] += (
+                f"\nFor more information about {self.appname}, "
+                f"check out: {self._docs_base_url}"
+            )
 
         # join all stripped blocks, leaving ONE empty blank line between
         return "\n\n".join(block.strip() for block in textblocks) + "\n"
 
     def _build_plain_command_help(
         self,
+        command: BaseCommand,
         usage: str,
-        overview: str,
         parameters: list[tuple[str, str]],
         options: list[tuple[str, str]],
         other_command_names: list[str],
@@ -289,7 +316,7 @@ class HelpBuilder:
         - positional arguments (only if parameters are not empty)
         - options
         - other related commands
-        - footer
+        - help for all commands and documentation
         """
         textblocks = []
 
@@ -302,7 +329,7 @@ class HelpBuilder:
             )
         )
 
-        overview = textwrap.indent(overview, "    ")
+        overview = textwrap.indent(command.overview, "    ")
         textblocks.append(f"Summary:{overview}")
 
         # column alignment is dictated by longest options title
@@ -326,19 +353,23 @@ class HelpBuilder:
             see_also_block.extend(("    " + name) for name in sorted(other_command_names))
             textblocks.append("\n".join(see_also_block))
 
-        # footer
+        # help for all commands
         textblocks.append(
             f"""
-            For a summary of all commands, run '{self.appname} help --all'.
-        """
+            For a summary of all commands, run '{self.appname} help --all'."""
         )
+
+        # documentation link
+        if self._docs_base_url:
+            command_url = f"{self._docs_base_url}/reference/commands/{command.name}"
+            textblocks[-1] += f"\nFor more information, check out: {command_url}"
 
         return textblocks
 
     def _build_markdown_command_help(
         self,
+        command: BaseCommand,
         usage: str,
-        overview: str,
         parameters: list[tuple[str, str]],
         options: list[tuple[str, str]],
         other_command_names: list[str],
@@ -352,7 +383,6 @@ class HelpBuilder:
         - positional arguments (only if parameters are not empty)
         - options
         - other related commands
-        - footer
         """
         textblocks = []
 
@@ -367,7 +397,7 @@ class HelpBuilder:
             )
         )
 
-        overview = process_overview_for_markdown(overview)
+        overview = process_overview_for_markdown(command.overview)
         textblocks.append(f"## Summary:\n\n{overview}")
 
         if parameters:
@@ -444,7 +474,7 @@ class HelpBuilder:
             builder = self._build_markdown_command_help
         else:
             builder = self._build_plain_command_help
-        textblocks = builder(usage, command.overview, parameters, options, other_command_names)
+        textblocks = builder(command, usage, parameters, options, other_command_names)
 
         # join all stripped blocks, leaving ONE empty blank line between
         return "\n\n".join(block.strip() for block in textblocks) + "\n"
