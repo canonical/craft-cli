@@ -39,6 +39,9 @@ jobs:
   pypi:
     needs: ["source-wheel"]
     runs-on: [self-hosted, jammy]
+    permissions:
+      # IMPORTANT: this permission is mandatory for trusted publishing
+      id-token: write
     steps:
       - name: Get packages
         uses: actions/download-artifact@v4
@@ -46,9 +49,10 @@ jobs:
           name: pypi-packages
           path: dist/
       - name: Publish to pypi
+        # Note: this action uses PyPI's support for Trusted Publishers
+        # It needs a configuration on the PyPI project - see:
+        # https://docs.pypi.org/trusted-publishers/adding-a-publisher/#github-actions
         uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          password: ${{ secrets.PYPI_API_TOKEN }}
   github-release:
     needs: ["source-wheel"]
     runs-on: [self-hosted, jammy]
