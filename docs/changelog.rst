@@ -9,7 +9,7 @@ included in each version.
 
 2.10.0 (2024-Oct-31)
 --------------------
-- Add a link to documentation in help messages.
+- Support adding a link to documentation in help messages.
 
 2.9.0 (2024-Oct-22)
 -------------------
