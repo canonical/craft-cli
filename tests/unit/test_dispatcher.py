@@ -33,12 +33,17 @@ from tests.factory import create_command
 # --- Tests for the Dispatcher
 
 
-def test_dispatcher_help_init():
+@pytest.mark.parametrize("docs_base_url", [None, "www.craft-app.com/docs/3.14159"])
+def test_dispatcher_help_init(docs_base_url):
     """Init the help infrastructure properly."""
     groups = [CommandGroup("title", [create_command("somecommand")])]
-    dispatcher = Dispatcher("test-appname", groups, summary="test summary")
+    dispatcher = Dispatcher(
+        "test-appname", groups, summary="test summary", docs_base_url=docs_base_url
+    )
+
     assert dispatcher._help_builder.appname == "test-appname"
     assert dispatcher._help_builder.general_summary == "test summary"
+    assert dispatcher._help_builder._docs_base_url == docs_base_url
 
 
 def test_dispatcher_pre_parsing():

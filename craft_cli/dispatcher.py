@@ -209,9 +209,10 @@ class Dispatcher:
     :param extra_global_args: other automatic global arguments than the ones
         provided automatically
     :param default_command: the command to run if none was specified in the command line
+    :param docs_base_url: The base address of the documentation, for help messages.
     """
 
-    def __init__(
+    def __init__(  # noqa: PLR0913 (too-many-arguments)
         self,
         appname: str,
         commands_groups: list[CommandGroup],
@@ -219,9 +220,11 @@ class Dispatcher:
         summary: str = "",
         extra_global_args: list[GlobalArgument] | None = None,
         default_command: type[BaseCommand] | None = None,
+        docs_base_url: str | None = None,
     ) -> None:
         self._default_command = default_command
-        self._help_builder = HelpBuilder(appname, summary, commands_groups)
+        self._docs_base_url = docs_base_url
+        self._help_builder = HelpBuilder(appname, summary, commands_groups, docs_base_url)
 
         self.global_arguments = _DEFAULT_GLOBAL_ARGS[:]
         if extra_global_args is not None:
