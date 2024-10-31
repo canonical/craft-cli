@@ -217,20 +217,18 @@ class HelpBuilder:
             )
         textblocks.append("\n".join(grouped_lines))
 
-        textblocks.append(
-            textwrap.dedent(
-                f"""
+        more_help_text = textwrap.dedent(
+            f"""
             For more information about a command, run '{self.appname} help <command>'.
             For a summary of all commands, run '{self.appname} help --all'."""
-            )
         )
-
         # append documentation links to block for more help
         if self._docs_base_url:
-            textblocks[-1] += (
+            more_help_text += (
                 f"\nFor more information about {self.appname}, "
                 f"check out: {self._docs_base_url}"
             )
+        textblocks.append(more_help_text)
 
         # join all stripped blocks, leaving ONE empty blank line between
         return "\n\n".join(block.strip() for block in textblocks) + "\n"
@@ -247,7 +245,6 @@ class HelpBuilder:
         - summary
         - global options
         - all commands shown with description, grouped
-        - more help
         - more help and documentation
         """
         textblocks = []
@@ -282,19 +279,17 @@ class HelpBuilder:
                 group_lines.extend(_build_item_plain(cmd.name, cmd.help_msg, max_title_len))
             textblocks.append("\n".join(group_lines))
 
-        textblocks.append(
-            textwrap.dedent(
-                f"""
-            For more information about a specific command, run '{self.appname} help <command>'."""
-            )
+        more_help_text = (
+            f"For more information about a specific command, run '{self.appname} "
+            "help <command>'."
+            ""
         )
-
-        # append documentation links to block for more help
         if self._docs_base_url:
-            textblocks[-1] += (
+            more_help_text += (
                 f"\nFor more information about {self.appname}, "
                 f"check out: {self._docs_base_url}"
             )
+        textblocks.append(more_help_text)
 
         # join all stripped blocks, leaving ONE empty blank line between
         return "\n\n".join(block.strip() for block in textblocks) + "\n"
@@ -354,15 +349,11 @@ class HelpBuilder:
             textblocks.append("\n".join(see_also_block))
 
         # help for all commands
-        textblocks.append(
-            f"""
-            For a summary of all commands, run '{self.appname} help --all'."""
-        )
-
-        # documentation link
+        more_help_text = f"For a summary of all commands, run '{self.appname} help --all'."
         if self._docs_base_url:
             command_url = f"{self._docs_base_url}/reference/commands/{command.name}"
-            textblocks[-1] += f"\nFor more information, check out: {command_url}"
+            more_help_text += f"\nFor more information, check out: {command_url}"
+        textblocks.append(more_help_text)
 
         return textblocks
 
