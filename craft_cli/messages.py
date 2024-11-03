@@ -25,6 +25,7 @@ __all__ = [
 
 import enum
 import functools
+import json
 import logging
 import os
 import pathlib
@@ -37,6 +38,8 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any, Callable, Generator, Literal, TextIO, TypeVar, cast
 
 import platformdirs
+
+from .errors import BaseErrorData, CraftError
 
 try:
     import win32pipe  # type: ignore[import]
@@ -66,6 +69,94 @@ _PIPE_READER_CHUNK_SIZE = 4096
 # set to true when running *application* tests so some behaviours change (see
 # craft_cli/pytest_plugin.py )
 TESTMODE = False
+
+# Constants for emitter-to-emitter line protocol
+_MSG_MESSAGE = "<M>"
+_MSG_VERBOSE = "<V>"
+_MSG_DEBUG = "<D>"
+_MSG_TRACE = "<T>"
+_MSG_PROGRESS_PERMANENT = "<P>"
+_MSG_PROGRESS = "<p>"
+_MSG_ERROR = "<E>"
+
+class _ErrorMessage(BaseErrorData):
+    message: str
+    is_command_error: bool
+    traceback_lines: list[str]
+
+    def __init__(  # noqa: PLR0913 (too many arguments)
+        self,
+        message: str,
+        *,
+        details: str | None,
+        resolution: str | None,
+        docs_url: str | None,
+        logpath_report: bool,
+        reportable: bool,
+        retcode: int,
+        doc_slug: str | None,
+        stderr: str | None,
+        is_command_error: bool,
+        traceback_lines: list[str] | None,
+    ) -> None:
+        self.message = message
+        self.details = details
+        self.resolution = resolution
+        self.docs_url = docs_url
+        self.logpath_report = logpath_report
+        self.reportable = reportable
+        self.retcode = retcode
+        self.doc_slug = doc_slug
+        self.stderr = stderr
+        self.is_command_error = is_command_error
+        self.traceback_lines = traceback_lines or []
+
+    @classmethod
+    def from_error(cls, error: CraftError) -> _ErrorMessage:
+        """Create an error message from an error exception.
+
+        :param error: The CraftError exception.
+        :return: The error message for the CLI protocol.
+        """
+        msg = cls(
+            message = str(error),
+            details = error.details,
+            resolution = error.resolution,
+            docs_url = error.docs_url,
+            doc_slug = error.doc_slug,
+            stderr = "",
+            logpath_report = error.logpath_report,
+            reportable = error.reportable,
+            retcode = error.retcode,
+            is_command_error = False,
+            traceback_lines = [],
+        )
+
+        if error.__cause__:
+            msg.traceback_lines = list(_get_traceback_lines(error.__cause__))
+
+        if isinstance(error, errors.CraftCommandError):
+            msg.is_command_error = True
+            msg.stderr = error.stderr
+
+        return msg
+
+    @classmethod
+    def loads(cls, data: str) -> _ErrorMessage:
+        """Unmarshal error data from a string.
+
+        :param data: Serialized error attributes.
+        :return: CraftError object.
+        """
+        j = json.loads(data)
+        return cls(**j)
+
+    def dumps(self) -> str:
+        """Marshal error data to a string.
+
+        :return: Serialized error attributes.
+        """
+        return json.dumps(self.__dict__)
 
 
 def _get_log_filepath(appname: str) -> pathlib.Path:
@@ -532,11 +623,7 @@ class Emitter:
 
         Normally used as the final message, to show the result of a command.
         """
-        stream = None if self._mode == EmitterMode.QUIET else sys.stdout
-        if self._streaming_brief:
-            # Clear the message prefix, as this message stands alone
-            self._printer.set_terminal_prefix("")
-        self._printer.show(stream, text)
+        self._handle_cli_message(_MSG_MESSAGE, text)
 
     @_active_guard()
     def verbose(self, text: str) -> None:
@@ -545,16 +632,7 @@ class Emitter:
         Useful to provide more information to the user that shouldn't be exposed
         when in brief mode for clarity and simplicity.
         """
-        if self._mode in (EmitterMode.QUIET, EmitterMode.BRIEF):
-            stream = None
-            use_timestamp = False
-        elif self._mode == EmitterMode.VERBOSE:
-            stream = sys.stderr
-            use_timestamp = False
-        else:
-            stream = sys.stderr
-            use_timestamp = True
-        self._printer.show(stream, text, use_timestamp=use_timestamp)
+        self._handle_cli_message(_MSG_VERBOSE, text)
 
     @_active_guard()
     def debug(self, text: str) -> None:
@@ -564,11 +642,7 @@ class Emitter:
         for the app developers to understand why things are failing or performing
         forensics on the produced logs.
         """
-        if self._mode in (EmitterMode.QUIET, EmitterMode.BRIEF, EmitterMode.VERBOSE):
-            stream = None
-        else:
-            stream = sys.stderr
-        self._printer.show(stream, text, use_timestamp=True)
+        self._handle_cli_message(_MSG_DEBUG, text)
 
     @_active_guard()
     def trace(self, text: str) -> None:
@@ -580,13 +654,81 @@ class Emitter:
 
         It only produces information to the screen and into the logs if in TRACE mode.
         """
-        # as we're not even logging anything if not in TRACE mode, instead of calling the
-        # Printer with no stream and the 'avoid_logging' flag (which would be more consistent
-        # with the rest of the Emitter methods, in this case we just avoid moving any
-        # machinery as much as possible, because potentially there will be huge number
-        # of trace calls.
-        if self._mode == EmitterMode.TRACE:
-            self._printer.show(sys.stderr, text, use_timestamp=True)
+        self._handle_cli_message(_MSG_TRACE, text)
+
+    def _handle_cli_message(self, msg_type: str, text: str) -> None:  # noqa: PLR0912 (too many branches)
+        """Process emitted message according to the local system configuration.
+
+        Emitted messages can be handled differently according to the type of the
+        message and configuration of the message handler. By decoupling the emitter
+        and message printer, the (potentially remote) emitter sets the type of the
+        emitted message, which is printed according to the local handler's verbosity
+        rules.
+
+        Note that text lines are passed directly, whereas structured error data is
+        serialized. This shouldn't impose significant performance overhead as error
+        messages are only emitted at the end of a failed session.
+
+        :param msg: The emitted message, in Craft CLI message protocol format.
+        """
+        if msg_type == _MSG_MESSAGE:
+            stream = None if self._mode == EmitterMode.QUIET else sys.stdout
+            if self._streaming_brief:
+                # Clear the message prefix, as this message stands alone
+                self._printer.set_terminal_prefix("")
+            self._printer.show(stream, text)
+
+        elif msg_type == _MSG_VERBOSE:
+            if self._mode in (EmitterMode.QUIET, EmitterMode.BRIEF):
+                stream = None
+                use_timestamp = False
+            elif self._mode == EmitterMode.VERBOSE:
+                stream = sys.stderr
+                use_timestamp = False
+            else:
+                stream = sys.stderr
+                use_timestamp = True
+            self._printer.show(stream, text, use_timestamp=use_timestamp)
+
+        elif msg_type == _MSG_DEBUG:
+            if self._mode in (EmitterMode.QUIET, EmitterMode.BRIEF, EmitterMode.VERBOSE):
+                stream = None
+            else:
+                stream = sys.stderr
+            self._printer.show(stream, text, use_timestamp=True)
+
+        elif msg_type == _MSG_TRACE:
+            # as we're not even logging anything if not in TRACE mode, instead of calling the
+            # Printer with no stream and the 'avoid_logging' flag (which would be more consistent
+            # with the rest of the Emitter methods, in this case we just avoid moving any
+            # machinery as much as possible, because potentially there will be huge number
+            # of trace calls.
+            if self._mode == EmitterMode.TRACE:
+                self._printer.show(sys.stderr, text, use_timestamp=True)
+
+        elif msg_type in (_MSG_PROGRESS_PERMANENT, _MSG_PROGRESS):
+            is_permament = msg_type == _MSG_PROGRESS_PERMANENT
+            stream, use_timestamp, ephemeral = self._get_progress_params(is_permament)
+
+            if self._streaming_brief:
+                # Clear the "new thing" prefix, as this is a new progress message.
+                self._printer.set_terminal_prefix("")
+
+            self._printer.show(stream, text, ephemeral=ephemeral, use_timestamp=use_timestamp)
+
+            if self._mode == EmitterMode.BRIEF and ephemeral and self._streaming_brief:
+                # Set the "progress prefix" for upcoming non-permanent messages.
+                self._printer.set_terminal_prefix(text)
+
+        elif msg_type == _MSG_ERROR:
+            if self._streaming_brief:
+                # Clear the message prefix, as this error stands alone
+                self._printer.set_terminal_prefix("")
+            self._report_error(_ErrorMessage.loads(text))
+
+        else:
+            raise RuntimeError("unknown message type '{msg_type}'")
+
 
     def _get_progress_params(
         self, permanent: bool  # noqa: FBT001 (boolean positional arg)
@@ -626,17 +768,11 @@ class Emitter:
         These messages will be truncated to the terminal's width, and overwritten by the next
         line (unless verbose/trace mode).
         """
-        stream, use_timestamp, ephemeral = self._get_progress_params(permanent)
+        if permanent:
+            self._handle_cli_message(_MSG_PROGRESS_PERMANENT, text)
+        else:
+            self._handle_cli_message(_MSG_PROGRESS, text)
 
-        if self._streaming_brief:
-            # Clear the "new thing" prefix, as this is a new progress message.
-            self._printer.set_terminal_prefix("")
-
-        self._printer.show(stream, text, ephemeral=ephemeral, use_timestamp=use_timestamp)
-
-        if self._mode == EmitterMode.BRIEF and ephemeral and self._streaming_brief:
-            # Set the "progress prefix" for upcoming non-permanent messages.
-            self._printer.set_terminal_prefix(text)
 
     @_active_guard()
     def progress_bar(
@@ -710,7 +846,7 @@ class Emitter:
         """Finish the messaging system gracefully."""
         self._stop()
 
-    def _report_error(self, error: errors.CraftError) -> None:  # noqa: PLR0912 (too many branches)
+    def _report_error(self, error: _ErrorMessage) -> None:  # noqa: PLR0912 (too many branches)
         """Report the different message lines from a CraftError."""
         if self._mode in (EmitterMode.QUIET, EmitterMode.BRIEF, EmitterMode.VERBOSE):
             use_timestamp = False
@@ -721,10 +857,10 @@ class Emitter:
 
         # The initial message. Print every line individually to correctly clear
         # previous lines, if necessary.
-        for line in str(error).splitlines():
+        for line in error.message.splitlines():
             self._printer.show(sys.stderr, line, use_timestamp=use_timestamp, end_line=True)
 
-        if isinstance(error, errors.CraftCommandError):
+        if error.is_command_error:
             stderr = error.stderr
             if stderr:
                 text = f"Captured error:\n{stderr}"
@@ -734,8 +870,8 @@ class Emitter:
         if error.details:
             text = f"Detailed information: {error.details}"
             self._printer.show(full_stream, text, use_timestamp=use_timestamp, end_line=True)
-        if error.__cause__:
-            for line in _get_traceback_lines(error.__cause__):
+        if error.traceback_lines:
+            for line in error.traceback_lines:
                 self._printer.show(full_stream, line, use_timestamp=use_timestamp, end_line=True)
 
         # hints for the user to know more
@@ -761,11 +897,10 @@ class Emitter:
     @_active_guard(ignore_when_stopped=True)
     def error(self, error: errors.CraftError) -> None:
         """Handle the system's indicated error and stop machinery."""
-        if self._streaming_brief:
-            # Clear the message prefix, as this error stands alone
-            self._printer.set_terminal_prefix("")
-        self._report_error(error)
+        msg = _ErrorMessage.from_error(error)
+        self._handle_cli_message(_MSG_ERROR, msg.dumps())
         self._stop()
+
 
     @_active_guard()
     def set_secrets(self, secrets: list[str]) -> None:

@@ -23,8 +23,8 @@ __all__ = [
 from typing import Any, Optional, Union, cast
 
 
-class CraftError(Exception):
-    """Signal a program error with a lot of information to report."""
+class BaseErrorData:
+    """Common error fields for CraftError and CLI protocol."""
 
     message: str
     """The main message to the user, to be shown as first line (and probably only that,
@@ -55,6 +55,10 @@ class CraftError(Exception):
 
     retcode: int
     """The code to return when the application finishes."""
+
+
+class CraftError(BaseErrorData, Exception):
+    """Signal a program error with a lot of information to report."""
 
     def __init__(  # noqa: PLR0913 (too many arguments)
         self,
