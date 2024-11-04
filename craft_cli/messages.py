@@ -80,6 +80,7 @@ _MSG_PROGRESS = "<p>"
 _MSG_ERROR = "<E>"
 _MSG_STREAM = "<S>"
 
+
 class _ErrorMessage(BaseErrorData):
     message: str
     is_command_error: bool
@@ -120,17 +121,17 @@ class _ErrorMessage(BaseErrorData):
         :return: The error message for the CLI protocol.
         """
         msg = cls(
-            message = str(error),
-            details = error.details,
-            resolution = error.resolution,
-            docs_url = error.docs_url,
-            doc_slug = error.doc_slug,
-            stderr = "",
-            logpath_report = error.logpath_report,
-            reportable = error.reportable,
-            retcode = error.retcode,
-            is_command_error = False,
-            traceback_lines = [],
+            message=str(error),
+            details=error.details,
+            resolution=error.resolution,
+            docs_url=error.docs_url,
+            doc_slug=error.doc_slug,
+            stderr="",
+            logpath_report=error.logpath_report,
+            reportable=error.reportable,
+            retcode=error.retcode,
+            is_command_error=False,
+            traceback_lines=[],
         )
 
         if error.__cause__:
@@ -667,7 +668,9 @@ class Emitter:
         """
         self._handle_cli_message(_MSG_TRACE, text)
 
-    def _handle_cli_message(self, msg_type: str, text: str) -> None:  # noqa: PLR0912 (too many branches)
+    def _handle_cli_message(
+        self, msg_type: str, text: str
+    ) -> None:  # noqa: PLR0912 (too many branches)
         """Process emitted message according to the local system configuration.
 
         Emitted messages can be handled differently according to the type of the
@@ -688,13 +691,19 @@ class Emitter:
                 self._printer.show(None, text, use_timestamp=False, ephemeral=True, end_line=False)
             elif self._mode == EmitterMode.BRIEF:
                 # third party stream to stderr
-                self._printer.show(sys.stderr, text, use_timestamp=False, ephemeral=True, end_line=False)
+                self._printer.show(
+                    sys.stderr, text, use_timestamp=False, ephemeral=True, end_line=False
+                )
             elif self._mode == EmitterMode.VERBOSE:
                 # third party stream to stderr
-                self._printer.show(sys.stderr, text, use_timestamp=False, ephemeral=False, end_line=True)
+                self._printer.show(
+                    sys.stderr, text, use_timestamp=False, ephemeral=False, end_line=True
+                )
             else:
                 # third party stream to stderr with timestamp
-                self._printer.show(sys.stderr, text, use_timestamp=True, ephemeral=False, end_line=True)
+                self._printer.show(
+                    sys.stderr, text, use_timestamp=True, ephemeral=False, end_line=True
+                )
 
         elif msg_type == _MSG_MESSAGE:
             stream = None if self._mode == EmitterMode.QUIET else sys.stdout
@@ -754,7 +763,6 @@ class Emitter:
         else:
             raise RuntimeError("unknown message type '{msg_type}'")
 
-
     def _get_progress_params(
         self, permanent: bool  # noqa: FBT001 (boolean positional arg)
     ) -> tuple[TextIO | None, bool, bool]:
@@ -797,7 +805,6 @@ class Emitter:
             self._handle_cli_message(_MSG_PROGRESS_PERMANENT, text)
         else:
             self._handle_cli_message(_MSG_PROGRESS, text)
-
 
     @_active_guard()
     def progress_bar(
@@ -925,7 +932,6 @@ class Emitter:
         msg = _ErrorMessage.from_error(error)
         self._handle_cli_message(_MSG_ERROR, msg.dumps())
         self._stop()
-
 
     @_active_guard()
     def set_secrets(self, secrets: list[str]) -> None:
