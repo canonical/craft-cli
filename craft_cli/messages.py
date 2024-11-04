@@ -78,6 +78,7 @@ _MSG_TRACE = "<T>"
 _MSG_PROGRESS_PERMANENT = "<P>"
 _MSG_PROGRESS = "<p>"
 _MSG_ERROR = "<E>"
+_MSG_STREAM = "<S>"
 
 class _ErrorMessage(BaseErrorData):
     message: str
@@ -336,7 +337,12 @@ class _PipeReaderThread(threading.Thread):
             # can correctly count the characters.
             unicode_line = unicode_line.replace("\t", "  ")
             text = f":: {unicode_line}"
-            self.printer.show(self.stream, text, **self.printer_flags)
+
+            self._handle_cli_message(_MSG_STREAM, text)
+
+    def _handle_cli_message(self, _msg_type: str, text: str) -> None:
+        """Process emitted message according to the local system configuration."""
+        self.printer.show(self.stream, text, **self.printer_flags)
 
     def _run_posix(self) -> None:
         """Run the thread, handling pipes in the POSIX way."""
@@ -618,6 +624,11 @@ class Emitter:
                 )
 
     @_active_guard()
+    def stream(self, text: str) -> None:
+        """Show strings streamed from a stream context."""
+        self._handle_cli_message(_MSG_STREAM, text)
+
+    @_active_guard()
     def message(self, text: str) -> None:
         """Show an important message to the user.
 
@@ -671,7 +682,21 @@ class Emitter:
 
         :param msg: The emitted message, in Craft CLI message protocol format.
         """
-        if msg_type == _MSG_MESSAGE:
+        if msg_type == _MSG_STREAM:
+            if self._mode == EmitterMode.QUIET:
+                # no third party stream
+                self._printer.show(None, text, use_timestamp=False, ephemeral=True, end_line=False)
+            elif self._mode == EmitterMode.BRIEF:
+                # third party stream to stderr
+                self._printer.show(sys.stderr, text, use_timestamp=False, ephemeral=True, end_line=False)
+            elif self._mode == EmitterMode.VERBOSE:
+                # third party stream to stderr
+                self._printer.show(sys.stderr, text, use_timestamp=False, ephemeral=False, end_line=True)
+            else:
+                # third party stream to stderr with timestamp
+                self._printer.show(sys.stderr, text, use_timestamp=True, ephemeral=False, end_line=True)
+
+        elif msg_type == _MSG_MESSAGE:
             stream = None if self._mode == EmitterMode.QUIET else sys.stdout
             if self._streaming_brief:
                 # Clear the message prefix, as this message stands alone
