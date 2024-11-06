@@ -339,9 +339,9 @@ class _PipeReaderThread(threading.Thread):
             unicode_line = unicode_line.replace("\t", "  ")
             text = f":: {unicode_line}"
 
-            self._handle_cli_message(_MSG_STREAM, text)
+            self.handle_message(_MSG_STREAM, text)
 
-    def _handle_cli_message(self, _msg_type: str, text: str) -> None:
+    def handle_message(self, _msg_type: str, text: str) -> None:
         """Process emitted message according to the local system configuration."""
         self.printer.show(self.stream, text, **self.printer_flags)
 
@@ -627,7 +627,7 @@ class Emitter:
     @_active_guard()
     def stream(self, text: str) -> None:
         """Show strings streamed from a stream context."""
-        self._handle_cli_message(_MSG_STREAM, text)
+        self.handle_message(_MSG_STREAM, text)
 
     @_active_guard()
     def message(self, text: str) -> None:
@@ -635,7 +635,7 @@ class Emitter:
 
         Normally used as the final message, to show the result of a command.
         """
-        self._handle_cli_message(_MSG_MESSAGE, text)
+        self.handle_message(_MSG_MESSAGE, text)
 
     @_active_guard()
     def verbose(self, text: str) -> None:
@@ -644,7 +644,7 @@ class Emitter:
         Useful to provide more information to the user that shouldn't be exposed
         when in brief mode for clarity and simplicity.
         """
-        self._handle_cli_message(_MSG_VERBOSE, text)
+        self.handle_message(_MSG_VERBOSE, text)
 
     @_active_guard()
     def debug(self, text: str) -> None:
@@ -654,7 +654,7 @@ class Emitter:
         for the app developers to understand why things are failing or performing
         forensics on the produced logs.
         """
-        self._handle_cli_message(_MSG_DEBUG, text)
+        self.handle_message(_MSG_DEBUG, text)
 
     @_active_guard()
     def trace(self, text: str) -> None:
@@ -666,11 +666,11 @@ class Emitter:
 
         It only produces information to the screen and into the logs if in TRACE mode.
         """
-        self._handle_cli_message(_MSG_TRACE, text)
+        self.handle_message(_MSG_TRACE, text)
 
-    def _handle_cli_message(
+    def handle_message(  # noqa: PLR0912 (too many branches)
         self, msg_type: str, text: str
-    ) -> None:  # noqa: PLR0912 (too many branches)
+    ) -> None:
         """Process emitted message according to the local system configuration.
 
         Emitted messages can be handled differently according to the type of the
@@ -802,9 +802,9 @@ class Emitter:
         line (unless verbose/trace mode).
         """
         if permanent:
-            self._handle_cli_message(_MSG_PROGRESS_PERMANENT, text)
+            self.handle_message(_MSG_PROGRESS_PERMANENT, text)
         else:
-            self._handle_cli_message(_MSG_PROGRESS, text)
+            self.handle_message(_MSG_PROGRESS, text)
 
     @_active_guard()
     def progress_bar(
@@ -930,7 +930,7 @@ class Emitter:
     def error(self, error: errors.CraftError) -> None:
         """Handle the system's indicated error and stop machinery."""
         msg = _ErrorMessage.from_error(error)
-        self._handle_cli_message(_MSG_ERROR, msg.dumps())
+        self.handle_message(_MSG_ERROR, msg.dumps())
         self._stop()
 
     @_active_guard()
