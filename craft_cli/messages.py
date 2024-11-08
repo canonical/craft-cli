@@ -510,10 +510,15 @@ class Emitter:
     @_active_guard()
     def set_mode(self, mode: EmitterMode) -> None:
         """Set the mode of the emitter."""
+        current_mode = self._mode
         self._mode = mode
         self._log_handler.mode = mode
 
         if mode in (EmitterMode.VERBOSE, EmitterMode.DEBUG, EmitterMode.TRACE):
+            import traceback
+
+            traceback.print_stack()
+            print(f"setting mode FROM {current_mode} TO {mode}")
             use_timestamp = mode in (EmitterMode.DEBUG, EmitterMode.TRACE)
 
             # send the greeting to the screen before any further messages
