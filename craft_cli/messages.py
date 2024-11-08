@@ -510,6 +510,9 @@ class Emitter:
     @_active_guard()
     def set_mode(self, mode: EmitterMode) -> None:
         """Set the mode of the emitter."""
+        if mode == self._mode:
+            return
+
         self._mode = mode
         self._log_handler.mode = mode
 

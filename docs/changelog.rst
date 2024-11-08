@@ -7,6 +7,12 @@ Changelog
 See the `Releases page`_ on GitHub for a complete list of commits that are
 included in each version.
 
+2.10.1 (2024-Nov-11)
+--------------------
+
+- Fix an issue where setting an ``Emitter`` to the same mode multiple times
+  resulted in multiple greetings.
+
 2.10.0 (2024-Oct-31)
 --------------------
 - Support adding a link to documentation in help messages.
