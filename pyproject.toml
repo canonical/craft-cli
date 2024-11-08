@@ -43,7 +43,7 @@ emitter = "craft_cli.pytest_plugin"
 
 [project.optional-dependencies]
 dev = [
-    "coverage[toml]==7.6.4",
+    "coverage[toml]==7.6.1",
     "pytest==8.3.3",
     "pytest-cov==5.0.0",
     "pytest-mock==3.14.0",
