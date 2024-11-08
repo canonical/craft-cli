@@ -930,6 +930,27 @@ def test_tool_exec_command_incorrect_similar_several():
     assert str(exc_cm.value) == expected
 
 
+def test_tool_exec_command_incorrect_similar_hidden():
+    """The command does not exist, similar ones do but some are hidden."""
+    cmd1 = create_command("abcdefg", "Command line help.", hidden=False)
+    cmd2 = create_command("abcdefh", "Command line help.", hidden=True)
+    cmd3 = create_command("abcdefi", "Command line help.", hidden=True)
+    command_groups = [CommandGroup("group", [cmd1, cmd2, cmd3])]
+    dispatcher = Dispatcher("testapp", command_groups, summary="general summary")
+    with pytest.raises(ArgumentParsingError) as exc_cm:
+        dispatcher.pre_parse_args(["abcef"])  # note missing 'd'
+
+    expected = textwrap.dedent(
+        """\
+        Usage: testapp [options] command [args]...
+        Try 'testapp -h' for help.
+
+        Error: no such command 'abcef', maybe you meant 'abcdefg'
+        """
+    )
+    assert str(exc_cm.value) == expected
+
+
 @pytest.mark.parametrize(
     "sysargv",
     [

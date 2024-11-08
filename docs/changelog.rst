@@ -12,6 +12,8 @@ included in each version.
 
 - Fix an issue where setting an ``Emitter`` to the same mode multiple times
   resulted in multiple greetings.
+- Hidden commands can no longer show up as suggested alternatives when an
+  invalid command is entered by the user.
 
 2.10.0 (2024-Oct-31)
 --------------------
