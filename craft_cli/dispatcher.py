@@ -359,7 +359,9 @@ class Dispatcher:
 
     def _build_no_command_error(self, missing_command: str) -> str:
         """Build the error help text for missing command, providing options."""
-        all_alternatives = self.commands.keys()
+        all_alternatives = [
+            name for (name, command) in self.commands.items() if not command.hidden
+        ]
         similar = difflib.get_close_matches(missing_command, all_alternatives)
         if len(similar) == 0:
             extra_similar = ""
