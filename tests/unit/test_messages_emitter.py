@@ -18,6 +18,7 @@
 
 import logging
 import sys
+from unittest import mock
 from unittest.mock import call, patch
 
 import pytest
@@ -296,6 +297,32 @@ def test_set_mode_developer_modes(get_initiated_emitter, mode):
     logger = logging.getLogger("")
     (handler,) = [x for x in logger.handlers if isinstance(x, _Handler)]
     assert handler.mode == mode
+
+
+@pytest.mark.parametrize(
+    "mode",
+    [
+        EmitterMode.VERBOSE,
+        EmitterMode.DEBUG,
+        EmitterMode.TRACE,
+    ],
+)
+def test_set_mode_repeated(get_initiated_emitter, mode):
+    """Repeatedly setting the same mode should not emit multiple greetings."""
+    greeting = "greeting"
+    emitter = get_initiated_emitter(EmitterMode.QUIET, greeting=greeting)
+
+    emitter.set_mode(mode)
+    emitter.set_mode(mode)
+
+    log_locat = f"Logging execution to {emitter._log_filepath!r}"
+    extra_print_args = {"use_timestamp": mock.ANY, "avoid_logging": True, "end_line": True}
+
+    # Only a single printing of the greeting and the logpath
+    assert emitter.printer_calls == [
+        call().show(sys.stderr, greeting, **extra_print_args),
+        call().show(sys.stderr, log_locat, **extra_print_args),
+    ]
 
 
 # -- tests for emitting messages of all kind

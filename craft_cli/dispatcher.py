@@ -209,9 +209,10 @@ class Dispatcher:
     :param extra_global_args: other automatic global arguments than the ones
         provided automatically
     :param default_command: the command to run if none was specified in the command line
+    :param docs_base_url: The base address of the documentation, for help messages.
     """
 
-    def __init__(
+    def __init__(  # noqa: PLR0913 (too-many-arguments)
         self,
         appname: str,
         commands_groups: list[CommandGroup],
@@ -219,9 +220,11 @@ class Dispatcher:
         summary: str = "",
         extra_global_args: list[GlobalArgument] | None = None,
         default_command: type[BaseCommand] | None = None,
+        docs_base_url: str | None = None,
     ) -> None:
         self._default_command = default_command
-        self._help_builder = HelpBuilder(appname, summary, commands_groups)
+        self._docs_base_url = docs_base_url
+        self._help_builder = HelpBuilder(appname, summary, commands_groups, docs_base_url)
 
         self.global_arguments = _DEFAULT_GLOBAL_ARGS[:]
         if extra_global_args is not None:
@@ -281,7 +284,7 @@ class Dispatcher:
         return ArgumentParsingError(self._help_builder.get_usage_message(text))
 
     def _get_requested_help(  # noqa: PLR0912 (too many branches)
-        self, parameters: list[str]
+        self, parameters: list[str], app_config: Any
     ) -> str:
         """Produce the requested help depending on the rest of the command line params."""
         if len(parameters) == 0:
@@ -332,7 +335,7 @@ class Dispatcher:
             raise self._build_usage_exc(msg) from None
 
         # instantiate the command and fill its arguments
-        command = cmd_class(None)
+        command = cmd_class(app_config)
         parser = _CustomArgumentParser(self._help_builder, prog=command.name, add_help=False)
         command.fill_parser(parser)
 
@@ -356,7 +359,9 @@ class Dispatcher:
 
     def _build_no_command_error(self, missing_command: str) -> str:
         """Build the error help text for missing command, providing options."""
-        all_alternatives = self.commands.keys()
+        all_alternatives = [
+            name for (name, command) in self.commands.items() if not command.hidden
+        ]
         similar = difflib.get_close_matches(missing_command, all_alternatives)
         if len(similar) == 0:
             extra_similar = ""
@@ -413,7 +418,7 @@ class Dispatcher:
                 filtered_sysargs.append(sysarg)
         return global_args, filtered_sysargs
 
-    def pre_parse_args(self, sysargs: list[str]) -> dict[str, Any]:
+    def pre_parse_args(self, sysargs: list[str], app_config: Any = None) -> dict[str, Any]:
         """Pre-parse sys args.
 
         Several steps:
@@ -423,6 +428,8 @@ class Dispatcher:
         - validate global options and apply them
 
         - validate that command is correct (NOT loading and parsing its arguments)
+
+        If provided, ``app_config`` is passed to the command to be validated.
         """
         global_args, filtered_sysargs = self._parse_options(self.global_arguments, sysargs)
 
@@ -448,7 +455,7 @@ class Dispatcher:
 
         # handle requested help through -h/--help options
         if global_args["help"]:
-            help_text = self._get_requested_help(filtered_sysargs)
+            help_text = self._get_requested_help(filtered_sysargs, app_config)
             raise ProvideHelpException(help_text)
 
         if not filtered_sysargs or filtered_sysargs[0].startswith("-"):
@@ -466,7 +473,7 @@ class Dispatcher:
 
         # handle requested help through implicit "help" command
         if command == "help":
-            help_text = self._get_requested_help(cmd_args)
+            help_text = self._get_requested_help(cmd_args, app_config)
             raise ProvideHelpException(help_text)
 
         self._command_args = cmd_args

@@ -1,9 +1,34 @@
+:tocdepth: 2
+
 ***************
 Changelog
 ***************
 
 See the `Releases page`_ on GitHub for a complete list of commits that are
 included in each version.
+
+2.10.1 (2024-Nov-11)
+--------------------
+
+- Fix an issue where setting an ``Emitter`` to the same mode multiple times
+  resulted in multiple greetings.
+- Hidden commands can no longer show up as suggested alternatives when an
+  invalid command is entered by the user.
+
+2.10.0 (2024-Oct-31)
+--------------------
+- Support adding a link to documentation in help messages.
+
+2.9.0 (2024-Oct-22)
+-------------------
+
+- The ``Dispatcher.pre_parse_args()`` method now accepts an ``app_config``
+  parameter, which is used to instantiate the command that will be validated.
+
+2.8.0 (2024-Oct-10)
+-------------------
+- Positional arguments are now displayed in 'help' outputs.
+- The terminal cursor is now hidden during execution.
 
 2.7.0 (2024-Sep-05)
 -------------------
