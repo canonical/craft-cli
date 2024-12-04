@@ -50,7 +50,6 @@ dev = [
     "pytest-subprocess"
 ]
 lint = [
-    "black==24.10.0",
     "codespell[toml]==2.3.0",
     "yamllint==1.35.1"
 ]
@@ -88,11 +87,6 @@ exclude = [
     "results*",
     "tests*",
 ]
-
-[tool.black]
-target-version = ["py38"]
-line-length = 99
-extend-exclude = "docs/conf.py"
 
 [tool.codespell]
 ignore-words-list = "buildd,crate,keyserver,comandos,ro,dedent,dedented"
@@ -248,9 +242,9 @@ lint.ignore = [
     "TRY003",  # Avoid specifying long messages outside the exception class
 
     "PT001",  # Add parentheses to parameter-less pytest.fixture
-    "PT004",  # Fixture {function} does not return anything, add leading underscore
 
     "ANN401", # Disallow Any in parameters (reason: too restrictive)
+    "ISC001", # Avoid potential issues with formatting
 ]
 
 [tool.ruff.lint.per-file-ignores]
