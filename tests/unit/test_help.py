@@ -333,6 +333,44 @@ def test_detailed_help_text_command_order(command_groups, expected_output):
     assert actual_output == expected_output
 
 
+def test_command_help_text_strip_backticks():
+    overview = textwrap.dedent(
+        """
+    An insightful overview. Look - it even has code!
+
+    For each ``foo``, care must be taken to instantiate a ``bar`` using ``baz``.
+    """
+    )
+
+    cmd = create_command("thecommand", "Witty one-liner", overview=overview)
+    command_groups = [
+        CommandGroup("group1", [cmd]),
+    ]
+    options = [("-h, --help", "Show this help message and exit.")]
+
+    help_builder = HelpBuilder("testapp", "general summary", command_groups, None)
+    text = help_builder.get_command_help(cmd(None), options, OutputFormat.plain)
+
+    expected = textwrap.dedent(
+        """\
+    Usage:
+        testapp thecommand [options]
+        
+    Summary:
+        An insightful overview. Look - it even has code!
+
+        For each foo, care must be taken to instantiate a bar using baz.
+
+    Options:
+        -h, --help:  Show this help message and exit.
+
+    For a summary of all commands, run 'testapp help --all'.
+    """
+    )
+
+    assert text == expected
+
+
 @pytest.mark.parametrize("output_format", list(OutputFormat))
 def test_command_help_text_no_parameters(docs_url, output_format):
     """All different parts for a specific command help that doesn't have parameters."""
