@@ -346,7 +346,9 @@ class _Handler(logging.Handler):
     """A logging handler that emits messages through the core Printer."""
 
     def __init__(
-        self, printer: Printer, streaming_brief: bool = False  # noqa: FBT001, FBT002
+        self,
+        printer: Printer,
+        streaming_brief: bool = False,  # noqa: FBT001, FBT002
     ) -> None:
         """Init the handler.
 
@@ -592,7 +594,8 @@ class Emitter:
             self._printer.show(sys.stderr, text, use_timestamp=True)
 
     def _get_progress_params(
-        self, permanent: bool  # noqa: FBT001 (boolean positional arg)
+        self,
+        permanent: bool,  # noqa: FBT001 (boolean positional arg)
     ) -> tuple[TextIO | None, bool, bool]:
         """Calculate the different parameters for progress information."""
         if self._mode == EmitterMode.QUIET:
@@ -643,7 +646,10 @@ class Emitter:
 
     @_active_guard()
     def progress_bar(
-        self, text: str, total: float, delta: bool = True  # noqa: FBT001, FBT002
+        self,
+        text: str,
+        total: float,
+        delta: bool = True,  # noqa: FBT001, FBT002
     ) -> _Progresser:
         """Progress information for a potentially long-running single step of a command.
 
