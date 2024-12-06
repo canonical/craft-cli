@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import argparse
 import enum
+import re
 import textwrap
 from operator import attrgetter
 from typing import TYPE_CHECKING
@@ -325,6 +326,9 @@ class HelpBuilder:
         )
 
         overview = textwrap.indent(command.overview, "    ")
+        # Remove reST-style double backticks
+        # Match _only_ double backticks, never triples
+        overview = re.sub(r"(?<!`)``(?!`)", "", overview)
         textblocks.append(f"Summary:{overview}")
 
         # column alignment is dictated by longest options title
