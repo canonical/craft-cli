@@ -67,7 +67,7 @@ jobs:
       - name: Test with tox
         run: tox run-parallel --parallel all --parallel-no-spinner --skip-pkg-install --result-json results/tox-${{ matrix.platform }}.json -m tests -- --no-header --quiet -rN
       - name: Upload code coverage
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           directory: ./results/
           files: coverage*.xml
