@@ -719,14 +719,13 @@ class Emitter:
         """Finish the messaging system gracefully."""
         self._stop()
 
-    def _report_error(self, error: errors.CraftError) -> None:  # noqa: PLR0912 (too many branches)
+    def _report_error(self, error: errors.CraftError) -> None:
         """Report the different message lines from a CraftError."""
+        use_timestamp = True
+        exception_stream = sys.stderr
         if self._mode in (EmitterMode.QUIET, EmitterMode.BRIEF, EmitterMode.VERBOSE):
             use_timestamp = False
-            full_stream = None
-        else:
-            use_timestamp = True
-            full_stream = sys.stderr
+            exception_stream = None
 
         # The initial message. Print every line individually to correctly clear
         # previous lines, if necessary.
@@ -742,10 +741,13 @@ class Emitter:
         # detailed information and/or original exception
         if error.details:
             text = f"Detailed information: {error.details}"
-            self._printer.show(full_stream, text, use_timestamp=use_timestamp, end_line=True)
+            details_stream = None if self._mode == EmitterMode.QUIET else sys.stderr
+            self._printer.show(details_stream, text, use_timestamp=use_timestamp, end_line=True)
         if error.__cause__:
             for line in _get_traceback_lines(error.__cause__):
-                self._printer.show(full_stream, line, use_timestamp=use_timestamp, end_line=True)
+                self._printer.show(
+                    exception_stream, line, use_timestamp=use_timestamp, end_line=True
+                )
 
         # hints for the user to know more
         if error.resolution:
