@@ -21,6 +21,7 @@ import sys
 from unittest import mock
 from unittest.mock import call, patch
 
+import craft_cli
 import pytest
 
 from craft_cli import messages
@@ -42,6 +43,15 @@ def clean_logging_handler():
     to_remove = [x for x in logger.handlers if isinstance(x, _Handler)]
     for handler in to_remove:
         logger.removeHandler(handler)
+
+@pytest.fixture
+def mock_isatty(mocker):
+    return mocker.patch("sys.stdin.isatty", return_value=True)
+
+
+@pytest.fixture
+def mock_input(mocker):
+    return mocker.patch("builtins.input", return_value="")
 
 
 class RecordingEmitter(Emitter):
@@ -1167,3 +1177,70 @@ def test_reporterror_command_error_no_stderr(get_initiated_emitter, stderr):
         call().show(sys.stderr, "test message", use_timestamp=False, end_line=True),
         call().stop(),
     ]
+
+
+# -- Tests for confirming a yes/no question with the user.
+
+def test_confirm_with_user_defaults_with_tty(
+    get_initiated_emitter,
+    emitter_mode: EmitterMode,
+    mock_input,
+    mock_isatty
+):
+    mock_input.return_value = ""
+    mock_isatty.return_value = True
+    emit = get_initiated_emitter(emitter_mode)
+
+    assert emit.confirm("prompt", default=True) is True
+    assert mock_input.mock_calls == [call("prompt [Y/n]: ")]
+    mock_input.reset_mock()
+
+    assert emit.confirm("prompt", default=False) is False
+    assert mock_input.mock_calls == [call("prompt [y/N]: ")]
+
+
+def test_confirm_with_user_defaults_without_tty(get_initiated_emitter, emitter_mode, mock_input, mock_isatty):
+    mock_isatty.return_value = False
+    emit = get_initiated_emitter(emitter_mode)
+
+    assert emit.confirm("prompt", default=True) is True
+    assert emit.confirm("prompt", default=False) is False
+
+    assert mock_input.mock_calls == []
+
+
+@pytest.mark.parametrize(
+    ("user_input", "expected"),
+    [
+        ("y", True),
+        ("Y", True),
+        ("yes", True),
+        ("YES", True),
+        ("n", False),
+        ("N", False),
+        ("no", False),
+        ("NO", False),
+    ],
+)
+@pytest.mark.usefixtures("mock_isatty")
+def test_confirm_with_user(get_initiated_emitter, user_input, expected, mock_input, emitter_mode):
+    mock_input.return_value = user_input
+    emit = get_initiated_emitter(emitter_mode)
+
+    assert emit.confirm("prompt") == expected
+    assert mock_input.mock_calls == [call("prompt [y/N]: ")]
+
+
+def test_confirm_with_user_pause_emitter(get_initiated_emitter, emitter_mode, mock_isatty, mocker):
+    """The emitter should be paused when using the terminal."""
+    mock_isatty.return_value = True
+    emit = get_initiated_emitter(emitter_mode)
+
+    def fake_input(_prompt):
+        """Check if the Emitter is paused."""
+        assert emit._stopped
+        return ""
+
+    mocker.patch("builtins.input", fake_input)
+
+    emit.confirm("prompt")
