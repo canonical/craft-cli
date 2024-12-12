@@ -18,6 +18,7 @@
 
 import pytest
 
+from craft_cli.messages import EmitterMode
 from craft_cli.printer import Printer, _Spinner
 
 
@@ -79,3 +80,8 @@ def recording_printer(tmp_path):
     yield recording_printer
     if not recording_printer.stopped:
         recording_printer.stop()
+
+
+@pytest.fixture(params=EmitterMode)
+def emitter_mode(request) -> EmitterMode:
+    return request.param

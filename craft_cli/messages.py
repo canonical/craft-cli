@@ -1,4 +1,4 @@
-# Copyright 2021-2023 Canonical Ltd.
+# Copyright 2021-2024 Canonical Ltd.
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -780,6 +780,29 @@ class Emitter:
     def set_secrets(self, secrets: list[str]) -> None:
         """Set the list of strings that should be masked out in all output."""
         self._printer.set_secrets(secrets)
+
+    @_active_guard()
+    def confirm(self, prompt: str, *, default: bool = False) -> bool:
+        """Query user for yes/no answer.
+
+        If stdin is not a tty, the default value is returned.
+        If user returns an empty answer, the default value is returned.
+        :returns: True if answer starts with [yY], False if answer starts with [nN],
+            otherwise the default.
+        """
+        if not sys.stdin.isatty():
+            return default
+
+        choices = " [Y/n]: " if default else " [y/N]: "
+
+        with self.pause():
+            reply = input(prompt + choices).lower().strip()
+
+        if reply and reply[0] == "y":
+            return True
+        if reply and reply[0] == "n":
+            return False
+        return default
 
 
 # module-level instantiated Emitter; this is the instance all code shall use and Emitter

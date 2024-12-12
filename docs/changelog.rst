@@ -11,6 +11,7 @@ included in each version.
 --------------------
 
 - Remove the ``assert_error`` plugin method.
+- Add a ``confirm`` method to the emitter for asking a yes-no question.
 
 2.11.0 (2024-Dec-12)
 --------------------
