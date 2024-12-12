@@ -7,6 +7,11 @@ Changelog
 See the `Releases page`_ on GitHub for a complete list of commits that are
 included in each version.
 
+2.12.0 (2024-Dec-XX)
+--------------------
+
+- Remove the ``assert_error`` plugin method.
+
 2.11.0 (2024-Dec-12)
 --------------------
 
