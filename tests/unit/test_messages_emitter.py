@@ -1220,6 +1220,8 @@ def test_confirm_with_user_defaults_without_tty(get_initiated_emitter, emitter_m
         ("N", False),
         ("no", False),
         ("NO", False),
+        (" Yes sir Mr. Callahan Sir!", True),
+        (" nah yeah? Yeah nah!    ", False)
     ],
 )
 @pytest.mark.usefixtures("mock_isatty")
