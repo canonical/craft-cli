@@ -14,13 +14,12 @@
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 """Test the fixtures provided by Craft CLI."""
-import copy
+
 from unittest.mock import call
 
 import pytest
 
-from craft_cli import messages, printer, errors
-
+from craft_cli import messages, printer
 
 # -- tests for the `init_emitter` auto-fixture
 
@@ -182,41 +181,6 @@ def test_emitter_messages(emitter):
             "Got: 2",
         ]
     )
-
-
-@pytest.mark.parametrize(
-    "error",
-    [
-        errors.CraftError("Basic error"),
-        errors.CraftError("Detailed", details="Very detailed"),
-        errors.CraftError("Resolved", resolution="640x480"),
-        errors.CraftError("Documented", docs_url="https://docs.ubuntu.com"),
-        errors.CraftError("Detailed Resolved", details="Extra fine", resolution="3840x2160"),
-    ],
-)
-def test_emitter_error_success(emitter, error):
-    """Verify that the checking the emitter for the correct error succeeds."""
-    error_copy = copy.deepcopy(error)  # Ensure we're not just checking identity.
-    messages.emit.error(error)
-    assert emitter.assert_error(error_copy) is error
-
-
-@pytest.mark.parametrize(
-    ("error", "assert_error"),
-    [
-        (errors.CraftError("Basic"), errors.CraftError("Very basic")),
-        (
-            errors.CraftError("Detailed", details="Case sensitive"),
-            errors.CraftError("Detailed", details="case Sensitive"),
-        ),
-    ],
-)
-def test_emitter_error_failure(emitter, error, assert_error):
-    """Verify that checking the emitter for the wrong error fails."""
-    messages.emit.error(error)
-    with pytest.raises(AssertionError, match="Error not emitted:") as exc_info:
-        emitter.assert_error(assert_error)
-    assert exc_info.value.args[1] == [error]
 
 
 def test_emitter_interactions_positive_complete(emitter):

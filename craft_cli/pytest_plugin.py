@@ -22,12 +22,12 @@ import os
 import pathlib
 import re
 import tempfile
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 from unittest.mock import call
 
 import pytest
 
-from craft_cli import errors, messages, printer
+from craft_cli import messages, printer
 
 if TYPE_CHECKING:
     from unittest.mock import _Call
@@ -163,18 +163,6 @@ class RecordingEmitter:
         """
         self.assert_interactions([call("message", text) for text in texts])
 
-    def assert_error(self, error: errors.CraftError) -> errors.CraftError:
-        """Check that the 'error' method was called with the given error."""
-        # Error should be the last thing called, so start at the end.
-        errors_called = []
-        for stored_call in reversed(self.interactions):
-            if stored_call.args[0] != "error":
-                continue
-            errors_called.append(stored_call.args[1])
-            if stored_call.args[1] == error:
-                return cast(errors.CraftError, stored_call.args[1])
-        raise AssertionError(f"Error not emitted: {error!r}", errors_called[::-1])
-
     def assert_interactions(self, expected_call_list):
         """Check that the expected call list happen at some point between all stored calls.
 
@@ -217,7 +205,7 @@ class _RecordingProgresser:
 def emitter(monkeypatch):
     """Provide a helper to test everything that was shown using the Emitter."""
     recording_emitter = RecordingEmitter()
-    for method_name in ("message", "progress", "verbose", "debug", "trace", "error"):
+    for method_name in ("message", "progress", "verbose", "debug", "trace"):
         monkeypatch.setattr(
             messages.emit,
             method_name,
