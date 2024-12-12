@@ -68,9 +68,10 @@ def _build_item_plain(title: str, text: str, title_space: int) -> list[str]:
     text_space = TERMINAL_WIDTH - title_space - not_title_space
     wrapped_lines = textwrap.wrap(text, text_space)
 
+    result: list[str] = []
     # first line goes with the title at column 4
-    first = f"    {title:>{title_space}s}:  {wrapped_lines[0]}"
-    result = [first]
+    if wrapped_lines:
+        result.append(f"    {title:>{title_space}s}:  {wrapped_lines[0]}")
 
     # the rest (if any) still aligned but without title
     for line in wrapped_lines[1:]:
@@ -336,10 +337,12 @@ class HelpBuilder:
 
         if parameters:
             # command positional arguments
-            positional_args_lines = ["Positional arguments:"]
+            positional_args_lines: list[str] = []
             for title, text in parameters:
                 positional_args_lines.extend(_build_item_plain(title, text, max_title_len))
-            textblocks.append("\n".join(positional_args_lines))
+            # Only populate if we have collected parameters.
+            if positional_args_lines:
+                textblocks.append("\n".join(["Positional arguments:", *positional_args_lines]))
 
         # command options
         option_lines = ["Options:"]
@@ -396,15 +399,19 @@ class HelpBuilder:
         textblocks.append(f"## Summary:\n\n{overview}")
 
         if parameters:
-            parameters_lines = [
-                "## Positional arguments:",
-                "| | |",
-                "|-|-|",
-            ]
-            for title, text in parameters:
+            parameters_lines: list[str] = []
+            # Only keep items that have text
+            for title, text in ((title, text) for title, text in parameters if text):
                 parameters_lines.append(f"| `{title}` | {text} |")
 
-            textblocks.append("\n".join(parameters_lines))
+            # Only populate if we have collected parameters
+            if parameters_lines:
+                header_lines = [
+                    "## Positional arguments:",
+                    "| | |",
+                    "|-|-|",
+                ]
+                textblocks.append("\n".join(header_lines + parameters_lines))
 
         option_lines = [
             "## Options:",

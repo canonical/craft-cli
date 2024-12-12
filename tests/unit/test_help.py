@@ -592,6 +592,82 @@ def test_command_help_text_with_parameters(docs_url, output_format):
 
 
 @pytest.mark.parametrize("output_format", list(OutputFormat))
+def test_command_help_text_with_parameters_with_no_help(docs_url, output_format):
+    """Test help text for a command with parameters but no help."""
+    overview = textwrap.dedent(
+        """
+        Quite some long text.
+    """
+    )
+    cmd1 = create_command("somecommand", "Command one line help.", overview=overview)
+    cmd2 = create_command("other-cmd-2", "Some help.")
+    command_groups = [
+        CommandGroup("group1", [cmd1, cmd2]),
+    ]
+
+    options = [
+        ("-h, --help", "Show this help message and exit."),
+        ("name", ""),
+        ("--revision", "The revision to release (defaults to latest)."),
+        ("extraparam", ""),
+        ("--other-option", "Other option."),
+        ("--experimental-1", HIDDEN),
+        ("--experimental-2", argparse.SUPPRESS),
+    ]
+
+    help_builder = HelpBuilder("testapp", "general summary", command_groups, docs_url)
+    text = help_builder.get_command_help(cmd1(None), options, output_format)
+
+    expected_plain = textwrap.dedent(
+        """\
+        Usage:
+            testapp somecommand [options] <name> <extraparam>
+
+        Summary:
+            Quite some long text.
+
+        Options:
+                -h, --help:  Show this help message and exit.
+                --revision:  The revision to release (defaults to latest).
+            --other-option:  Other option.
+
+        See also:
+            other-cmd-2
+
+        For a summary of all commands, run 'testapp help --all'.
+    """
+    )
+    if docs_url:
+        expected_plain += (
+            "For more information, check out: "
+            "www.craft-app.com/docs/3.14159/reference/commands/somecommand\n"
+        )
+    expected_markdown = textwrap.dedent(
+        """\
+        ## Usage:
+        ```text
+        testapp somecommand [options] <name> <extraparam>
+        ```
+
+        ## Summary:
+
+        Quite some long text.
+
+        ## Options:
+        | | |
+        |-|-|
+        | `-h, --help` | Show this help message and exit. |
+        | `--revision` | The revision to release (defaults to latest). |
+        | `--other-option` | Other option. |
+
+        ## See also:
+        - `other-cmd-2`
+    """
+    )
+    assert text == (expected_plain if output_format == OutputFormat.plain else expected_markdown)
+
+
+@pytest.mark.parametrize("output_format", list(OutputFormat))
 def test_command_help_text_complex_overview(docs_url, output_format):
     """The overviews are processed in different ways."""
     overview = textwrap.dedent(
