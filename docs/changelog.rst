@@ -7,6 +7,14 @@ Changelog
 See the `Releases page`_ on GitHub for a complete list of commits that are
 included in each version.
 
+2.11.0 (2024-Dec-12)
+--------------------
+
+- Hide positional arguments from extended help if the argument does not
+  provide any help text.
+- Remove markdown code block back ticks from plain text help output.
+- Add a new ``assert_error`` to the pytest plugin for testing.
+
 2.10.1 (2024-Nov-11)
 --------------------
 
