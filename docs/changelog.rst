@@ -10,7 +10,8 @@ included in each version.
 2.12.0 (2024-Dec-XX)
 --------------------
 
-- Remove the ``assert_error`` plugin method.
+- Remove the ``assert_error`` pytest plugin method. For checking errors, we
+  recommend using ``capsys`` instead.
 - Add a ``confirm`` method to the emitter for asking a yes-no question.
 
 2.11.0 (2024-Dec-12)
