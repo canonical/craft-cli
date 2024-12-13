@@ -878,7 +878,10 @@ def test_reporterror_simple_message_developer_modes(mode, get_initiated_emitter)
 
 
 def test_reporterror_detailed_info_quiet_modes(get_initiated_emitter):
-    """Report an error having detailed information, in final user modes."""
+    """Report an error having detailed information, in final user modes.
+    
+    Check that "quiet" is indeed quiet.
+    """
     emitter = get_initiated_emitter(EmitterMode.QUIET)
     error = CraftError("test message", details="boom")
     emitter.error(error)

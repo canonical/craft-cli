@@ -908,7 +908,10 @@ def test_simple_errors_debugish(capsys, mode):
 
 @pytest.mark.parametrize("output_is_terminal", [True, False])
 def test_error_api_details_quiet(capsys):
-    """Somewhat expected API error, final user modes."""
+    """Somewhat expected API error, final user modes.
+    
+    Check that "quiet" is indeed quiet.
+    """
     emit = Emitter()
     emit.init(EmitterMode.QUIET, "testapp", GREETING)
     full_error = {"message": "Invalid channel.", "code": "BAD-CHANNEL"}
