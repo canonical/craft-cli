@@ -7,7 +7,7 @@ Changelog
 See the `Releases page`_ on GitHub for a complete list of commits that are
 included in each version.
 
-2.12.0 (2024-Dec-XX)
+2.12.0 (2024-Dec-13)
 --------------------
 
 - Remove the ``assert_error`` pytest plugin method. For checking errors, we
