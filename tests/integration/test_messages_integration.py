@@ -906,16 +906,39 @@ def test_simple_errors_debugish(capsys, mode):
     assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)
 
 
+@pytest.mark.parametrize("output_is_terminal", [True, False])
+def test_error_api_details_quiet(capsys):
+    """Somewhat expected API error, final user modes.
+    
+    Check that "quiet" is indeed quiet.
+    """
+    emit = Emitter()
+    emit.init(EmitterMode.QUIET, "testapp", GREETING)
+    full_error = {"message": "Invalid channel.", "code": "BAD-CHANNEL"}
+    error = CraftError("Invalid channel.", details=str(full_error))
+    emit.error(error)
+
+    expected_err = [
+        Line("Invalid channel."),
+        Line(f"Full execution log: {str(emit._log_filepath)!r}"),
+    ]
+    expected_log = [
+        Line("Invalid channel."),
+        Line(f"Detailed information: {full_error}"),
+        Line(f"Full execution log: {str(emit._log_filepath)!r}"),
+    ]
+    assert_outputs(capsys, emit, expected_err=expected_err, expected_log=expected_log)
+
+    
 @pytest.mark.parametrize(
     "mode",
     [
-        EmitterMode.QUIET,
         EmitterMode.BRIEF,
         EmitterMode.VERBOSE,
     ],
 )
 @pytest.mark.parametrize("output_is_terminal", [True, False])
-def test_error_api_quietly(capsys, mode):
+def test_error_api_details(capsys, mode):
     """Somewhat expected API error, final user modes."""
     emit = Emitter()
     emit.init(mode, "testapp", GREETING)
@@ -925,6 +948,7 @@ def test_error_api_quietly(capsys, mode):
 
     expected_err = [
         Line("Invalid channel."),
+        Line("Detailed information: {'message': 'Invalid channel.', 'code': 'BAD-CHANNEL'}"),
         Line(f"Full execution log: {str(emit._log_filepath)!r}"),
     ]
     expected_log = [

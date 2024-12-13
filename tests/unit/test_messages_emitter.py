@@ -877,7 +877,25 @@ def test_reporterror_simple_message_developer_modes(mode, get_initiated_emitter)
     ]
 
 
-@pytest.mark.parametrize("mode", [EmitterMode.QUIET, EmitterMode.BRIEF, EmitterMode.VERBOSE])
+def test_reporterror_detailed_info_quiet_modes(get_initiated_emitter):
+    """Report an error having detailed information, in final user modes.
+    
+    Check that "quiet" is indeed quiet.
+    """
+    emitter = get_initiated_emitter(EmitterMode.QUIET)
+    error = CraftError("test message", details="boom")
+    emitter.error(error)
+
+    full_log_message = f"Full execution log: {repr(emitter._log_filepath)}"
+    assert emitter.printer_calls == [
+        call().show(sys.stderr, "test message", use_timestamp=False, end_line=True),
+        call().show(None, "Detailed information: boom", use_timestamp=False, end_line=True),
+        call().show(sys.stderr, full_log_message, use_timestamp=False, end_line=True),
+        call().stop(),
+    ]
+
+
+@pytest.mark.parametrize("mode", [EmitterMode.BRIEF, EmitterMode.VERBOSE])
 def test_reporterror_detailed_info_final_user_modes(mode, get_initiated_emitter):
     """Report an error having detailed information, in final user modes."""
     emitter = get_initiated_emitter(mode)
@@ -887,7 +905,7 @@ def test_reporterror_detailed_info_final_user_modes(mode, get_initiated_emitter)
     full_log_message = f"Full execution log: {repr(emitter._log_filepath)}"
     assert emitter.printer_calls == [
         call().show(sys.stderr, "test message", use_timestamp=False, end_line=True),
-        call().show(None, "Detailed information: boom", use_timestamp=False, end_line=True),
+        call().show(sys.stderr, "Detailed information: boom", use_timestamp=False, end_line=True),
         call().show(sys.stderr, full_log_message, use_timestamp=False, end_line=True),
         call().stop(),
     ]
