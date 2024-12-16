@@ -7,7 +7,7 @@ Changelog
 See the `Releases page`_ on GitHub for a complete list of commits that are
 included in each version.
 
-2.13.0 (2024-Dec-XX)
+2.13.0 (2024-Dec-16)
 --------------------
 
 - Show error details in every mode except quiet.
