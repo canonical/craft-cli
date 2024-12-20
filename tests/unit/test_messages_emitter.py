@@ -20,9 +20,11 @@ import logging
 import sys
 from unittest import mock
 from unittest.mock import call, patch
+from typing import cast, Callable
 
 import craft_cli
 import pytest
+import pytest_mock
 
 from craft_cli import messages
 from craft_cli.errors import CraftError, CraftCommandError
@@ -879,7 +881,7 @@ def test_reporterror_simple_message_developer_modes(mode, get_initiated_emitter)
 
 def test_reporterror_detailed_info_quiet_modes(get_initiated_emitter):
     """Report an error having detailed information, in final user modes.
-    
+
     Check that "quiet" is indeed quiet.
     """
     emitter = get_initiated_emitter(EmitterMode.QUIET)
@@ -1251,16 +1253,72 @@ def test_confirm_with_user(get_initiated_emitter, user_input, expected, mock_inp
     assert mock_input.mock_calls == [call("prompt [y/N]: ")]
 
 
-def test_confirm_with_user_pause_emitter(get_initiated_emitter, emitter_mode, mock_isatty, mocker):
+@pytest.fixture
+def initiated_emitter(get_initiated_emitter, mock_isatty, emitter_mode) -> Emitter:
+    return cast(Emitter, get_initiated_emitter(emitter_mode))
+
+
+@pytest.fixture
+def fake_input(initiated_emitter: Emitter) -> Callable[[str], Callable[[str], str]]:
+    def get_fake_input_wrapper(input_val: str) -> Callable[[str], str]:
+        def _inner(prompt: str) -> str:
+            assert initiated_emitter._stopped
+            return input_val
+
+        return _inner
+
+    return get_fake_input_wrapper
+
+
+def test_confirm_with_user_pause_emitter(
+    initiated_emitter: Emitter,
+    fake_input: Callable[[str], Callable[[str], str]],
+    mocker,
+):
     """The emitter should be paused when using the terminal."""
-    mock_isatty.return_value = True
+    mocker.patch("builtins.input", fake_input(""))
+
+    initiated_emitter.confirm("prompt")
+
+
+def test_prompt_returns_user_input(
+    initiated_emitter: Emitter,
+    fake_input: Callable[[str], Callable[[str], str]],
+    mocker: pytest_mock.MockerFixture,
+):
+    """The emitter should return user input."""
+    mocker.patch("builtins.input", fake_input("some-input"))
+
+    assert initiated_emitter.prompt("prompt") == "some-input"
+
+
+def test_prompt_returns_secret_input(
+    initiated_emitter: Emitter,
+    fake_input: Callable[[str], Callable[[str], str]],
+    mocker: pytest_mock.MockerFixture,
+):
+    """The emitter should return user secret input."""
+    mocker.patch("getpass.getpass", fake_input("some-secret-input"))
+
+    assert initiated_emitter.prompt("prompt", hide=True) == "some-secret-input"
+
+def test_prompt_errors_out_without_tty(
+    get_initiated_emitter, mock_isatty: mock.MagicMock, emitter_mode,
+):
+    """The emitter should error out if no tty available."""
+    mock_isatty.return_value = False
     emit = get_initiated_emitter(emitter_mode)
 
-    def fake_input(_prompt):
-        """Check if the Emitter is paused."""
-        assert emit._stopped
-        return ""
+    with pytest.raises(CraftError, match="prompting not possible without tty"):
+        emit.prompt("no prompting without tty!")
 
-    mocker.patch("builtins.input", fake_input)
+def test_prompt_does_not_allow_empty_input(
+    initiated_emitter: Emitter,
+    fake_input: Callable[[str], Callable[[str], str]],
+    mocker: pytest_mock.MockerFixture,
+):
+    """The emitter should not allow empty input."""
+    mocker.patch("builtins.input", fake_input(""))
 
-    emit.confirm("prompt")
+    with pytest.raises(CraftError, match="input cannot be empty") as error:
+        initiated_emitter.prompt("prompt")

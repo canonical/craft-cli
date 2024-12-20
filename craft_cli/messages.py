@@ -25,6 +25,7 @@ __all__ = [
 
 import enum
 import functools
+import getpass
 import logging
 import os
 import pathlib
@@ -805,6 +806,28 @@ class Emitter:
         if reply and reply[0] == "n":
             return False
         return default
+
+    @_active_guard()
+    def prompt(self, prompt_text: str, *, hide: bool = False) -> str:
+        """Prompt user for input.
+
+        If stdin is not a tty a CraftError is raised.
+
+        :param prompt_text: text displayed to user while asking for an input.
+        :param hide: hide user input if True.
+        :returns: value that was provided by user.
+        :raises: CraftError if shell is not interactive or input is empty.
+        """
+        if not sys.stdin.isatty():
+            raise errors.CraftError("prompting not possible without tty")
+
+        method: Callable[[str], str] = getpass.getpass if hide else input  # type: ignore[assignment]
+
+        with self.pause():
+            val = method(prompt_text).strip()
+        if not val:
+            raise errors.CraftError("input cannot be empty")
+        return val
 
 
 # module-level instantiated Emitter; this is the instance all code shall use and Emitter

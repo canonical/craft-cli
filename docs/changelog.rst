@@ -7,6 +7,11 @@ Changelog
 See the `Releases page`_ on GitHub for a complete list of commits that are
 included in each version.
 
+2.14.0 (2025-Jan-DD)
+--------------------
+
+- Add a ``prompt`` method to the emitter for asking user for an input.
+
 2.13.0 (2024-Dec-16)
 --------------------
 
