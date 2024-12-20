@@ -808,11 +808,12 @@ class Emitter:
         return default
 
     @_active_guard()
-    def prompt(self, prompt: str, *, hide: bool = False) -> str:
+    def prompt(self, prompt_text: str, *, hide: bool = False) -> str:
         """Prompt user for input.
 
         If stdin is not a tty a CraftError is raised.
 
+        :param prompt_text: text displayed to user while asking for an input.
         :param hide: hide user input if True.
         :returns: value that was provided by user.
         :raises: CraftError if shell is not interactive or input is empty
@@ -823,7 +824,7 @@ class Emitter:
         method: Callable[[str], str] = getpass.getpass if hide else input  # type: ignore[assignment]
 
         with self.pause():
-            val = method(prompt).strip()
+            val = method(prompt_text).strip()
         if not val:
             raise errors.CraftError("input cannot be empty")
         return val
