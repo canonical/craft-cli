@@ -816,7 +816,7 @@ class Emitter:
         :param prompt_text: text displayed to user while asking for an input.
         :param hide: hide user input if True.
         :returns: value that was provided by user.
-        :raises: CraftError if shell is not interactive or input is empty
+        :raises: CraftError if shell is not interactive or input is empty.
         """
         if not sys.stdin.isatty():
             raise errors.CraftError("prompting not possible without tty")
