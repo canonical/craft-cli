@@ -193,7 +193,6 @@ lint.select = [  # Base linting rule selections.
     "RSE",  # Errors on pytest raises.
     "RET",  # Simpler logic after return, raise, continue or break
     "SIM",  # Code simplification
-    "TCH",  # Guard imports only used for type checking behind a type-checkning block.
     "ARG",  # Unused arguments
     "PTH",  # Migrate to pathlib
     "ERA",  # Don't check in commented out code
@@ -228,7 +227,6 @@ lint.extend-select = [
     "RUF100",  # #noqa directive that doesn't flag anything
 ]
 lint.ignore = [
-    "ANN10",  # Type annotations for `self` and `cls`
     #"E203",  # Whitespace before ":"  -- Commented because ruff doesn't currently check E203
     "E501",  # Line too long (reason: black will automatically fix this for us)
     "D105",  # Missing docstring in magic method (reason: magic methods already have definitions)
