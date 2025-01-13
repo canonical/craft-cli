@@ -193,6 +193,7 @@ lint.select = [  # Base linting rule selections.
     "RSE",  # Errors on pytest raises.
     "RET",  # Simpler logic after return, raise, continue or break
     "SIM",  # Code simplification
+    "TC",   # Guard imports only used for type checking behind a type-checking block.
     "ARG",  # Unused arguments
     "PTH",  # Migrate to pathlib
     "ERA",  # Don't check in commented out code
