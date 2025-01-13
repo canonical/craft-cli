@@ -18,10 +18,9 @@
 from __future__ import annotations
 
 import argparse
-from collections.abc import Collection
 import dataclasses
 import difflib
-from typing import Any, Callable, Literal, NamedTuple, NoReturn, Optional, Sequence, List
+from typing import Any, Callable, Literal, NamedTuple, NoReturn, Optional, Sequence
 
 from craft_cli import EmitterMode, emit
 from craft_cli.errors import ArgumentParsingError, ProvideHelpException
@@ -68,7 +67,7 @@ class GlobalArgument:
     help_message: str
     """the one-line text that describes the argument, for building the help texts."""
 
-    choices: List[str] | None = dataclasses.field(default=None)
+    choices: list[str] | None = dataclasses.field(default=None)
     """Valid choices for this option."""
 
     validator: Callable[[str], Any] | None = dataclasses.field(default=None)
@@ -436,7 +435,7 @@ class Dispatcher:
                     value = next(sysargs_it)
                 except StopIteration:
                     msg = f"The {arg.name!r} option expects one argument."
-                    raise self._build_usage_exc(msg)
+                    raise self._build_usage_exc(msg) from None
             elif sysarg.startswith(tuple(options_with_equal)):
                 option, value = sysarg.split("=", 1)
             else:
