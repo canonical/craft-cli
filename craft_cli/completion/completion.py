@@ -21,9 +21,12 @@ import enum
 import importlib
 import shlex
 import sys
-from collections.abc import Collection, MutableSequence
 from pathlib import Path
-from typing import Callable, cast, Optional, Union, Dict, Tuple, List
+from typing import TYPE_CHECKING, Callable, List, Optional, Union, cast
+
+if TYPE_CHECKING:
+    from collections.abc import Collection, MutableSequence
+    from typing import Dict, Tuple
 
 import jinja2
 import pydantic
@@ -241,6 +244,7 @@ def _validate_dispatch_func(raw_ref: str) -> Callable[[], craft_cli.Dispatcher]:
 
 
 def main() -> None:
+    """Entry point for bash completion script generation."""
     parser = argparse.ArgumentParser(
         prog="craft_cli.completion",
         description="Generate bash completion scripts from your craft-cli dispatcher. Only bash and other Bourne-like shells are supported currently.",

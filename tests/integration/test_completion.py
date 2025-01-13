@@ -13,12 +13,12 @@
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import craft_cli
-from pathlib import Path
 import textwrap
+from pathlib import Path
+
+import craft_cli
 from craft_cli.completion import complete
 
-import pytest
 
 class TestLsCommand(craft_cli.BaseCommand):
     """A copycat ls command."""
