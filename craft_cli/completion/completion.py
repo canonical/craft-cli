@@ -36,7 +36,6 @@ import craft_cli
 
 TEMPLATE_PATH = "bash_completion.sh.j2"
 
-
 class Option(enum.Flag):
     """An option flag for compgen."""
 
@@ -227,15 +226,10 @@ def _validate_dispatch_func(raw_ref: str) -> Callable[[], craft_cli.Dispatcher]:
         print("aah!")
         raise ValueError
 
-    filepath, func_name = split
-    mod_path = Path(filepath).resolve()
+    mod_path, func_name = split
 
-    # Add the parent folder of the given module to the import path if needed
-    mod_search_dir = str(mod_path.parent)
-    if mod_search_dir not in sys.path:
-        sys.path.append(mod_search_dir)
     # Then import it
-    module = importlib.import_module(mod_path.with_suffix("").name)
+    module = importlib.import_module(mod_path)
 
     # Type-checking function signatures is impossible without enforcing the
     # function at `func_name` being type-annotated. This is Python though,
@@ -260,7 +254,7 @@ def main() -> None:
         type=_validate_dispatch_func,
         metavar="FUNC_REF",
         help="A reference to a Python function to be imported. The function should take no arguments and return a craft-cli dispatcher.\n"
-        "Example: /some/python/file.py:get_dispatcher",
+        "Example: some.python.module:get_dispatcher",
     )
     args = parser.parse_args(sys.argv[1:])
 
