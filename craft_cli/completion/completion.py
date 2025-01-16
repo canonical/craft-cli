@@ -228,12 +228,10 @@ def complete(shell_cmd: str, get_dispatcher: Callable[[], craft_cli.Dispatcher])
 
 def _validate_dispatch_func(raw_ref: str) -> Callable[[], craft_cli.Dispatcher]:
     if len(split := raw_ref.split(":", maxsplit=1)) != 2:  # noqa: PLR2004 (no magic values)
-        print("aah!")
         raise ValueError
 
     mod_path, func_name = split
 
-    # Then import it
     module = importlib.import_module(mod_path)
 
     # Type-checking function signatures is impossible without enforcing the
