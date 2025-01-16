@@ -261,4 +261,9 @@ def main() -> None:
     )
     args = parser.parse_args(sys.argv[1:])
 
+    # Necessary to avoid errors from running foreign functions that use the craft-cli emitter
+    craft_cli.emit.init(
+        craft_cli.EmitterMode.QUIET, "craft-cli completion", "Generating completion scripts..."
+    )
+
     print(complete(args.shell_cmd, args.func))
