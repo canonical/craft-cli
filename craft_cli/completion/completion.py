@@ -36,6 +36,7 @@ import craft_cli
 
 TEMPLATE_PATH = "bash_completion.sh.j2"
 
+
 class Option(enum.Flag):
     """An option flag for compgen."""
 
@@ -158,7 +159,9 @@ class OptionArgument:
         else:
             completion_command = CompGen()
 
-        return cls(flags=cast(List[str], action.option_strings), completion_command=completion_command)
+        return cls(
+            flags=cast(List[str], action.option_strings), completion_command=completion_command
+        )
 
 
 def complete(shell_cmd: str, get_dispatcher: Callable[[], craft_cli.Dispatcher]) -> str:
@@ -179,7 +182,9 @@ def complete(shell_cmd: str, get_dispatcher: Callable[[], craft_cli.Dispatcher])
     )
     template = env.get_template(TEMPLATE_PATH)
 
-    command_map: Dict[str, Tuple[Collection[OptionArgument], Collection[OptionArgument], CompGen]] = {}
+    command_map: Dict[
+        str, Tuple[Collection[OptionArgument], Collection[OptionArgument], CompGen]
+    ] = {}
     for name, cmd_cls in dispatcher.commands.items():
         parser = argparse.ArgumentParser()
         cmd = cmd_cls(None)
@@ -222,7 +227,7 @@ def complete(shell_cmd: str, get_dispatcher: Callable[[], craft_cli.Dispatcher])
 
 
 def _validate_dispatch_func(raw_ref: str) -> Callable[[], craft_cli.Dispatcher]:
-    if len(split := raw_ref.split(":", maxsplit=1)) != 2: # noqa: PLR2004 (no magic values)
+    if len(split := raw_ref.split(":", maxsplit=1)) != 2:  # noqa: PLR2004 (no magic values)
         print("aah!")
         raise ValueError
 
