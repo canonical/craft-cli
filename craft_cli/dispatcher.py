@@ -483,7 +483,7 @@ class Dispatcher:
             help_text = self._build_no_command_error(command)
             raise ArgumentParsingError(help_text) from None
 
-        emit.trace(f"General parsed sysargs: command={ command!r} args={cmd_args}")
+        emit.trace(f"General parsed sysargs: command={command!r} args={cmd_args}")
         return global_args
 
     def run(self) -> int | None:
