@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import argparse
 import difflib
-from typing import Any, Literal, NamedTuple, NoReturn, Optional, Sequence
+from typing import Any, Literal, NamedTuple, NoReturn, Optional
 
 from craft_cli import EmitterMode, emit
 from craft_cli.errors import ArgumentParsingError, ProvideHelpException
@@ -36,7 +36,7 @@ class CommandGroup(NamedTuple):
     name: str
     """The identifier of the command group (to be used in help texts)."""
 
-    commands: Sequence[type[BaseCommand]]
+    commands: list[type[BaseCommand]]
     """A list of the commands belonging in this group."""
 
     ordered: bool = False

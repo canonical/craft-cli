@@ -27,7 +27,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from craft_cli.dispatcher import BaseCommand, CommandGroup
 
-
 # if the `help` of any argument (global or for any command, option or parameter) is set to this
 # value, the argument will not be shown in help messages; the default is to support the
 # non-documented argparse attribute (so if users were using it, will just work) in a secure way
