@@ -34,5 +34,6 @@ subdirectories
 subtree
 subfolders
 UI
+utils
 VM
 YAML
