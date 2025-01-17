@@ -20,7 +20,7 @@ import craft_cli
 from craft_cli.completion import complete
 
 
-class TestLsCommand(craft_cli.BaseCommand):
+class FakeLsCommand(craft_cli.BaseCommand):
     """A copycat ls command."""
 
     name = "ls"
@@ -36,7 +36,7 @@ class TestLsCommand(craft_cli.BaseCommand):
         parser.add_argument("path", nargs="*", type=Path, help="Path to list")
 
 
-class TestCpCommand(craft_cli.BaseCommand):
+class FakeCpCommand(craft_cli.BaseCommand):
     """A copycat cp command."""
 
     name = "cp"
@@ -50,7 +50,7 @@ class TestCpCommand(craft_cli.BaseCommand):
 
 def test_completion() -> None:
     def _get_dispatcher() -> craft_cli.Dispatcher:
-        basic_group = craft_cli.CommandGroup("basic", [TestLsCommand, TestCpCommand])
+        basic_group = craft_cli.CommandGroup("basic", [FakeLsCommand, FakeCpCommand])
 
         return craft_cli.Dispatcher(
             appname="pybash",
