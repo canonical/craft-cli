@@ -32,7 +32,6 @@ if TYPE_CHECKING:
     from typing import Dict
 
 import jinja2
-import pydantic
 from typing_extensions import Self
 
 import craft_cli
@@ -141,10 +140,6 @@ class Arg(ABC):
 
         if argument.choices:
             completion_command = CompGen(words=argument.choices)
-        elif argument.validator == pydantic.DirectoryPath:
-            completion_command = CompGen(actions=Action.directory)
-        elif argument.validator == pydantic.FilePath:
-            completion_command = CompGen(actions=Action.file)
         else:
             completion_command = CompGen()
 
@@ -155,10 +150,6 @@ class Arg(ABC):
         """Convert an argparse Action into an OptionArgument for parsing."""
         if action.choices:
             completion_command = CompGen(words=list(action.choices))
-        elif action.type == pydantic.DirectoryPath:
-            completion_command = CompGen(actions=Action.directory)
-        elif action.type == pydantic.FilePath:
-            completion_command = CompGen(actions=Action.file)
         else:
             completion_command = CompGen()
 
@@ -245,9 +236,7 @@ def complete(shell_cmd: str, get_dispatcher: Callable[[], craft_cli.Dispatcher])
 
         param_actions = Action(0)
         action_types = {action.type for action in actions if not action.option_strings}
-        if pydantic.DirectoryPath in action_types:
-            param_actions |= Action.directory
-        if Path in action_types or pydantic.FilePath in action_types:
+        if Path in action_types:
             param_actions |= Action.file
 
         parameters = CompGen(actions=param_actions, options=Option.bashdefault)

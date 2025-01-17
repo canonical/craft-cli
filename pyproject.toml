@@ -69,7 +69,6 @@ docs = [
 completion = [
     "jinja2>=3.1.5",
     "overrides>=7.7.0",
-    "pydantic>=2.10.4",
 ]
 
 [build-system]
