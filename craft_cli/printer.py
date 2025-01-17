@@ -29,10 +29,11 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any, Callable, TextIO
+from typing import TYPE_CHECKING, Any, TextIO
 
 if TYPE_CHECKING:
     import pathlib
+    from collections.abc import Callable
 
 # the char used to draw the progress bar ('FULL BLOCK')
 _PROGRESS_BAR_SYMBOL = "█"

@@ -19,11 +19,14 @@ from __future__ import annotations
 
 import argparse
 import difflib
-from typing import Any, Literal, NamedTuple, NoReturn, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple, NoReturn, Optional
 
 from craft_cli import EmitterMode, emit
 from craft_cli.errors import ArgumentParsingError, ProvideHelpException
 from craft_cli.helptexts import HelpBuilder, OutputFormat
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 class CommandGroup(NamedTuple):
