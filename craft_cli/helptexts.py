@@ -227,8 +227,7 @@ class HelpBuilder:
         # append documentation links to block for more help
         if self._docs_base_url:
             more_help_text += (
-                f"\nFor more information about {self.appname}, "
-                f"check out: {self._docs_base_url}"
+                f"\nFor more information about {self.appname}, check out: {self._docs_base_url}"
             )
         textblocks.append(more_help_text)
 
@@ -282,14 +281,11 @@ class HelpBuilder:
             textblocks.append("\n".join(group_lines))
 
         more_help_text = (
-            f"For more information about a specific command, run '{self.appname} "
-            "help <command>'."
-            ""
+            f"For more information about a specific command, run '{self.appname} help <command>'."
         )
         if self._docs_base_url:
             more_help_text += (
-                f"\nFor more information about {self.appname}, "
-                f"check out: {self._docs_base_url}"
+                f"\nFor more information about {self.appname}, check out: {self._docs_base_url}"
             )
         textblocks.append(more_help_text)
 
