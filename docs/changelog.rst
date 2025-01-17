@@ -11,6 +11,7 @@ included in each version.
 --------------------
 
 - Add a ``prompt`` method to the emitter for asking user for an input.
+- Add a ``completion`` module for generating bash auto-completion scripts.
 
 2.13.0 (2024-Dec-16)
 --------------------
