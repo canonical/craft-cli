@@ -175,6 +175,7 @@ def complete(shell_cmd: str, get_dispatcher: Callable[[], craft_cli.Dispatcher])
     env = jinja2.Environment(
         trim_blocks=True,
         lstrip_blocks=True,
+        keep_trailing_newline=True,
         comment_start_string="#{",
         comment_end_string="#}",
         loader=jinja2.FileSystemLoader(Path(__file__).parent),
