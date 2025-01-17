@@ -35,8 +35,8 @@ _complete_{{ shell_cmd }}(){
     {% for name, options in commands.items() %}
     {{ name }})
       case "${prev}" in
-      {% for option in options[0] %}
-        {{ option.flags | join("|") }})
+      {% for option in options.options %}
+        {{ option.flag_list }})
           COMPREPLY=($({{option.completion_command}} -- "$cur"))
           return
           ;;
@@ -44,8 +44,8 @@ _complete_{{ shell_cmd }}(){
         *)
           # Not in the middle of a command option, present all options.
           COMPREPLY=(
-            $(compgen -W "{{options[1] | map(attribute="flags") | map("join", " ") | join(" ")}}" -- "$cur")
-            $({{options[2]}} -- "$cur")
+            $(compgen -W "{{options.all_args}}" -- "$cur")
+            $({{options.params}} -- "$cur")
           )
           return
           ;;
@@ -56,7 +56,7 @@ _complete_{{ shell_cmd }}(){
 
   case "${prev}" in
     {% for opt in global_opts %}
-    {{ opt.flags | join("|") }})
+    {{ opt.flag_list }})
       COMPREPLY=($({{ opt.completion_command }} -- "$cur"))
       return
       ;;

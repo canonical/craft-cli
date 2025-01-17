@@ -21,12 +21,15 @@ import enum
 import importlib
 import shlex
 import sys
+from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable, List, Optional, Union, cast
 
+from overrides import override
+
 if TYPE_CHECKING:
-    from collections.abc import Collection, MutableSequence
-    from typing import Dict, Tuple
+    from collections.abc import MutableSequence
+    from typing import Dict
 
 import jinja2
 import pydantic
@@ -122,8 +125,8 @@ class CompGen:
 
 
 @dataclasses.dataclass
-class OptionArgument:
-    """An argument that's an option."""
+class Arg(ABC):
+    """An argument baseclass."""
 
     flags: List[str]
     completion_command: Union[str, CompGen]
@@ -163,6 +166,44 @@ class OptionArgument:
             flags=cast(List[str], action.option_strings), completion_command=completion_command
         )
 
+    @property
+    @abstractmethod
+    def flag_list(self) -> str:
+        """A list of all flags associated with this argument."""
+        ...
+
+class Argument(Arg):
+    """A simple argument."""
+
+    @property
+    @override
+    def flag_list(self) -> str:
+        """A list of all flags associated with this argument."""
+        return " ".join(self.flags)
+
+
+class OptionArgument(Arg):
+    """An argument that's an option."""
+
+    @property
+    @override
+    def flag_list(self) -> str:
+        """A list of all flags associated with this argument."""
+        return "|".join(self.flags)
+
+@dataclasses.dataclass
+class CommandMapping:
+    """A utility class containing all arguments for a command."""
+
+    options: List[OptionArgument]
+    args: List[Argument]
+    params: CompGen
+
+    @property
+    def all_args(self) -> str:
+        """All arguments, joined by spaces."""
+        return " ".join([a.flag_list for a in self.args])
+
 
 def complete(shell_cmd: str, get_dispatcher: Callable[[], craft_cli.Dispatcher]) -> str:
     """Generate a bash completion script based on a craft-cli dispatcher.
@@ -184,7 +225,7 @@ def complete(shell_cmd: str, get_dispatcher: Callable[[], craft_cli.Dispatcher])
     template = env.get_template(TEMPLATE_PATH)
 
     command_map: Dict[
-        str, Tuple[Collection[OptionArgument], Collection[OptionArgument], CompGen]
+        str, CommandMapping
     ] = {}
     for name, cmd_cls in dispatcher.commands.items():
         parser = argparse.ArgumentParser()
@@ -195,13 +236,12 @@ def complete(shell_cmd: str, get_dispatcher: Callable[[], craft_cli.Dispatcher])
         actions = parser._actions
 
         options: MutableSequence[OptionArgument] = []
-        args: MutableSequence[OptionArgument] = []
+        args: MutableSequence[Argument] = []
         for action in actions:
-            opt_arg = OptionArgument.from_action(action)
             if action.option_strings:
-                args.append(opt_arg)
+                args.append(Argument.from_action(action))
                 if action.const is None:
-                    options.append(opt_arg)
+                    options.append(OptionArgument.from_action(action))
 
         param_actions = Action(0)
         action_types = {action.type for action in actions if not action.option_strings}
@@ -211,7 +251,7 @@ def complete(shell_cmd: str, get_dispatcher: Callable[[], craft_cli.Dispatcher])
             param_actions |= Action.file
 
         parameters = CompGen(actions=param_actions, options=Option.bashdefault)
-        command_map[name] = options, args, parameters
+        command_map[name] = CommandMapping(list(options), list(args), parameters)
 
     global_opts = [
         OptionArgument.from_global_argument(arg)
