@@ -80,8 +80,10 @@ class Action(enum.Flag):
     variable = enum.auto()
 
 
-def _get_set_flags(flags: enum.Flag) -> List[enum.Flag]:
-    return [f for f in flags.__class__ if f & flags == f]
+def get_set_flags(flags: enum.Flag) -> List[enum.Flag]:
+    """Get a list of the set flags in a flag enum."""
+    # Sorted for consistent testing
+    return sorted([f for f in flags.__class__ if f & flags == f], key=lambda f: f.value)
 
 
 @dataclasses.dataclass
@@ -104,10 +106,10 @@ class CompGen:
         """Represent as a bash completion script."""
         cmd = ["compgen"]
         if self.options:
-            for option in _get_set_flags(self.options):
+            for option in get_set_flags(self.options):
                 cmd.extend(["-o", cast(str, option.name)])
         if self.actions:
-            for action in _get_set_flags(self.actions):
+            for action in get_set_flags(self.actions):
                 cmd.extend(["-A", cast(str, action.name)])
         if self.glob_pattern:
             cmd.extend(["-G", self.glob_pattern])
@@ -157,6 +159,7 @@ class Arg(ABC):
         """A list of all flags associated with this argument."""
         ...
 
+
 class Argument(Arg):
     """A simple argument."""
 
@@ -176,13 +179,14 @@ class OptionArgument(Arg):
         """A list of all flags associated with this argument."""
         return "|".join(self.flags)
 
+
 @dataclasses.dataclass
 class CommandMapping:
     """A utility class containing all arguments for a command."""
 
     options: List[OptionArgument]
     args: List[Argument]
-    params: CompGen
+    params: Union[str, CompGen]
 
     @property
     def all_args(self) -> str:
@@ -209,9 +213,7 @@ def complete(shell_cmd: str, get_dispatcher: Callable[[], craft_cli.Dispatcher])
     )
     template = env.get_template(TEMPLATE_PATH)
 
-    command_map: Dict[
-        str, CommandMapping
-    ] = {}
+    command_map: Dict[str, CommandMapping] = {}
     for name, cmd_cls in dispatcher.commands.items():
         parser = argparse.ArgumentParser()
         cmd = cmd_cls(None)
