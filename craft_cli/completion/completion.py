@@ -268,3 +268,5 @@ def main() -> None:
     )
 
     print(complete(args.shell_cmd, args.func))
+
+    craft_cli.emit.ended_ok()
