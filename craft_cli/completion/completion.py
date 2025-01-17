@@ -138,20 +138,14 @@ class Arg(ABC):
         else:
             flags = [argument.long_option]
 
-        if argument.choices:
-            completion_command = CompGen(words=argument.choices)
-        else:
-            completion_command = CompGen()
+        completion_command = CompGen(words=argument.choices) if argument.choices else CompGen()
 
         return cls(flags=flags, completion_command=completion_command)
 
     @classmethod
     def from_action(cls, action: argparse.Action) -> Self:
         """Convert an argparse Action into an OptionArgument for parsing."""
-        if action.choices:
-            completion_command = CompGen(words=list(action.choices))
-        else:
-            completion_command = CompGen()
+        completion_command = CompGen(words=list(action.choices)) if action.choices else CompGen()
 
         return cls(
             flags=cast(List[str], action.option_strings), completion_command=completion_command
