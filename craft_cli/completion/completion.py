@@ -193,15 +193,15 @@ class CommandMapping:
 
 
 def complete(
-    shell_cmd: str, get_dispatcher: Callable[[], Tuple[craft_cli.Dispatcher, Dict[str, Any]]]
+    shell_cmd: str, get_app_info: Callable[[], Tuple[craft_cli.Dispatcher, Dict[str, Any]]]
 ) -> str:
     """Generate a bash completion script based on a craft-cli dispatcher.
 
     :param shell_cmd: The name of the command being completed for
-    :param get_dispatcher: A function that returns a populated craft-cli dispatcher
+    :param get_app_info: A function that returns a populated craft-cli dispatcher and its app config
     :return: A bash completion script for ``shell_cmd``
     """
-    dispatcher, app_config = get_dispatcher()
+    dispatcher, app_config = get_app_info()
     env = jinja2.Environment(
         trim_blocks=True,
         lstrip_blocks=True,
