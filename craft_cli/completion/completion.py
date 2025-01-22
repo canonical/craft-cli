@@ -23,7 +23,7 @@ import shlex
 import sys
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, List, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union, cast
 
 import jinja2
 from overrides import override
@@ -31,7 +31,6 @@ from typing_extensions import Self
 
 if TYPE_CHECKING:
     from collections.abc import MutableSequence
-    from typing import Dict
 
 import craft_cli
 
@@ -193,14 +192,16 @@ class CommandMapping:
         return " ".join([a.flag_list for a in self.args])
 
 
-def complete(shell_cmd: str, get_dispatcher: Callable[[], craft_cli.Dispatcher]) -> str:
+def complete(
+    shell_cmd: str, get_dispatcher: Callable[[], Tuple[craft_cli.Dispatcher, Dict[str, Any]]]
+) -> str:
     """Generate a bash completion script based on a craft-cli dispatcher.
 
     :param shell_cmd: The name of the command being completed for
     :param get_dispatcher: A function that returns a populated craft-cli dispatcher
     :return: A bash completion script for ``shell_cmd``
     """
-    dispatcher = get_dispatcher()
+    dispatcher, app_config = get_dispatcher()
     env = jinja2.Environment(
         trim_blocks=True,
         lstrip_blocks=True,
@@ -215,7 +216,7 @@ def complete(shell_cmd: str, get_dispatcher: Callable[[], craft_cli.Dispatcher])
     command_map: Dict[str, CommandMapping] = {}
     for name, cmd_cls in dispatcher.commands.items():
         parser = argparse.ArgumentParser()
-        cmd = cmd_cls(None)
+        cmd = cmd_cls(app_config)
         cmd.fill_parser(parser)  # type: ignore[arg-type]
         # reason: for this module, we don't need the help/error
         # capabilities of _CustomArgumentParser
@@ -251,7 +252,7 @@ def complete(shell_cmd: str, get_dispatcher: Callable[[], craft_cli.Dispatcher])
     )
 
 
-def _validate_dispatch_func(raw_ref: str) -> Callable[[], craft_cli.Dispatcher]:
+def _validate_app_info(raw_ref: str) -> Callable[[], Tuple[craft_cli.Dispatcher, Dict[str, Any]]]:
     if len(split := raw_ref.split(":", maxsplit=1)) != 2:  # noqa: PLR2004 (no magic values)
         raise ValueError
 
@@ -262,7 +263,9 @@ def _validate_dispatch_func(raw_ref: str) -> Callable[[], craft_cli.Dispatcher]:
     # Type-checking function signatures is impossible without enforcing the
     # function at `func_name` being type-annotated. This is Python though,
     # so just trust that it's a valid function.
-    return cast(Callable[[], craft_cli.Dispatcher], getattr(module, func_name))
+    return cast(
+        Callable[[], Tuple[craft_cli.Dispatcher, Dict[str, Any]]], getattr(module, func_name)
+    )
 
 
 def main() -> None:
@@ -278,11 +281,11 @@ def main() -> None:
         help="The name of the binary completion scripts are being generated for.",
     )
     parser.add_argument(
-        "func",
-        type=_validate_dispatch_func,
-        metavar="FUNC_REF",
-        help="A reference to a Python function to be imported. The function should take no arguments and return a craft-cli dispatcher.\n"
-        "Example: some.python.module:get_dispatcher",
+        "app_info",
+        type=_validate_app_info,
+        metavar="APP_INFO_FUNC",
+        help="A reference to a Python function to be imported. The function should take no arguments and return a tuple of (craft-cli dispatcher, app config).\n"
+        "Example: some.python.module:get_app_info",
     )
     args = parser.parse_args(sys.argv[1:])
 
@@ -291,6 +294,6 @@ def main() -> None:
         craft_cli.EmitterMode.QUIET, "craft-cli completion", "Generating completion scripts..."
     )
 
-    print(complete(args.shell_cmd, args.func))
+    print(complete(args.shell_cmd, args.app_info))
 
     craft_cli.emit.ended_ok()

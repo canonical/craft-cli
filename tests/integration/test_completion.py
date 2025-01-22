@@ -13,12 +13,13 @@
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import textwrap
 from pathlib import Path
 
 import craft_cli
 from craft_cli.completion import complete
+from typing import Any, Tuple, Dict, Sequence, Callable, Type
 
+from unittest.mock import patch
 
 class FakeLsCommand(craft_cli.BaseCommand):
     """A copycat ls command."""
@@ -48,18 +49,30 @@ class FakeCpCommand(craft_cli.BaseCommand):
         parser.add_argument("src", type=Path)
         parser.add_argument("dest", type=Path)
 
-def test_completion() -> None:
-    def _get_dispatcher() -> craft_cli.Dispatcher:
-        basic_group = craft_cli.CommandGroup("basic", [FakeLsCommand, FakeCpCommand])
+def get_app_info_func(commands: Sequence[Type[craft_cli.BaseCommand]], config: Dict[str, Any] = {}) -> Callable[[], Tuple[craft_cli.Dispatcher, Dict[str, Any]]]:
+    basic_group = craft_cli.CommandGroup("basic", commands)
 
+    def _inner() -> Tuple[craft_cli.Dispatcher, Dict[str, Any]]:
         return craft_cli.Dispatcher(
             appname="pybash",
             commands_groups=[basic_group],
             extra_global_args=[],
-        )
+        ), config
 
-    actual_output = complete("testcraft", _get_dispatcher)
+    return _inner
+
+def test_completion_output() -> None:
+    app_info_func = get_app_info_func([FakeLsCommand, FakeCpCommand])
+    actual_output = complete("testcraft", app_info_func)
 
     expected_output = (Path(__file__).parent / "test_completion" / "expected_script.sh").read_text()
 
     assert actual_output == expected_output
+
+def test_app_config_used() -> None:
+    app_info_func = get_app_info_func([FakeCpCommand], config={"hello": "world"})
+
+    with patch(__name__ + ".FakeCpCommand.__init__", return_value=None) as complete_mock:
+        complete("testcraft", app_info_func)
+
+    complete_mock.assert_called_once_with({"hello": "world"})
