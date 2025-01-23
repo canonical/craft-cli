@@ -13,12 +13,12 @@
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import textwrap
 from pathlib import Path
 
 import craft_cli
 from craft_cli.completion import complete
-
+from craft_cli.completion.completion import DispatcherAndConfig
+from typing import Any, Callable, Dict, Sequence, Type
 
 class FakeLsCommand(craft_cli.BaseCommand):
     """A copycat ls command."""
@@ -48,18 +48,39 @@ class FakeCpCommand(craft_cli.BaseCommand):
         parser.add_argument("src", type=Path)
         parser.add_argument("dest", type=Path)
 
-def test_completion() -> None:
-    def _get_dispatcher() -> craft_cli.Dispatcher:
-        basic_group = craft_cli.CommandGroup("basic", [FakeLsCommand, FakeCpCommand])
+def get_app_info_func(commands: Sequence[Type[craft_cli.BaseCommand]], config: Dict[str, Any] = {}) -> Callable[[], DispatcherAndConfig]:
+    basic_group = craft_cli.CommandGroup("basic", commands)
 
+    def _inner() -> DispatcherAndConfig:
         return craft_cli.Dispatcher(
             appname="pybash",
             commands_groups=[basic_group],
             extra_global_args=[],
-        )
+        ), config
 
-    actual_output = complete("testcraft", _get_dispatcher)
+    return _inner
+
+def test_completion_output() -> None:
+    app_info_func = get_app_info_func([FakeLsCommand, FakeCpCommand])
+    actual_output = complete("testcraft", app_info_func)
 
     expected_output = (Path(__file__).parent / "test_completion" / "expected_script.sh").read_text()
 
     assert actual_output == expected_output
+
+class FakeMvCommand(craft_cli.BaseCommand):
+    """A copycat mv command initialized with a dict."""
+
+    name = "mv"
+    help_msg = "mv"
+    overview = "mv"
+
+    def __init__(self, config: Dict[str, Any]) -> None:
+        config["testing_was_used_by_init"] = True
+        super().__init__(config)
+
+def test_app_config_used() -> None:
+    config = {"hello": "world"}
+    app_info_func = get_app_info_func([FakeMvCommand], config=config)
+    complete("testcraft", app_info_func)
+    assert config.get("testing_was_used_by_init")
