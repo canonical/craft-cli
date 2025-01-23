@@ -36,6 +36,8 @@ import craft_cli
 
 TEMPLATE_PATH = "bash_completion.sh.j2"
 
+DispatcherAndConfig = Tuple[craft_cli.Dispatcher, Optional[Dict[str, Any]]]
+
 
 class Option(enum.Flag):
     """An option flag for compgen."""
@@ -193,12 +195,13 @@ class CommandMapping:
 
 
 def complete(
-    shell_cmd: str, get_app_info: Callable[[], Tuple[craft_cli.Dispatcher, Dict[str, Any]]]
+    shell_cmd: str, get_app_info: Callable[[], DispatcherAndConfig]
 ) -> str:
     """Generate a bash completion script based on a craft-cli dispatcher.
 
     :param shell_cmd: The name of the command being completed for
-    :param get_app_info: A function that returns a populated craft-cli dispatcher and its app config
+    :param get_app_info: A function that returns a populated craft-cli dispatcher and the config
+    needed to create its commands
     :return: A bash completion script for ``shell_cmd``
     """
     dispatcher, app_config = get_app_info()
@@ -252,7 +255,7 @@ def complete(
     )
 
 
-def _validate_app_info(raw_ref: str) -> Callable[[], Tuple[craft_cli.Dispatcher, Dict[str, Any]]]:
+def _validate_app_info(raw_ref: str) -> Callable[[], DispatcherAndConfig]:
     if len(split := raw_ref.split(":", maxsplit=1)) != 2:  # noqa: PLR2004 (no magic values)
         raise ValueError
 
