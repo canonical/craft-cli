@@ -194,9 +194,7 @@ class CommandMapping:
         return " ".join([a.flag_list for a in self.args])
 
 
-def complete(
-    shell_cmd: str, get_app_info: Callable[[], DispatcherAndConfig]
-) -> str:
+def complete(shell_cmd: str, get_app_info: Callable[[], DispatcherAndConfig]) -> str:
     """Generate a bash completion script based on a craft-cli dispatcher.
 
     :param shell_cmd: The name of the command being completed for
