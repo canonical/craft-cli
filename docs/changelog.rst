@@ -7,6 +7,15 @@ Changelog
 See the `Releases page`_ on GitHub for a complete list of commits that are
 included in each version.
 
+2.15.0 (2025-Jan-23)
+--------------------
+
+This release deprecates craft-cli 2.14.0, which is considered broken and
+should not be used.
+
+- Fixes an error with the ``completion`` module's interaction with newer
+  projects based on craft-application.
+
 2.14.0 (2025-Jan-21)
 --------------------
 
