@@ -25,7 +25,7 @@ The values for ``mode`` are the following attributes of the ``EmitterMode`` enum
 How Craft CLI manage the application logs
 =========================================
 
-Unless overridden when ``emit`` is initiated (see :ref:`how to do that <howto_other_logfile>`), the application logs will be managed by the Craft CLI library, according to the following rules:
+Unless overridden when ``emit`` is initiated (see :ref:`how to do that <change_logfile>`), the application logs will be managed by the Craft CLI library, according to the following rules:
 
 - one log file is always produced for each application run (only exposed to the user if the application ends in error or a verbose run was requested, for example by ``--verbose``), naming the files with a timestamp so they are unique
 
@@ -47,7 +47,7 @@ For example, all these application executions are equivalent:
     <app> <command> --verbose <command-parameter>
     <app> <command> <command-parameter> --verbose
 
-The Dispatcher automatically provides the following global arguments, but more can be specified through the ``extra_global_args`` option (see :ref:`how to do that <howto_global_args>`):
+The Dispatcher automatically provides the following global arguments, but more can be specified through the ``extra_global_args`` option (see :ref:`how to do that <use_global_args>`):
 
 - ``-h`` / ``--help``: provides a help text for the application or command
 - ``-q`` / ``--quiet``: sets the ``emit`` output level to QUIET
