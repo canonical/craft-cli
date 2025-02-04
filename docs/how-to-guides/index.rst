@@ -12,5 +12,6 @@ How-to guides
     raise-helpful-errors
     set-default-command
     unit-test-with-emitter
+    use-completion
     use-global-args
     yield-terminal-control
