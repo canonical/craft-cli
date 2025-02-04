@@ -2,11 +2,11 @@ Welcome to Craft CLI's documentation!
 =====================================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :hidden:
 
    tutorials
-   howtos
+   how-to-guides/index
    reference
    explanations
    changelog
@@ -17,7 +17,7 @@ Welcome to Craft CLI's documentation!
 
       **Get started** with hands-on introductions to Craft CLI
 
-   .. grid-item-card:: :doc:`howtos`
+   .. grid-item-card:: :doc:`how-to-guides/index`
 
       **Step-by-step guides** covering key operations and common tasks
 
