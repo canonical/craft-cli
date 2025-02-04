@@ -6,7 +6,7 @@ Welcome to Craft CLI's documentation!
    :hidden:
 
    tutorials
-   howto/index
+   how-to-guides/index
    reference
    explanations
    changelog
@@ -17,7 +17,7 @@ Welcome to Craft CLI's documentation!
 
       **Get started** with hands-on introductions to Craft CLI
 
-   .. grid-item-card:: :doc:`howto/index`
+   .. grid-item-card:: :doc:`how-to-guides/index`
 
       **Step-by-step guides** covering key operations and common tasks
 
