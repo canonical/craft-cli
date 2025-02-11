@@ -3,11 +3,17 @@
 Use the completion module
 =========================
 
-Craft-cli provides a completion module for auto-generating bash completion scripts for applications using its :py:class:`Dispatcher`.
+Craft-cli provides a completion module for auto-generating bash completion scripts for
+applications using its :py:class:`Dispatcher`.
 
-In order to invoke it, the application needs to have a public function that returns some basic information about itself. All applications must provide their :py:class:`Dispatcher` and a configuration to initialise commands with. By default, craft-cli commands don't need to be initialised with anything, so this would be ``None`` in the basic case.
+In order to invoke it, the application needs to have a public function that returns
+some basic information about itself. All applications must provide their
+:py:class:`Dispatcher` and a configuration to initialise commands with. By default,
+craft-cli commands don't need to be initialised with anything, so this would be
+``None`` in the basic case.
 
-For a project named "testcraft", create the file :file:`testcraft/application.py` and add the following content:
+For a project named "testcraft", create the file :file:`testcraft/application.py` and
+add the following content:
 
 .. code:: python
 
@@ -19,7 +25,8 @@ For a project named "testcraft", create the file :file:`testcraft/application.py
     def get_app_info() -> tuple[Dispatcher, None]:
         return get_dispatcher(), None
 
-Once the function is made, the completion module can be invoked to create the completion file:
+Once the function is made, the completion module can be invoked to create the
+completion file:
 
 .. code:: shell
 
@@ -28,7 +35,9 @@ Once the function is made, the completion module can be invoked to create the co
 Applications using craft-application
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Commands from `craft-application`_ need their ``app_config`` dictionary in order to be initialised. To handle this, return the ``app_config`` alongside the application's :py:class:`Dispatcher` object:
+Commands from `craft-application`_ need their ``app_config`` dictionary in order to be
+initialised. To handle this, return the ``app_config`` alongside the application's
+:py:class:`Dispatcher` object:
 
 .. code:: python
 
