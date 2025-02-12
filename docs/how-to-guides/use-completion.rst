@@ -3,16 +3,26 @@
 Use the completion module
 =========================
 
-Craft-cli provides a completion module for auto-generating bash completion scripts for
-applications using its :py:class:`Dispatcher`.
+Craft CLI provides a completion module for auto-generating Bash completion scripts for
+apps.
 
-In order to invoke it, the application needs to have a public function that returns
-some basic information about itself. All applications must provide their
-:py:class:`Dispatcher` and a configuration to initialise commands with. By default,
-craft-cli commands don't need to be initialised with anything, so this would be
+Write the app info getter
+-------------------------
+
+To invoke the module, an app needs to have a public function that returns
+some basic information about itself. The app must provide a
+:py:class:`Dispatcher` with a configuration to initialise commands with. By default,
+Craft CLI commands don't need to be initialised with anything, so this would be
 ``None`` in the basic case.
 
-For a project named "testcraft", create the file :file:`testcraft/application.py` and
+The :py:class:`Dispatcher` is where the commands themselves are pulled in and
+transformed into entries for the Bash script. The commands inside the
+:py:class:`Dispatcher` are initialised and then parsed for their options and inputs.
+
+The purpose of the getter is to give the module an entry point into your application
+for it to gather the necessary information to build a completion script.
+
+For a project named Testcraft, create the file :file:`testcraft/application.py` and
 add the following content:
 
 .. code:: python
@@ -23,7 +33,11 @@ add the following content:
         """Fill out this function to create the application's dispatcher"""
 
     def get_app_info() -> tuple[Dispatcher, None]:
+        # Returning the Dispatcher and no initialisation config
         return get_dispatcher(), None
+
+Create the completion script
+----------------------------
 
 Once the function is made, the completion module can be invoked to create the
 completion file:
