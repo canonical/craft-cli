@@ -228,7 +228,7 @@ def _get_commands_info(commands_groups: list[CommandGroup]) -> dict[str, type[Ba
 class Dispatcher:
     """Set up infrastructure and let the needed command run.
 
-    ♪♫"Leeeeeet, the command ruuun"♪♫ https://www.youtube.com/watch?v=cv-0mmVnxPA
+    `♪♫"Leeeeeet, the command ruuun"♪♫ <https://www.youtube.com/watch?v=cv-0mmVnxPA>`_
 
     :param appname: the name of the application
     :param commands_groups: a list of command groups available to the user
