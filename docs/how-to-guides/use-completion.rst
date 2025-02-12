@@ -9,15 +9,14 @@ apps.
 Write the app info getter
 -------------------------
 
-To invoke the module, an app needs to have a public function that returns
-some basic information about itself. The app must provide a
-:py:class:`Dispatcher` with a configuration to initialise commands with. By default,
-Craft CLI commands don't need to be initialised with anything, so this would be
-``None`` in the basic case.
+To invoke the module, an app needs to have a public function that returns some basic
+information about itself. The app must provide a Dispatcher with a configuration to
+initialise commands with. By default, Craft CLI commands don't need to be initialised
+with anything, so this would be ``None`` in the basic case.
 
-The :py:class:`Dispatcher` is where the commands themselves are pulled in and
-transformed into entries for the Bash script. The commands inside the
-:py:class:`Dispatcher` are initialised and then parsed for their options and inputs.
+The Dispatcher is where the commands themselves are pulled in and transformed into
+entries for the Bash script. The commands inside the Dispatcher are initialised and
+then parsed for their options and inputs.
 
 The purpose of the getter is to give the module an entry point into your application
 for it to gather the necessary information to build a completion script.
@@ -49,17 +48,23 @@ completion file:
 Applications using craft-application
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Commands from `craft-application`_ need their ``app_config`` dictionary in order to be
-initialised. To handle this, return the ``app_config`` alongside the application's
-:py:class:`Dispatcher` object:
+Commands from `craft-application`_ need their corresponding ``Application``'s
+``app_config`` in order to be initialised. To handle this, return the ``app_config``
+alongside the application's Dispatcher object:
 
 .. code:: python
 
+    from craft_application import Application, ServiceFactory
     from craft_cli import Dispatcher
     from typing import Any
 
-    def get_app() -> MyApplication:
-        """Fill out this function to create an application"""
+    from my_app import APP_METADATA, commands
+    def get_app() -> Application:
+        """Replace this function with a function that instantiates your app."""
+        services = ServiceFactory(app=APP_METADATA)
+        app = Application(app=APP_METADATA, services=services)
+        commands.fill_command_groups(app)
+        return app
 
     def get_dispatcher() -> Dispatcher:
         """Fill out this function to create the application's dispatcher"""
