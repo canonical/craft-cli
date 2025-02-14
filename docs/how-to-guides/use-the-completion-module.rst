@@ -1,4 +1,4 @@
-.. _use_completion:
+.. _use_the_completion_module:
 
 Use the completion module
 =========================
