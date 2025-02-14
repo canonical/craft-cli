@@ -10,6 +10,7 @@ EBS
 EKS
 favicon
 Furo
+getter
 Grafana
 IAM
 installable
