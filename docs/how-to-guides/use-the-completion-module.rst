@@ -3,20 +3,22 @@
 Use the completion module
 =========================
 
-Craft CLI provides a completion module for auto-generating Bash completion scripts for
-apps.
+Craft CLI provides the completion module, which auto-generates Bash completion scripts
+for apps.
 
 Write the app info getter
 -------------------------
 
 To invoke the module, an app needs to have a public function that returns some basic
-information about itself. The app must provide a Dispatcher with a configuration to
-initialise commands with. By default, Craft CLI commands don't need to be initialised
-with anything, so this would be ``None`` in the basic case.
+information about itself. The app must provide a
+:py:class:`~craft_cli.dispatcher.Dispatcher` with a configuration to initialise
+commands with. By default, Craft CLI commands don't need to be initialised with
+anything, so this would be ``None`` in the basic case.
 
-The Dispatcher is where the commands themselves are pulled in and transformed into
-entries for the Bash script. The commands inside the Dispatcher are initialised and
-then parsed for their options and inputs.
+The :py:class:`~craft_cli.dispatcher.Dispatcher` is where the commands themselves are
+pulled in and transformed into entries for the Bash script. The commands inside the
+:py:class:`~craft_cli.dispatcher.Dispatcher` are initialised and then parsed for their
+options and inputs.
 
 The purpose of the getter is to give the module an entry point into your application
 for it to gather the necessary information to build a completion script.
@@ -48,9 +50,10 @@ completion file:
 Applications using craft-application
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Commands from `craft-application`_ need their corresponding ``Application``'s
-``app_config`` in order to be initialised. To handle this, return the ``app_config``
-alongside the application's Dispatcher object:
+Commands from `craft-application`_ need their corresponding ``Application``
+object's ``app_config`` in order to be initialised. To handle this, return the
+``app_config`` alongside the application's :py:class:`~craft_cli.dispatcher.Dispatcher`
+object:
 
 .. code:: python
 
