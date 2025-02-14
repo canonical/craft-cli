@@ -10,6 +10,7 @@ EBS
 EKS
 favicon
 Furo
+getter
 Grafana
 IAM
 installable
@@ -34,6 +35,7 @@ subdirectories
 subtree
 subfolders
 Subpackages
+testcraft
 UI
 utils
 VM

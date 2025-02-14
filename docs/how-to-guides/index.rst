@@ -13,4 +13,5 @@ How-to guides
     set-default-command
     unit-test-with-emitter
     use-global-args
+    use-the-completion-module
     yield-terminal-control
