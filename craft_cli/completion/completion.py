@@ -22,8 +22,9 @@ import importlib
 import shlex
 import sys
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import jinja2
 from overrides import override
@@ -36,7 +37,7 @@ import craft_cli
 
 TEMPLATE_PATH = "bash_completion.sh.j2"
 
-DispatcherAndConfig = Tuple[craft_cli.Dispatcher, Optional[Dict[str, Any]]]
+DispatcherAndConfig = tuple[craft_cli.Dispatcher, dict[str, Any] | None]
 
 
 class Option(enum.Flag):
@@ -80,7 +81,7 @@ class Action(enum.Flag):
     variable = enum.auto()
 
 
-def get_set_flags(flags: enum.Flag) -> List[enum.Flag]:
+def get_set_flags(flags: enum.Flag) -> list[enum.Flag]:
     """Get a list of the set flags in a flag enum."""
     # Sorted for consistent testing
     return sorted([f for f in flags.__class__ if f & flags == f], key=lambda f: f.value)
@@ -94,13 +95,13 @@ class CompGen:
     with $(...)
     """
 
-    options: Optional[Option] = None
-    actions: Optional[Action] = None
-    glob_pattern: Optional[str] = None
-    prefix: Optional[str] = None
-    suffix: Optional[str] = None
-    words: List[str] = dataclasses.field(default_factory=list)
-    filter_pattern: Optional[str] = None
+    options: Option | None = None
+    actions: Action | None = None
+    glob_pattern: str | None = None
+    prefix: str | None = None
+    suffix: str | None = None
+    words: list[str] = dataclasses.field(default_factory=list)
+    filter_pattern: str | None = None
 
     def __str__(self) -> str:
         """Represent as a bash completion script."""
@@ -129,8 +130,8 @@ class CompGen:
 class Arg(ABC):
     """An argument baseclass."""
 
-    flags: List[str]
-    completion_command: Union[str, CompGen]
+    flags: list[str]
+    completion_command: str | CompGen
 
     @classmethod
     def from_global_argument(cls, argument: craft_cli.GlobalArgument) -> Self:
@@ -150,7 +151,7 @@ class Arg(ABC):
         completion_command = CompGen(words=list(action.choices)) if action.choices else CompGen()
 
         return cls(
-            flags=cast(List[str], action.option_strings), completion_command=completion_command
+            flags=cast(list[str], action.option_strings), completion_command=completion_command
         )
 
     @property
@@ -184,9 +185,9 @@ class OptionArgument(Arg):
 class CommandMapping:
     """A utility class containing all arguments for a command."""
 
-    options: List[OptionArgument]
-    args: List[Argument]
-    params: Union[str, CompGen]
+    options: list[OptionArgument]
+    args: list[Argument]
+    params: str | CompGen
 
     @property
     def all_args(self) -> str:
@@ -214,7 +215,7 @@ def complete(shell_cmd: str, get_app_info: Callable[[], DispatcherAndConfig]) ->
     )
     template = env.get_template(TEMPLATE_PATH)
 
-    command_map: Dict[str, CommandMapping] = {}
+    command_map: dict[str, CommandMapping] = {}
     for name, cmd_cls in dispatcher.commands.items():
         parser = argparse.ArgumentParser()
         cmd = cmd_cls(app_config)
@@ -265,7 +266,7 @@ def _validate_app_info(raw_ref: str) -> Callable[[], DispatcherAndConfig]:
     # function at `func_name` being type-annotated. This is Python though,
     # so just trust that it's a valid function.
     return cast(
-        Callable[[], Tuple[craft_cli.Dispatcher, Dict[str, Any]]], getattr(module, func_name)
+        Callable[[], tuple[craft_cli.Dispatcher, dict[str, Any]]], getattr(module, func_name)
     )
 
 

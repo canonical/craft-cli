@@ -15,7 +15,7 @@
 
 """Utility functions for craft_cli."""
 
-from typing import Sequence
+from collections.abc import Sequence
 
 
 def humanize_list(values: Sequence[str], conjunction: str = "and") -> str:
