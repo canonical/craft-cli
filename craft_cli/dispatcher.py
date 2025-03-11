@@ -28,7 +28,7 @@ from craft_cli.helptexts import HelpBuilder, OutputFormat
 from craft_cli.utils import humanize_list
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
+    from collections.abc import Callable
 
 
 class CommandGroup(NamedTuple):
@@ -41,7 +41,7 @@ class CommandGroup(NamedTuple):
     name: str
     """The identifier of the command group (to be used in help texts)."""
 
-    commands: Sequence[type[BaseCommand]]
+    commands: list[type[BaseCommand]]
     """A list of the commands belonging in this group."""
 
     ordered: bool = False

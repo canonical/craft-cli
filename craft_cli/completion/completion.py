@@ -24,14 +24,11 @@ import sys
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, cast
+from typing import Any, cast
 
 import jinja2
 from overrides import override
 from typing_extensions import Self
-
-if TYPE_CHECKING:
-    from collections.abc import MutableSequence
 
 import craft_cli
 
@@ -224,8 +221,8 @@ def complete(shell_cmd: str, get_app_info: Callable[[], DispatcherAndConfig]) ->
         # capabilities of _CustomArgumentParser
         actions = parser._actions
 
-        options: MutableSequence[OptionArgument] = []
-        args: MutableSequence[Argument] = []
+        options: list[OptionArgument] = []
+        args: list[Argument] = []
         for action in actions:
             if action.option_strings:
                 args.append(Argument.from_action(action))
