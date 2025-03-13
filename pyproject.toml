@@ -247,6 +247,7 @@ lint.ignore = [
 
     "ANN401", # Disallow Any in parameters (reason: too restrictive)
     "ISC001", # Avoid potential issues with formatting
+    "TC003",  # Allow imported types only used in type checking outside of typecheck guard
 ]
 
 [tool.ruff.lint.per-file-ignores]

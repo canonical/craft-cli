@@ -20,15 +20,13 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import difflib
-from typing import TYPE_CHECKING, Any, Literal, NamedTuple, NoReturn, Optional
+from collections.abc import Callable, Sequence
+from typing import Any, Literal, NamedTuple, NoReturn, Optional
 
 from craft_cli import EmitterMode, emit
 from craft_cli.errors import ArgumentParsingError, ProvideHelpException
 from craft_cli.helptexts import HelpBuilder, OutputFormat
 from craft_cli.utils import humanize_list
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
 
 
 class CommandGroup(NamedTuple):
@@ -41,7 +39,7 @@ class CommandGroup(NamedTuple):
     name: str
     """The identifier of the command group (to be used in help texts)."""
 
-    commands: list[type[BaseCommand]]
+    commands: Sequence[type[BaseCommand]]
     """A list of the commands belonging in this group."""
 
     ordered: bool = False
