@@ -20,7 +20,8 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import difflib
-from typing import Any, Callable, Literal, NamedTuple, NoReturn, Optional, Sequence
+from collections.abc import Callable, Sequence
+from typing import Any, Literal, NamedTuple, NoReturn, Optional
 
 from craft_cli import EmitterMode, emit
 from craft_cli.errors import ArgumentParsingError, ProvideHelpException

@@ -21,7 +21,7 @@ The first step, then, is to create a virtual environment (you may skip this test
 
     $ python3 -m venv env
 
-Note that Python 3.8 or 3.9 are the supported versions.
+Note that Python 3.10, 3.11, and 3.12 are the supported versions.
 
 Then enable the virtual environment and install Craft CLI::
 

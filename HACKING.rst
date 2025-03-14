@@ -12,7 +12,7 @@ Tooling
 =======
 We use a large number of tools for our project. Most of these are installed for you with tox, but you'll need to install:
 
-- Python 3.8 (default on Ubuntu 20.04, available on Ubuntu 22.04 through the deadsnakes_ PPA) with setuptools.
+- Python 3.10 (default on Ubuntu 22.04, available on Ubuntu 24.04 through the deadsnakes_ PPA) with setuptools.
 - tox_ version 4 or later. (3.8+ will automatically provision a v4 virtualenv)
 - Pyright_ (it's recommended you install with ``snap install --classic pyright``)
 - ShellCheck_  (also available via snap: ``snap install shellcheck``)

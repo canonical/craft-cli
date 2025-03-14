@@ -7,6 +7,14 @@ Changelog
 See the `Releases page`_ on GitHub for a complete list of commits that are
 included in each version.
 
+X.X.X (2025-MMM-YY)
+-------------------
+
+Breaking changes
+
+    - Deprecates support for Python 3.8 and adds support for Python 3.11
+      and 3.12.
+
 2.15.0 (2025-Jan-23)
 --------------------
 
