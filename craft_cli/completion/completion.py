@@ -105,10 +105,10 @@ class CompGen:
         cmd = ["compgen"]
         if self.options:
             for option in get_set_flags(self.options):
-                cmd.extend(["-o", cast(str, option.name)])
+                cmd.extend(["-o", cast("str", option.name)])
         if self.actions:
             for action in get_set_flags(self.actions):
-                cmd.extend(["-A", cast(str, action.name)])
+                cmd.extend(["-A", cast("str", action.name)])
         if self.glob_pattern:
             cmd.extend(["-G", self.glob_pattern])
         if self.prefix:
@@ -148,7 +148,7 @@ class Arg(ABC):
         completion_command = CompGen(words=list(action.choices)) if action.choices else CompGen()
 
         return cls(
-            flags=cast(list[str], action.option_strings), completion_command=completion_command
+            flags=cast("list[str]", action.option_strings), completion_command=completion_command
         )
 
     @property
@@ -263,7 +263,7 @@ def _validate_app_info(raw_ref: str) -> Callable[[], DispatcherAndConfig]:
     # function at `func_name` being type-annotated. This is Python though,
     # so just trust that it's a valid function.
     return cast(
-        Callable[[], tuple[craft_cli.Dispatcher, dict[str, Any]]], getattr(module, func_name)
+        "Callable[[], tuple[craft_cli.Dispatcher, dict[str, Any]]]", getattr(module, func_name)
     )
 
 

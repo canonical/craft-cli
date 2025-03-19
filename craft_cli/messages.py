@@ -421,7 +421,7 @@ def _active_guard(ignore_when_stopped: bool = False) -> Callable[..., Any]:  # n
                 raise RuntimeError("Emitter is stopped already")
             return wrapped_func(self, *args, **kwargs)
 
-        return cast(FuncT, func)
+        return cast("FuncT", func)
 
     return decorator
 
