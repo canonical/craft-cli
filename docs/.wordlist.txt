@@ -19,6 +19,7 @@ Juju
 Kubernetes
 Kubeflow
 Makefile
+MMM
 MyST
 namespace
 namespaces
@@ -40,3 +41,4 @@ UI
 utils
 VM
 YAML
+YYYY
