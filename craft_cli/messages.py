@@ -33,9 +33,10 @@ import select
 import sys
 import threading
 import traceback
+from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Callable, Generator, Literal, TextIO, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Literal, TextIO, TypeVar, cast
 
 import platformdirs
 
@@ -420,7 +421,7 @@ def _active_guard(ignore_when_stopped: bool = False) -> Callable[..., Any]:  # n
                 raise RuntimeError("Emitter is stopped already")
             return wrapped_func(self, *args, **kwargs)
 
-        return cast(FuncT, func)
+        return cast("FuncT", func)
 
     return decorator
 

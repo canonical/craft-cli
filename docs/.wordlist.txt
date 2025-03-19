@@ -4,6 +4,7 @@ APIs
 balancer
 Charmhub
 CLI
+DD
 dropdown
 Diátaxis
 EBS
@@ -19,6 +20,7 @@ Juju
 Kubernetes
 Kubeflow
 Makefile
+MMM
 MyST
 namespace
 namespaces
@@ -40,3 +42,4 @@ UI
 utils
 VM
 YAML
+YYYY

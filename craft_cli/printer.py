@@ -20,19 +20,18 @@ from __future__ import annotations
 import itertools
 import math
 import os
+import pathlib
 import platform
 import queue
 import shutil
 import sys
 import threading
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any, Callable, TextIO
-
-if TYPE_CHECKING:
-    import pathlib
+from typing import Any, TextIO
 
 # the char used to draw the progress bar ('FULL BLOCK')
 _PROGRESS_BAR_SYMBOL = "█"
