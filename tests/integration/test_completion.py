@@ -18,7 +18,7 @@ from pathlib import Path
 import craft_cli
 from craft_cli.completion import complete
 from craft_cli.completion.completion import DispatcherAndConfig
-from typing import Any, Callable, Dict, Type
+from typing import Any, Callable, Type
 
 class FakeLsCommand(craft_cli.BaseCommand):
     """A copycat ls command."""
@@ -48,7 +48,7 @@ class FakeCpCommand(craft_cli.BaseCommand):
         parser.add_argument("src", type=Path)
         parser.add_argument("dest", type=Path)
 
-def get_app_info_func(commands: list[Type[craft_cli.BaseCommand]], config: Dict[str, Any] = {}) -> Callable[[], DispatcherAndConfig]:
+def get_app_info_func(commands: list[Type[craft_cli.BaseCommand]], config: dict[str, Any] = {}) -> Callable[[], DispatcherAndConfig]:
     basic_group = craft_cli.CommandGroup("basic", commands)
 
     def _inner() -> DispatcherAndConfig:
@@ -75,7 +75,7 @@ class FakeMvCommand(craft_cli.BaseCommand):
     help_msg = "mv"
     overview = "mv"
 
-    def __init__(self, config: Dict[str, Any]) -> None:
+    def __init__(self, config: dict[str, Any]) -> None:
         config["testing_was_used_by_init"] = True
         super().__init__(config)
 

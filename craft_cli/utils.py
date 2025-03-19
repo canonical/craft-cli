@@ -15,10 +15,8 @@
 
 """Utility functions for craft_cli."""
 
-from collections.abc import Sequence
 
-
-def humanize_list(values: Sequence[str], conjunction: str = "and") -> str:
+def humanize_list(values: list[str], conjunction: str = "and") -> str:
     """Convert a collection of values into a string that lists the values."""
     start = ", ".join(values[:-1])
     return f"{start}, {conjunction} {values[-1]}"
