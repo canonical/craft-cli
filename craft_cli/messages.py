@@ -780,6 +780,23 @@ class Emitter:
         self._report_error(error)
         self._stop()
 
+    @_active_guard(ignore_when_stopped=True)
+    def dump_log_contents(self, log_path: pathlib.Path | str, prefix: str = "::") -> None:
+        """Dump the contents of a log file."""
+        # Open a path object in case we received a string
+        log_path = pathlib.Path(log_path)
+
+        # Same settings as debug
+        if self._mode in (EmitterMode.QUIET, EmitterMode.BRIEF, EmitterMode.VERBOSE):
+            stream = None
+        else:
+            stream = sys.stderr
+
+        with log_path.open() as log_file:
+            for line in log_file:
+                text = f"{prefix} {line}"
+                self._printer.show(stream, text, use_timestamp=False)
+
     @_active_guard()
     def set_secrets(self, secrets: list[str]) -> None:
         """Set the list of strings that should be masked out in all output."""
