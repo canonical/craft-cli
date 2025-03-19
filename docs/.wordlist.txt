@@ -4,6 +4,7 @@ APIs
 balancer
 Charmhub
 CLI
+DD
 dropdown
 Diátaxis
 EBS
