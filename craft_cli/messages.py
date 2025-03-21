@@ -843,6 +843,11 @@ class Emitter:
             raise errors.CraftError("input cannot be empty")
         return val
 
+    @property
+    def log_filepath(self) -> pathlib.Path:
+        """The path to the log file."""
+        return self._log_filepath
+
 
 # module-level instantiated Emitter; this is the instance all code shall use and Emitter
 # shall not be instantiated again for the process' run
