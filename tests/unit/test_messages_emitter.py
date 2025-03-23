@@ -18,9 +18,10 @@
 
 import logging
 import sys
+from types import MethodType
 from unittest import mock
 from unittest.mock import call, patch
-from typing import cast, Callable
+from typing import Any, cast, Callable
 
 import craft_cli
 import pytest
@@ -88,6 +89,24 @@ def get_initiated_emitter(tmp_path, monkeypatch):
 
         yield func
 
+@pytest.fixture
+def emitter_methods() -> Callable[[Emitter | RecordingEmitter, list[str]], list[Callable[..., Any]]]:
+    def _inner(emitter, exclude: list[str] = []) -> list[Callable[..., Any]]:
+        # Collect all the public methods in Emitter
+        all_methods = [item for item in dir(Emitter) if item[0] != "_"]
+
+        # Filter out from the exclusion list
+        all_methods = [item for item in all_methods if item not in exclude]
+
+        # Get the actual attributes
+        all_methods = [getattr(emitter, item) for item in all_methods]
+
+        # Filter out anything that isn't actually a method
+        all_methods = [item for item in all_methods if isinstance(item, Callable)]
+
+        return all_methods
+
+    return _inner
 
 # -- tests for init and setting/getting mode
 
@@ -100,6 +119,7 @@ def get_initiated_emitter(tmp_path, monkeypatch):
     ],
 )
 def test_init_quietish(mode, tmp_path, monkeypatch):
+
     """Init the class in some quiet-ish mode."""
     # avoid using a real log file
     fake_logpath = str(tmp_path / FAKE_LOG_NAME)
@@ -181,13 +201,12 @@ def test_init_developer_modes(mode, tmp_path, monkeypatch):
     assert handler.mode == mode
 
 
-@pytest.mark.parametrize("method_name", [x for x in dir(Emitter) if x[0] != "_" and x != "init"])
-def test_needs_init(method_name):
+def test_needs_init(emitter_methods):
     """Check that calling other methods needs emitter first to be initiated."""
-    emitter = Emitter()
-    method = getattr(emitter, method_name)
-    with pytest.raises(RuntimeError, match="Emitter needs to be initiated first"):
-        method()
+    methods = emitter_methods(Emitter(), exclude=["init"])
+    for method in methods:
+        with pytest.raises(RuntimeError, match="Emitter needs to be initiated first"):
+            method()
 
 
 def test_init_receiving_logfile(tmp_path, monkeypatch):
@@ -775,19 +794,14 @@ def test_ended_double_after_error(get_initiated_emitter):
     emitter.ended_ok()
     assert emitter.printer_calls == []
 
-
-@pytest.mark.parametrize(
-    "method_name",
-    [x for x in dir(Emitter) if x[0] != "_" and x not in ("init", "ended_ok", "error")],
-)
-def test_needs_being_active(get_initiated_emitter, method_name):
+def test_needs_being_active(get_initiated_emitter, emitter_methods):
     """Check that calling public methods needs emitter to not be stopped."""
     emitter = get_initiated_emitter(EmitterMode.QUIET)
     emitter.ended_ok()
-
-    method = getattr(emitter, method_name)
-    with pytest.raises(RuntimeError, match="Emitter is stopped already"):
-        method()
+    methods = emitter_methods(emitter, exclude=["init", "ended_ok", "error"])
+    for method in methods:
+        with pytest.raises(RuntimeError, match="Emitter is stopped already"):
+            method()
 
 
 # -- tests for pausing the machinery

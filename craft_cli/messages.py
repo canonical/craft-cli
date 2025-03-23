@@ -780,7 +780,7 @@ class Emitter:
         self._report_error(error)
         self._stop()
 
-    @_active_guard(ignore_when_stopped=True)
+    @_active_guard()
     def dump_log_contents(self, log_path: pathlib.Path | str, prefix: str = "::") -> None:
         """Dump the contents of a log file."""
         # Open a path object in case we received a string
