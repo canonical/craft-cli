@@ -782,7 +782,7 @@ class Emitter:
 
     @_active_guard()
     def dump_log_contents(self, log_path: pathlib.Path | str, prefix: str = "::") -> None:
-        """Dump the contents of a log file."""
+        """Dump the contents of an external log file into the emitter log."""
         # Open a path object in case we received a string
         if isinstance(log_path, str):
             log_path = pathlib.Path(log_path)
