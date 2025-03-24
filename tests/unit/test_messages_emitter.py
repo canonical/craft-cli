@@ -18,12 +18,10 @@
 
 import logging
 import sys
-from types import MethodType
 from unittest import mock
 from unittest.mock import call, patch
 from typing import Any, cast, Callable
 
-import craft_cli
 import pytest
 import pytest_mock
 
@@ -91,6 +89,10 @@ def get_initiated_emitter(tmp_path, monkeypatch):
 
 @pytest.fixture
 def emitter_methods() -> Callable[[Emitter | RecordingEmitter, list[str]], list[Callable[..., Any]]]:
+    """Provide a list of all public methods on an Emitter object.
+
+    Optionally filter out any methods that aren't wanted for testing.
+    """
     def _inner(emitter, exclude: list[str] = []) -> list[Callable[..., Any]]:
         # Collect all the public methods in Emitter
         all_methods = [item for item in dir(Emitter) if item[0] != "_"]
@@ -119,7 +121,6 @@ def emitter_methods() -> Callable[[Emitter | RecordingEmitter, list[str]], list[
     ],
 )
 def test_init_quietish(mode, tmp_path, monkeypatch):
-
     """Init the class in some quiet-ish mode."""
     # avoid using a real log file
     fake_logpath = str(tmp_path / FAKE_LOG_NAME)
