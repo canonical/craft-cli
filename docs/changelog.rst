@@ -17,7 +17,7 @@ Breaking changes
 
 New features
 
-    - Add a ``dump_log_contents`` method to the emitter, which reads from a file
+    - Add an ``append_to_log`` method to the emitter, which reads from a file
       and dumps it directly into the log.
     - Add a ``log_filepath`` read-only property to the emitter.
 

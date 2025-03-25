@@ -781,17 +781,16 @@ class Emitter:
         self._stop()
 
     @_active_guard()
-    def dump_log_contents(self, log_path: pathlib.Path | str, prefix: str = "::") -> None:
-        """Dump the contents of an external log file into the emitter log."""
-        # Open a path object in case we received a string
-        if isinstance(log_path, str):
-            log_path = pathlib.Path(log_path)
+    def append_to_log(self, file: TextIO, prefix: str = ":: ") -> None:
+        """Dump the contents of an external log file into the emitter log.
 
-        with log_path.open() as log_file:
-            for line in log_file:
-                text = f"{prefix} {line}"
-                # Don't set the stream so it only goes to the log file
-                self._printer.show(None, text, use_timestamp=False)
+        :param file: A file I/O object to read from
+        :param prefix: A prefix for every line printed. Defaults to ":: ".
+        """
+        for line in file.readlines():
+            text = f"{prefix}{line}"
+            # Don't set the stream so it only goes to the log file
+            self._printer.show(None, text, use_timestamp=False)
 
     @_active_guard()
     def set_secrets(self, secrets: list[str]) -> None:
