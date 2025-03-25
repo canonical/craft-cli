@@ -87,28 +87,34 @@ def get_initiated_emitter(tmp_path, monkeypatch):
 
         yield func
 
-@pytest.fixture
-def emitter_methods() -> Callable[[Emitter | RecordingEmitter, list[str]], list[Callable[..., Any]]]:
+def emitter_methods(init: bool, stop: bool = True, exclude: list[str] = []) -> list[Callable[..., Any]]:
     """Provide a list of all public methods on an Emitter object.
 
-    Optionally filter out any methods that aren't wanted for testing.
+    :param init: Whether or not to initialize the emitter first
+    :param stop: Whether or not to stop the emitter after initialization. Does nothing if init is False.
+        Defaults to true.
+    :param exclude: A list of method names to exclude from the final output. Defaults to empty.
     """
-    def _inner(emitter, exclude: list[str] = []) -> list[Callable[..., Any]]:
-        # Collect all the public methods in Emitter
-        all_methods = [item for item in dir(Emitter) if item[0] != "_"]
+    emitter = Emitter()
+    if init:
+        emitter.init(EmitterMode.QUIET, "testappname", "default greeting")
+        if stop:
+            emitter.ended_ok()
 
-        # Filter out from the exclusion list
-        all_methods = [item for item in all_methods if item not in exclude]
+    # Collect all the public methods in Emitter
+    all_methods = [item for item in dir(Emitter) if item[0] != "_"]
 
-        # Get the actual attributes
-        all_methods = [getattr(emitter, item) for item in all_methods]
+    # Filter out from the exclusion list
+    all_methods = [item for item in all_methods if item not in exclude]
 
-        # Filter out anything that isn't actually a method
-        all_methods = [item for item in all_methods if isinstance(item, Callable)]
+    # Get the actual attributes
+    all_methods = [getattr(emitter, item) for item in all_methods]
 
-        return all_methods
+    # Filter out anything that isn't actually a method
+    all_methods = [item for item in all_methods if isinstance(item, Callable)]
 
-    return _inner
+    return all_methods
+
 
 # -- tests for init and setting/getting mode
 
@@ -201,13 +207,11 @@ def test_init_developer_modes(mode, tmp_path, monkeypatch):
     (handler,) = [x for x in logger.handlers if isinstance(x, _Handler)]
     assert handler.mode == mode
 
-
-def test_needs_init(emitter_methods):
+@pytest.mark.parametrize("method", emitter_methods(init=False, exclude=["init"]))
+def test_needs_init(method):
     """Check that calling other methods needs emitter first to be initiated."""
-    methods = emitter_methods(Emitter(), exclude=["init"])
-    for method in methods:
-        with pytest.raises(RuntimeError, match="Emitter needs to be initiated first"):
-            method()
+    with pytest.raises(RuntimeError, match="Emitter needs to be initiated first"):
+        method()
 
 
 def test_init_receiving_logfile(tmp_path, monkeypatch):
@@ -795,14 +799,11 @@ def test_ended_double_after_error(get_initiated_emitter):
     emitter.ended_ok()
     assert emitter.printer_calls == []
 
-def test_needs_being_active(get_initiated_emitter, emitter_methods):
+@pytest.mark.parametrize("method", emitter_methods(init=True, exclude=["init", "ended_ok", "error"]))
+def test_needs_being_active(method):
     """Check that calling public methods needs emitter to not be stopped."""
-    emitter = get_initiated_emitter(EmitterMode.QUIET)
-    emitter.ended_ok()
-    methods = emitter_methods(emitter, exclude=["init", "ended_ok", "error"])
-    for method in methods:
-        with pytest.raises(RuntimeError, match="Emitter is stopped already"):
-            method()
+    with pytest.raises(RuntimeError, match="Emitter is stopped already"):
+        method()
 
 
 # -- tests for pausing the machinery
