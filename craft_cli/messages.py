@@ -787,7 +787,7 @@ class Emitter:
         :param file: A file I/O object to read from
         :param prefix: A prefix for every line printed. Defaults to ":: ".
         """
-        for line in file.readlines():
+        for line in file:
             text = f"{prefix}{line}"
             # Don't set the stream so it only goes to the log file
             self._printer.show(None, text, use_timestamp=False)
