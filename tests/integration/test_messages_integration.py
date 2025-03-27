@@ -22,6 +22,7 @@ outputs.
 
 import logging
 import os
+import pathlib
 import re
 import subprocess
 import sys
@@ -108,9 +109,9 @@ def compare_lines(expected_lines: Collection[Line], raw_stream: str, std_stream)
         else:
             # If the terminal doesn't support ANSI escape sequences, we fill the screen
             # width and don't terminate lines, so we split lines according to that length
-            assert (
-                len(raw_stream) % width == 0
-            ), f"Bad length {len(raw_stream)} ({width=}) {raw_stream=!r}"
+            assert len(raw_stream) % width == 0, (
+                f"Bad length {len(raw_stream)} ({width=}) {raw_stream=!r}"
+            )
             args = [iter(raw_stream)] * width
             lines = ["".join(x) for x in zip(*args)]  # pyright: ignore[reportGeneralTypeIssues]
     else:
@@ -909,7 +910,7 @@ def test_simple_errors_debugish(capsys, mode):
 @pytest.mark.parametrize("output_is_terminal", [True, False])
 def test_error_api_details_quiet(capsys):
     """Somewhat expected API error, final user modes.
-    
+
     Check that "quiet" is indeed quiet.
     """
     emit = Emitter()
@@ -929,7 +930,7 @@ def test_error_api_details_quiet(capsys):
     ]
     assert_outputs(capsys, emit, expected_err=expected_err, expected_log=expected_log)
 
-    
+
 @pytest.mark.parametrize(
     "mode",
     [
@@ -1684,3 +1685,50 @@ def test_open_stream_no_text(capsys, logger, monkeypatch, init_emitter):
         expected_err=expected_err,
         expected_log=expected_log,
     )
+
+
+@pytest.mark.parametrize(
+    "prefix",
+    [
+        pytest.param("", id="no_prefix"),
+        pytest.param(":: ", id="simple_prefix"),
+        pytest.param("2000-01-01 12:00:00.000", id="weird_prefix"),
+    ],
+)
+@pytest.mark.parametrize(
+    "file_contents",
+    [
+        pytest.param("", id="no_content"),
+        pytest.param("\n\n\n", id="only_newlines"),
+        pytest.param("one\ntwo\nthree", id="simple_content"),
+        pytest.param("one\ntwo\nthree\n", id="simple_with_newline"),
+    ],
+)
+@pytest.mark.parametrize(
+    "output_is_terminal", [pytest.param(True, id="is_term"), pytest.param(False, id="not_term")]
+)
+@pytest.mark.usefixtures("init_emitter")
+def test_append_to_log(tmp_path: pathlib.Path, prefix: str, file_contents: str) -> None:
+    file_to_dump = tmp_path / "file.txt"
+    file_to_dump.write_text(file_contents)
+
+    emit = Emitter()
+    emit.init(EmitterMode.QUIET, "testapp", GREETING)
+
+    emit.debug("We're having fun with it now!")
+    with file_to_dump.open() as file:
+        emit.append_to_log(file=file, prefix=prefix)
+    emit.debug("We are no longer having fun.")
+
+    prefixed_file_contents = [f"{prefix}{line}" for line in file_contents.splitlines()]
+    expected_output = [
+        rf"{TIMESTAMP_FORMAT}Specific greeting to be ignored",
+        rf"{TIMESTAMP_FORMAT}We're having fun with it now\!",
+        *prefixed_file_contents,
+        rf"{TIMESTAMP_FORMAT}We are no longer having fun\.",
+    ]
+
+    log_content = emit.log_filepath.read_text()
+
+    for expected, actual in zip(expected_output, log_content.splitlines()):
+        assert re.match(expected, actual)

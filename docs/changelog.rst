@@ -15,6 +15,12 @@ Breaking changes
     - Deprecates support for Python 3.8 and adds support for Python 3.11
       and 3.12.
 
+New features
+
+    - Add an ``append_to_log`` method to the emitter, which reads from a file
+      and dumps it directly into the log.
+    - Add a ``log_filepath`` read-only property to the emitter.
+
 2.15.0 (2025-Jan-23)
 --------------------
 
