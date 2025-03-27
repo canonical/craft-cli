@@ -7,7 +7,7 @@ Changelog
 See the `Releases page`_ on GitHub for a complete list of commits that are
 included in each version.
 
-X.X.X (2025-MMM-DD)
+3.0.0 (2025-Mar-27)
 -------------------
 
 Breaking changes
