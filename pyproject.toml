@@ -7,7 +7,6 @@ authors = [
 ]
 dependencies = [
     "platformdirs",
-    "pyyaml",
     "pywin32; sys_platform == 'win32'",
     "jinja2>=3.1.5",
     "overrides>=7.7.0",
