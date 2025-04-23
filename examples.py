@@ -521,6 +521,21 @@ def example_31():
     time.sleep(6)
     raise CraftError("Error 1\nError 2")
 
+def example_32():
+    """Logger affects emitter."""
+    logger = logging.getLogger("test")
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(logging.StreamHandler())
+    # emit.set_mode(EmitterMode.BRIEF)
+
+    emit.progress("Shorter message")
+    logger.debug("Message from external logger 1")
+    emit.progress("Another message")
+    time.sleep(1)
+    emit.progress("Interminient message", permanent=True)
+    logger.debug("Message from external logger 2")
+    time.sleep(1)
+    emit.message("Final message")
 
 # -- end of test cases
 
