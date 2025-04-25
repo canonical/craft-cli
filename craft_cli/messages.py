@@ -203,7 +203,7 @@ class _PipeReaderThread(threading.Thread):
         # on the platform
         if _WINDOWS_MODE:
             # parameters: default security, default buffer size, binary mode
-            binary_mode = os.O_BINARY
+            binary_mode = os.O_BINARY  # pyright: ignore[reportAttributeAccessIssue]
             # ignoring the type of the first parameter below, as documentation allows to use None
             # to make it use a NULL security descriptor:
             #     https://www.markjour.com/docs/pywin32-docs/PySECURITY_ATTRIBUTES.html
