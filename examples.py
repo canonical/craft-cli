@@ -521,21 +521,27 @@ def example_31():
     time.sleep(6)
     raise CraftError("Error 1\nError 2")
 
+
 def example_32():
     """Logger affects emitter."""
-    logger = logging.getLogger("test")
+    logger = logging.getLogger()
+    # This doesn't work (streaming_brief=True)
+    emit.init(EmitterMode.BRIEF, "explorator", "Greetings earthlings", streaming_brief=True)
+    # This works
+    # emit.init(EmitterMode.BRIEF, "explorator", "Greetings earthlings")
     logger.setLevel(logging.DEBUG)
-    logger.addHandler(logging.StreamHandler())
-    # emit.set_mode(EmitterMode.BRIEF)
 
-    emit.progress("Shorter message")
-    logger.debug("Message from external logger 1")
-    emit.progress("Another message")
-    time.sleep(1)
-    emit.progress("Interminient message", permanent=True)
-    logger.debug("Message from external logger 2")
-    time.sleep(1)
-    emit.message("Final message")
+    # it only fails if following message contains whitespace characters inside string
+    logger.info("Message from external logger 2")
+
+    # examples of failing cases
+    # emit.progress("Final\tmessage")
+    emit.message("Final message\nMultiline")
+
+    # but those would work
+    # emit.message("Single message")
+    # emit.progress("Final message\n")
+
 
 # -- end of test cases
 
@@ -549,7 +555,7 @@ if func is None:
     print(f"ERROR: function {name!r} not found")
     exit()
 
-if int(sys.argv[1]) != 29:
+if int(sys.argv[1]) not in (29, 32):
     emit.init(EmitterMode.BRIEF, "explorator", "Greetings earthlings")
 try:
     func(*sys.argv[2:])
