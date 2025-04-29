@@ -27,6 +27,7 @@ import shutil
 import sys
 import threading
 import time
+import weakref
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -228,6 +229,7 @@ class Printer:
             self.spinner.start()
             if _supports_ansi_escape_sequences() and _stream_is_terminal(sys.stderr):
                 print(ANSI_HIDE_CURSOR, end="", file=sys.stderr, flush=True)
+        weakref.finalize(self, self.stop)
 
     def set_terminal_prefix(self, prefix: str) -> None:
         """Set the string to be prepended to every message shown to the terminal."""

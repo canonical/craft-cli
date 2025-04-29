@@ -521,6 +521,10 @@ def example_31():
     time.sleep(6)
     raise CraftError("Error 1\nError 2")
 
+def example_32():
+    emit.progress("Look ma, no cursor!")
+    raise BaseException()
+
 
 # -- end of test cases
 
