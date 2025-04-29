@@ -2,10 +2,10 @@ settings:
   components:
     - Craft CLI
   labels:
-    - Bug
-    - Enhancement
-    - Spike
-    - Epic
+    - "Type: Bug"
+    - "Type: Enhancement"
+    - "Type: Spike"
+    - "Type: Research"
   # Adds a comment with the JIRA ID
   add_gh_comment: true
   # Reflect changes on JIRA
@@ -19,7 +19,7 @@ settings:
     opened: Untriaged
     closed: done
   label_mapping:
-    Enhancement: Story
-    Bug: Bug
-    Spike: Spike
-    Epic: Epic
+    "Type: Enhancement": Story
+    "Type: Bug": Bug
+    "Type: Spike": Spike
+    "Type: Research": Epic
