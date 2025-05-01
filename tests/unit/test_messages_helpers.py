@@ -437,5 +437,6 @@ def test_traceback_lines_simple():
     assert tbacklines[0] == "Traceback (most recent call last):"
     assert tbacklines[1].startswith("  File ")
     assert tbacklines[1].endswith(", in test_traceback_lines_simple")
-    assert tbacklines[2] == '    raise ValueError("pumba")'
-    assert tbacklines[3] == "ValueError: pumba"
+    assert tbacklines[2] == '    raise ValueError("pumba")  # noqa: TRY301'
+    assert tbacklines[3] == "    ^^^^^^^^^^^^^^^^^^^^^^^^^"
+    assert tbacklines[4] == "ValueError: pumba"
