@@ -31,7 +31,12 @@ except ImportError:  # pragma: no cover
 # is to break cyclic dependencies
 from .messages import EmitterMode, emit  # isort:skip
 from .dispatcher import BaseCommand, CommandGroup, Dispatcher, GlobalArgument
-from .errors import ArgumentParsingError, CraftError, CraftCommandError, ProvideHelpException
+from .errors import (
+    ArgumentParsingError,
+    CraftError,
+    CraftCommandError,
+    ProvideHelpException,
+)
 
 __all__ = [
     "ArgumentParsingError",

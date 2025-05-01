@@ -53,7 +53,10 @@ def init_emitter(monkeypatch):
     monkeypatch.setattr(messages, "TESTMODE", True)
     monkeypatch.setattr(printer, "TESTMODE", True)
     messages.emit.init(
-        messages.EmitterMode.QUIET, "test-emitter", "Hello world", log_filepath=temp_logfile
+        messages.EmitterMode.QUIET,
+        "test-emitter",
+        "Hello world",
+        log_filepath=temp_logfile,
     )
     yield
     # end machinery (just in case it was not ended before; note it's ok to "double end")
@@ -103,7 +106,9 @@ class RecordingEmitter:
         for stored_call in self.interactions:
             if stored_call == expected_call:
                 return stored_call.args[1]
-        raise AssertionError(f"Expected call {expected_call} not found in {self.interactions}")
+        raise AssertionError(
+            f"Expected call {expected_call} not found in {self.interactions}"
+        )
 
     def assert_message(self, expected_text, regex=False):
         """Check the 'message' method was properly used.
@@ -171,7 +176,9 @@ class RecordingEmitter:
         if expected_call_list is None:
             if self.interactions:
                 show_interactions = "\n".join(map(str, self.interactions))
-                raise AssertionError("Expected no call but really got:\n" + show_interactions)
+                raise AssertionError(
+                    "Expected no call but really got:\n" + show_interactions
+                )
             return
 
         for _pos, stored_call in enumerate(self.interactions):
@@ -209,7 +216,9 @@ def emitter(monkeypatch):
         monkeypatch.setattr(
             messages.emit,
             method_name,
-            lambda *a, method_name=method_name, **k: recording_emitter.record(method_name, a, k),
+            lambda *a, method_name=method_name, **k: recording_emitter.record(
+                method_name, a, k
+            ),
         )
 
     # progress bar is special, because it also needs to return a context manager with

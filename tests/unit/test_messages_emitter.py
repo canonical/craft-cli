@@ -45,6 +45,7 @@ def clean_logging_handler():
     for handler in to_remove:
         logger.removeHandler(handler)
 
+
 @pytest.fixture
 def mock_isatty(mocker):
     return mocker.patch("sys.stdin.isatty", return_value=True)
@@ -87,7 +88,12 @@ def get_initiated_emitter(tmp_path, monkeypatch):
 
         yield func
 
-def emitter_methods(init: bool, stop: bool = True, exclude: list[str] | None = None) -> list[Callable[..., Any]]:  # noqa: FBT001, FBT002
+
+def emitter_methods(
+    init: bool,  # noqa: FBT001
+    stop: bool = True,  # noqa: FBT001, FBT002
+    exclude: list[str] | None = None,
+) -> list[Callable[..., Any]]:
     """Provide a list of all public methods on an Emitter object.
 
     :param init: Whether or not to initialize the emitter first
@@ -114,7 +120,6 @@ def emitter_methods(init: bool, stop: bool = True, exclude: list[str] | None = N
 
     # Filter out anything that isn't actually a method
     return [item for item in all_methods if isinstance(item, Callable)]
-
 
 
 # -- tests for init and setting/getting mode
@@ -166,8 +171,16 @@ def test_init_verbose_mode(tmp_path, monkeypatch):
     assert mock_printer.mock_calls == [
         call(fake_logpath),  # the Printer instantiation, passing the log filepath
         call().show(None, "greeting"),  # the greeting, only sent to the log
-        call().show(sys.stderr, greeting, use_timestamp=False, end_line=True, avoid_logging=True),
-        call().show(sys.stderr, log_locat, use_timestamp=False, end_line=True, avoid_logging=True),
+        call().show(
+            sys.stderr, greeting, use_timestamp=False, end_line=True, avoid_logging=True
+        ),
+        call().show(
+            sys.stderr,
+            log_locat,
+            use_timestamp=False,
+            end_line=True,
+            avoid_logging=True,
+        ),
     ]
 
     # log handler is properly setup
@@ -199,14 +212,19 @@ def test_init_developer_modes(mode, tmp_path, monkeypatch):
     assert mock_printer.mock_calls == [
         call(fake_logpath),  # the Printer instantiation, passing the log filepath
         call().show(None, "greeting"),  # the greeting, only sent to the log
-        call().show(sys.stderr, greeting, use_timestamp=True, end_line=True, avoid_logging=True),
-        call().show(sys.stderr, log_locat, use_timestamp=True, end_line=True, avoid_logging=True),
+        call().show(
+            sys.stderr, greeting, use_timestamp=True, end_line=True, avoid_logging=True
+        ),
+        call().show(
+            sys.stderr, log_locat, use_timestamp=True, end_line=True, avoid_logging=True
+        ),
     ]
 
     # log handler is properly setup
     logger = logging.getLogger("")
     (handler,) = [x for x in logger.handlers if isinstance(x, _Handler)]
     assert handler.mode == mode
+
 
 @pytest.mark.parametrize("method", emitter_methods(init=False, exclude=["init"]))
 def test_needs_init(method):
@@ -224,22 +242,30 @@ def test_init_receiving_logfile(tmp_path, monkeypatch):
     emitter = Emitter()
     fake_logpath = tmp_path / FAKE_LOG_NAME
     with patch("craft_cli.messages.Printer") as mock_printer:
-        emitter.init(EmitterMode.DEBUG, "testappname", greeting, log_filepath=fake_logpath)
+        emitter.init(
+            EmitterMode.DEBUG, "testappname", greeting, log_filepath=fake_logpath
+        )
 
     # filepath is properly informed and passed to the printer
     log_locat = f"Logging execution to {str(fake_logpath)!r}"
     assert mock_printer.mock_calls == [
         call(fake_logpath),  # the Printer instantiation, passing the log filepath
         call().show(None, "greeting"),  # the greeting, only sent to the log
-        call().show(sys.stderr, greeting, use_timestamp=True, end_line=True, avoid_logging=True),
-        call().show(sys.stderr, log_locat, use_timestamp=True, end_line=True, avoid_logging=True),
+        call().show(
+            sys.stderr, greeting, use_timestamp=True, end_line=True, avoid_logging=True
+        ),
+        call().show(
+            sys.stderr, log_locat, use_timestamp=True, end_line=True, avoid_logging=True
+        ),
     ]
 
 
 def test_init_double_regular_mode(tmp_path, monkeypatch):
     """Double init in regular usage mode."""
     # ensure it's not using the standard log filepath provider (that pollutes user dirs)
-    monkeypatch.setattr(messages, "_get_log_filepath", lambda appname: tmp_path / FAKE_LOG_NAME)
+    monkeypatch.setattr(
+        messages, "_get_log_filepath", lambda appname: tmp_path / FAKE_LOG_NAME
+    )
 
     emitter = Emitter()
 
@@ -253,7 +279,9 @@ def test_init_double_regular_mode(tmp_path, monkeypatch):
 def test_init_double_tests_mode(tmp_path, monkeypatch):
     """Double init in tests usage mode."""
     # ensure it's not using the standard log filepath provider (that pollutes user dirs)
-    monkeypatch.setattr(messages, "_get_log_filepath", lambda appname: tmp_path / FAKE_LOG_NAME)
+    monkeypatch.setattr(
+        messages, "_get_log_filepath", lambda appname: tmp_path / FAKE_LOG_NAME
+    )
 
     monkeypatch.setattr(messages, "TESTMODE", True)
     emitter = Emitter()
@@ -299,8 +327,16 @@ def test_set_mode_verbose_mode(get_initiated_emitter):
     assert emitter.get_mode() == EmitterMode.VERBOSE
     log_locat = f"Logging execution to {emitter._log_filepath!r}"
     assert emitter.printer_calls == [
-        call().show(sys.stderr, greeting, use_timestamp=False, avoid_logging=True, end_line=True),
-        call().show(sys.stderr, log_locat, use_timestamp=False, avoid_logging=True, end_line=True),
+        call().show(
+            sys.stderr, greeting, use_timestamp=False, avoid_logging=True, end_line=True
+        ),
+        call().show(
+            sys.stderr,
+            log_locat,
+            use_timestamp=False,
+            avoid_logging=True,
+            end_line=True,
+        ),
     ]
 
     # log handler is affected
@@ -326,8 +362,12 @@ def test_set_mode_developer_modes(get_initiated_emitter, mode):
     assert emitter.get_mode() == mode
     log_locat = f"Logging execution to {emitter._log_filepath!r}"
     assert emitter.printer_calls == [
-        call().show(sys.stderr, greeting, use_timestamp=True, avoid_logging=True, end_line=True),
-        call().show(sys.stderr, log_locat, use_timestamp=True, avoid_logging=True, end_line=True),
+        call().show(
+            sys.stderr, greeting, use_timestamp=True, avoid_logging=True, end_line=True
+        ),
+        call().show(
+            sys.stderr, log_locat, use_timestamp=True, avoid_logging=True, end_line=True
+        ),
     ]
 
     # log handler is affected
@@ -353,7 +393,11 @@ def test_set_mode_repeated(get_initiated_emitter, mode):
     emitter.set_mode(mode)
 
     log_locat = f"Logging execution to {emitter._log_filepath!r}"
-    extra_print_args = {"use_timestamp": mock.ANY, "avoid_logging": True, "end_line": True}
+    extra_print_args = {
+        "use_timestamp": mock.ANY,
+        "avoid_logging": True,
+        "end_line": True,
+    }
 
     # Only a single printing of the greeting and the logpath
     assert emitter.printer_calls == [
@@ -558,7 +602,9 @@ def test_openstream_in_quiet_mode(get_initiated_emitter):
     """Return a stream context manager with the output stream in None."""
     emitter = get_initiated_emitter(EmitterMode.QUIET)
 
-    with patch("craft_cli.messages._StreamContextManager") as stream_context_manager_mock:
+    with patch(
+        "craft_cli.messages._StreamContextManager"
+    ) as stream_context_manager_mock:
         instantiated_cm = object()
         stream_context_manager_mock.return_value = instantiated_cm
         context_manager = emitter.open_stream("some text")
@@ -566,7 +612,13 @@ def test_openstream_in_quiet_mode(get_initiated_emitter):
     assert emitter.printer_calls == []
     assert context_manager is instantiated_cm
     assert stream_context_manager_mock.mock_calls == [
-        call(emitter._printer, "some text", stream=None, use_timestamp=False, ephemeral_mode=True),
+        call(
+            emitter._printer,
+            "some text",
+            stream=None,
+            use_timestamp=False,
+            ephemeral_mode=True,
+        ),
     ]
 
 
@@ -574,7 +626,9 @@ def test_openstream_in_brief_mode(get_initiated_emitter):
     """Return a stream context manager with stderr as the output stream and ephemeral mode."""
     emitter = get_initiated_emitter(EmitterMode.BRIEF)
 
-    with patch("craft_cli.messages._StreamContextManager") as stream_context_manager_mock:
+    with patch(
+        "craft_cli.messages._StreamContextManager"
+    ) as stream_context_manager_mock:
         instantiated_cm = object()
         stream_context_manager_mock.return_value = instantiated_cm
         context_manager = emitter.open_stream("some text")
@@ -596,7 +650,9 @@ def test_openstream_in_verbose_mode(get_initiated_emitter):
     """Return a stream context manager with stderr as the output stream."""
     emitter = get_initiated_emitter(EmitterMode.VERBOSE)
 
-    with patch("craft_cli.messages._StreamContextManager") as stream_context_manager_mock:
+    with patch(
+        "craft_cli.messages._StreamContextManager"
+    ) as stream_context_manager_mock:
         instantiated_cm = object()
         stream_context_manager_mock.return_value = instantiated_cm
         context_manager = emitter.open_stream("some text")
@@ -625,7 +681,9 @@ def test_openstream_in_developer_modes(get_initiated_emitter, mode):
     """Return a stream context manager with stderr as the output stream."""
     emitter = get_initiated_emitter(mode)
 
-    with patch("craft_cli.messages._StreamContextManager") as stream_context_manager_mock:
+    with patch(
+        "craft_cli.messages._StreamContextManager"
+    ) as stream_context_manager_mock:
         instantiated_cm = object()
         stream_context_manager_mock.return_value = instantiated_cm
         context_manager = emitter.open_stream("some text")
@@ -647,7 +705,9 @@ def test_openstream_no_text(get_initiated_emitter):
     """Test open_stream() with no text parameter."""
     emitter = get_initiated_emitter(EmitterMode.VERBOSE)
 
-    with patch("craft_cli.messages._StreamContextManager") as stream_context_manager_mock:
+    with patch(
+        "craft_cli.messages._StreamContextManager"
+    ) as stream_context_manager_mock:
         instantiated_cm = object()
         stream_context_manager_mock.return_value = instantiated_cm
         context_manager = emitter.open_stream()
@@ -800,7 +860,10 @@ def test_ended_double_after_error(get_initiated_emitter):
     emitter.ended_ok()
     assert emitter.printer_calls == []
 
-@pytest.mark.parametrize("method", emitter_methods(init=True, exclude=["init", "ended_ok", "error"]))
+
+@pytest.mark.parametrize(
+    "method", emitter_methods(init=True, exclude=["init", "ended_ok", "error"])
+)
 def test_needs_being_active(method):
     """Check that calling public methods needs emitter to not be stopped."""
     with pytest.raises(RuntimeError, match="Emitter is stopped already"):
@@ -817,7 +880,9 @@ def test_paused_resumed_ok(get_initiated_emitter, tmp_path):
     with emitter.pause():
         assert emitter.printer_calls == [
             # the pausing message is shown and emitter is stopped
-            call().show(None, "Emitter: Pausing control of the terminal", use_timestamp=True),
+            call().show(
+                None, "Emitter: Pausing control of the terminal", use_timestamp=True
+            ),
             call().stop(),
         ]
         emitter.printer_calls.clear()
@@ -826,7 +891,9 @@ def test_paused_resumed_ok(get_initiated_emitter, tmp_path):
     # a new Printer is created, with same logpath and the resuming message is shown
     assert emitter.printer_calls == [
         call(str(tmp_path / FAKE_LOG_NAME)),
-        call().show(None, "Emitter: Resuming control of the terminal", use_timestamp=True),
+        call().show(
+            None, "Emitter: Resuming control of the terminal", use_timestamp=True
+        ),
     ]
 
 
@@ -838,7 +905,9 @@ def test_paused_resumed_error(get_initiated_emitter, tmp_path):
         with emitter.pause():
             assert emitter.printer_calls == [
                 # the pausing message is shown and emitter is stopped
-                call().show(None, "Emitter: Pausing control of the terminal", use_timestamp=True),
+                call().show(
+                    None, "Emitter: Pausing control of the terminal", use_timestamp=True
+                ),
                 call().stop(),
             ]
             emitter.printer_calls.clear()
@@ -850,7 +919,9 @@ def test_paused_resumed_error(get_initiated_emitter, tmp_path):
     # a new Printer is created, with same logpath and the resuming message is shown
     assert emitter.printer_calls == [
         call(str(tmp_path / FAKE_LOG_NAME)),
-        call().show(None, "Emitter: Resuming control of the terminal", use_timestamp=True),
+        call().show(
+            None, "Emitter: Resuming control of the terminal", use_timestamp=True
+        ),
     ]
 
 
@@ -866,7 +937,9 @@ def test_paused_cant_show(get_initiated_emitter, tmp_path):
 # -- tests for error reporting
 
 
-@pytest.mark.parametrize("mode", [EmitterMode.QUIET, EmitterMode.BRIEF, EmitterMode.VERBOSE])
+@pytest.mark.parametrize(
+    "mode", [EmitterMode.QUIET, EmitterMode.BRIEF, EmitterMode.VERBOSE]
+)
 def test_reporterror_simple_message_final_user_modes(mode, get_initiated_emitter):
     """Report just a simple message, in final user modes."""
     emitter = get_initiated_emitter(mode)
@@ -908,7 +981,9 @@ def test_reporterror_detailed_info_quiet_modes(get_initiated_emitter):
     full_log_message = f"Full execution log: {repr(emitter._log_filepath)}"
     assert emitter.printer_calls == [
         call().show(sys.stderr, "test message", use_timestamp=False, end_line=True),
-        call().show(None, "Detailed information: boom", use_timestamp=False, end_line=True),
+        call().show(
+            None, "Detailed information: boom", use_timestamp=False, end_line=True
+        ),
         call().show(sys.stderr, full_log_message, use_timestamp=False, end_line=True),
         call().stop(),
     ]
@@ -924,7 +999,9 @@ def test_reporterror_detailed_info_final_user_modes(mode, get_initiated_emitter)
     full_log_message = f"Full execution log: {repr(emitter._log_filepath)}"
     assert emitter.printer_calls == [
         call().show(sys.stderr, "test message", use_timestamp=False, end_line=True),
-        call().show(sys.stderr, "Detailed information: boom", use_timestamp=False, end_line=True),
+        call().show(
+            sys.stderr, "Detailed information: boom", use_timestamp=False, end_line=True
+        ),
         call().show(sys.stderr, full_log_message, use_timestamp=False, end_line=True),
         call().stop(),
     ]
@@ -940,13 +1017,17 @@ def test_reporterror_detailed_info_developer_modes(mode, get_initiated_emitter):
     full_log_message = f"Full execution log: {repr(emitter._log_filepath)}"
     assert emitter.printer_calls == [
         call().show(sys.stderr, "test message", use_timestamp=True, end_line=True),
-        call().show(sys.stderr, "Detailed information: boom", use_timestamp=True, end_line=True),
+        call().show(
+            sys.stderr, "Detailed information: boom", use_timestamp=True, end_line=True
+        ),
         call().show(sys.stderr, full_log_message, use_timestamp=True, end_line=True),
         call().stop(),
     ]
 
 
-@pytest.mark.parametrize("mode", [EmitterMode.QUIET, EmitterMode.BRIEF, EmitterMode.VERBOSE])
+@pytest.mark.parametrize(
+    "mode", [EmitterMode.QUIET, EmitterMode.BRIEF, EmitterMode.VERBOSE]
+)
 def test_reporterror_chained_exception_final_user_modes(mode, get_initiated_emitter):
     """Report an error that was originated after other exception, in final user modes."""
     emitter = get_initiated_emitter(mode)
@@ -1008,7 +1089,9 @@ def test_reporterror_chained_exception_developer_modes(mode, get_initiated_emitt
     tblines_mock.assert_called_with(orig_exception)
 
 
-@pytest.mark.parametrize("mode", [EmitterMode.QUIET, EmitterMode.BRIEF, EmitterMode.VERBOSE])
+@pytest.mark.parametrize(
+    "mode", [EmitterMode.QUIET, EmitterMode.BRIEF, EmitterMode.VERBOSE]
+)
 def test_reporterror_with_resolution_final_user_modes(mode, get_initiated_emitter):
     """Report an error with a recommended resolution, in final user modes."""
     emitter = get_initiated_emitter(mode)
@@ -1018,7 +1101,12 @@ def test_reporterror_with_resolution_final_user_modes(mode, get_initiated_emitte
     full_log_message = f"Full execution log: {repr(emitter._log_filepath)}"
     assert emitter.printer_calls == [
         call().show(sys.stderr, "test message", use_timestamp=False, end_line=True),
-        call().show(sys.stderr, "Recommended resolution: run", use_timestamp=False, end_line=True),
+        call().show(
+            sys.stderr,
+            "Recommended resolution: run",
+            use_timestamp=False,
+            end_line=True,
+        ),
         call().show(sys.stderr, full_log_message, use_timestamp=False, end_line=True),
         call().stop(),
     ]
@@ -1034,13 +1122,17 @@ def test_reporterror_with_resolution_developer_modes(mode, get_initiated_emitter
     full_log_message = f"Full execution log: {repr(emitter._log_filepath)}"
     assert emitter.printer_calls == [
         call().show(sys.stderr, "test message", use_timestamp=True, end_line=True),
-        call().show(sys.stderr, "Recommended resolution: run", use_timestamp=True, end_line=True),
+        call().show(
+            sys.stderr, "Recommended resolution: run", use_timestamp=True, end_line=True
+        ),
         call().show(sys.stderr, full_log_message, use_timestamp=True, end_line=True),
         call().stop(),
     ]
 
 
-@pytest.mark.parametrize("mode", [EmitterMode.QUIET, EmitterMode.BRIEF, EmitterMode.VERBOSE])
+@pytest.mark.parametrize(
+    "mode", [EmitterMode.QUIET, EmitterMode.BRIEF, EmitterMode.VERBOSE]
+)
 def test_reporterror_with_docs_final_user_modes(mode, get_initiated_emitter):
     """Report including a docs url, in final user modes."""
     emitter = get_initiated_emitter(mode)
@@ -1048,7 +1140,9 @@ def test_reporterror_with_docs_final_user_modes(mode, get_initiated_emitter):
     emitter.error(error)
 
     full_log_message = f"Full execution log: {repr(emitter._log_filepath)}"
-    full_docs_message = "For more information, check out: https://charmhub.io/docs/whatever"
+    full_docs_message = (
+        "For more information, check out: https://charmhub.io/docs/whatever"
+    )
     assert emitter.printer_calls == [
         call().show(sys.stderr, "test message", use_timestamp=False, end_line=True),
         call().show(sys.stderr, full_docs_message, use_timestamp=False, end_line=True),
@@ -1065,7 +1159,9 @@ def test_reporterror_with_docs_developer_modes(mode, get_initiated_emitter):
     emitter.error(error)
 
     full_log_message = f"Full execution log: {repr(emitter._log_filepath)}"
-    full_docs_message = "For more information, check out: https://charmhub.io/docs/whatever"
+    full_docs_message = (
+        "For more information, check out: https://charmhub.io/docs/whatever"
+    )
     assert emitter.printer_calls == [
         call().show(sys.stderr, "test message", use_timestamp=True, end_line=True),
         call().show(sys.stderr, full_docs_message, use_timestamp=True, end_line=True),
@@ -1095,13 +1191,19 @@ def test_reporterror_full_complete(get_initiated_emitter):
         emitter.error(error)
 
     full_log_message = f"Full execution log: {repr(emitter._log_filepath)}"
-    full_docs_message = "For more information, check out: https://charmhub.io/docs/whatever"
+    full_docs_message = (
+        "For more information, check out: https://charmhub.io/docs/whatever"
+    )
     assert emitter.printer_calls == [
         call().show(sys.stderr, "test message", use_timestamp=True, end_line=True),
-        call().show(sys.stderr, "Detailed information: boom", use_timestamp=True, end_line=True),
+        call().show(
+            sys.stderr, "Detailed information: boom", use_timestamp=True, end_line=True
+        ),
         call().show(sys.stderr, "traceback line 1", use_timestamp=True, end_line=True),
         call().show(sys.stderr, "traceback line 2", use_timestamp=True, end_line=True),
-        call().show(sys.stderr, "Recommended resolution: run", use_timestamp=True, end_line=True),
+        call().show(
+            sys.stderr, "Recommended resolution: run", use_timestamp=True, end_line=True
+        ),
         call().show(sys.stderr, full_docs_message, use_timestamp=True, end_line=True),
         call().show(sys.stderr, full_log_message, use_timestamp=True, end_line=True),
         call().stop(),
@@ -1172,7 +1274,9 @@ def test_reporterror_both_url_and_slug(get_initiated_emitter):
     emitter = get_initiated_emitter(EmitterMode.BRIEF, docs_base_url=docs_base_url)
 
     # An error with both docs_url and doc_slug
-    error = CraftError("test message", logpath_report=False, docs_url=full_url, doc_slug=doc_slug)
+    error = CraftError(
+        "test message", logpath_report=False, docs_url=full_url, doc_slug=doc_slug
+    )
     emitter.error(error)
 
     full_docs_message = f"For more information, check out: {full_url}"
@@ -1207,7 +1311,6 @@ def test_reporterror_command_error_no_stderr(get_initiated_emitter, stderr):
     emitter = get_initiated_emitter(EmitterMode.BRIEF)
     emitter.error(error)
 
-
     # No "Captured error (...)" output
     assert emitter.printer_calls == [
         call().show(sys.stderr, "test message", use_timestamp=False, end_line=True),
@@ -1217,11 +1320,9 @@ def test_reporterror_command_error_no_stderr(get_initiated_emitter, stderr):
 
 # -- Tests for confirming a yes/no question with the user.
 
+
 def test_confirm_with_user_defaults_with_tty(
-    get_initiated_emitter,
-    emitter_mode: EmitterMode,
-    mock_input,
-    mock_isatty
+    get_initiated_emitter, emitter_mode: EmitterMode, mock_input, mock_isatty
 ):
     mock_input.return_value = ""
     mock_isatty.return_value = True
@@ -1235,7 +1336,9 @@ def test_confirm_with_user_defaults_with_tty(
     assert mock_input.mock_calls == [call("prompt [y/N]: ")]
 
 
-def test_confirm_with_user_defaults_without_tty(get_initiated_emitter, emitter_mode, mock_input, mock_isatty):
+def test_confirm_with_user_defaults_without_tty(
+    get_initiated_emitter, emitter_mode, mock_input, mock_isatty
+):
     mock_isatty.return_value = False
     emit = get_initiated_emitter(emitter_mode)
 
@@ -1257,11 +1360,13 @@ def test_confirm_with_user_defaults_without_tty(get_initiated_emitter, emitter_m
         ("no", False),
         ("NO", False),
         (" Yes sir Mr. Callahan Sir!", True),
-        (" nah yeah? Yeah nah!    ", False)
+        (" nah yeah? Yeah nah!    ", False),
     ],
 )
 @pytest.mark.usefixtures("mock_isatty")
-def test_confirm_with_user(get_initiated_emitter, user_input, expected, mock_input, emitter_mode):
+def test_confirm_with_user(
+    get_initiated_emitter, user_input, expected, mock_input, emitter_mode
+):
     mock_input.return_value = user_input
     emit = get_initiated_emitter(emitter_mode)
 
@@ -1318,8 +1423,11 @@ def test_prompt_returns_secret_input(
 
     assert initiated_emitter.prompt("prompt", hide=True) == "some-secret-input"
 
+
 def test_prompt_errors_out_without_tty(
-    get_initiated_emitter, mock_isatty: mock.MagicMock, emitter_mode,
+    get_initiated_emitter,
+    mock_isatty: mock.MagicMock,
+    emitter_mode,
 ):
     """The emitter should error out if no tty available."""
     mock_isatty.return_value = False
@@ -1327,6 +1435,7 @@ def test_prompt_errors_out_without_tty(
 
     with pytest.raises(CraftError, match="prompting not possible without tty"):
         emit.prompt("no prompting without tty!")
+
 
 def test_prompt_does_not_allow_empty_input(
     initiated_emitter: Emitter,

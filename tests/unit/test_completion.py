@@ -118,7 +118,9 @@ def test_arg_from_global() -> None:
 
 
 def test_arg_from_action() -> None:
-    action = argparse.Action(["--verbosity", "-v"], "verbosity", choices=["whispering", "yelling"])
+    action = argparse.Action(
+        ["--verbosity", "-v"], "verbosity", choices=["whispering", "yelling"]
+    )
     arg = FakeArg.from_action(action)
 
     assert arg.flag_list == "--verbosity,-v"

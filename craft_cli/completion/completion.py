@@ -138,17 +138,22 @@ class Arg(ABC):
         else:
             flags = [argument.long_option]
 
-        completion_command = CompGen(words=argument.choices) if argument.choices else CompGen()
+        completion_command = (
+            CompGen(words=argument.choices) if argument.choices else CompGen()
+        )
 
         return cls(flags=flags, completion_command=completion_command)
 
     @classmethod
     def from_action(cls, action: argparse.Action) -> Self:
         """Convert an argparse Action into an OptionArgument for parsing."""
-        completion_command = CompGen(words=list(action.choices)) if action.choices else CompGen()
+        completion_command = (
+            CompGen(words=list(action.choices)) if action.choices else CompGen()
+        )
 
         return cls(
-            flags=cast("list[str]", action.option_strings), completion_command=completion_command
+            flags=cast("list[str]", action.option_strings),
+            completion_command=completion_command,
         )
 
     @property
@@ -263,7 +268,8 @@ def _validate_app_info(raw_ref: str) -> Callable[[], DispatcherAndConfig]:
     # function at `func_name` being type-annotated. This is Python though,
     # so just trust that it's a valid function.
     return cast(
-        "Callable[[], tuple[craft_cli.Dispatcher, dict[str, Any]]]", getattr(module, func_name)
+        "Callable[[], tuple[craft_cli.Dispatcher, dict[str, Any]]]",
+        getattr(module, func_name),
     )
 
 
@@ -290,7 +296,9 @@ def main() -> None:
 
     # Necessary to avoid errors from running foreign functions that use the craft-cli emitter
     craft_cli.emit.init(
-        craft_cli.EmitterMode.QUIET, "craft-cli completion", "Generating completion scripts..."
+        craft_cli.EmitterMode.QUIET,
+        "craft-cli completion",
+        "Generating completion scripts...",
     )
 
     print(complete(args.shell_cmd, args.app_info))

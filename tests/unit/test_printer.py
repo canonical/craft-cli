@@ -261,7 +261,9 @@ def test_writelineterminal_with_timestamp(capsys, monkeypatch, log_filepath):
 
 
 @pytest.mark.usefixtures("ansi_escape_support")
-def test_writelineterminal_having_previous_message_out(capsys, monkeypatch, log_filepath):
+def test_writelineterminal_having_previous_message_out(
+    capsys, monkeypatch, log_filepath
+):
     """There is a previous message to be completed (in stdout)."""
     monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
     printer = Printer(log_filepath)
@@ -278,7 +280,9 @@ def test_writelineterminal_having_previous_message_out(capsys, monkeypatch, log_
 
 
 @pytest.mark.usefixtures("ansi_escape_support")
-def test_writelineterminal_having_previous_message_err(capsys, monkeypatch, log_filepath):
+def test_writelineterminal_having_previous_message_err(
+    capsys, monkeypatch, log_filepath
+):
     """There is a previous message to be completed (in stderr)."""
     monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
     printer = Printer(log_filepath)
@@ -295,7 +299,9 @@ def test_writelineterminal_having_previous_message_err(capsys, monkeypatch, log_
 
 
 @pytest.mark.usefixtures("ansi_escape_support")
-def test_writelineterminal_having_previous_message_complete(capsys, monkeypatch, log_filepath):
+def test_writelineterminal_having_previous_message_complete(
+    capsys, monkeypatch, log_filepath
+):
     """There is a previous message which is already complete."""
     monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
     printer = Printer(log_filepath)
@@ -349,7 +355,9 @@ def test_writelineterminal_ephemeral_message_short(capsys, monkeypatch, log_file
 
 
 @pytest.mark.usefixtures("ansi_escape_support")
-def test_writelineterminal_ephemeral_message_too_long(capsys, monkeypatch, log_filepath):
+def test_writelineterminal_ephemeral_message_too_long(
+    capsys, monkeypatch, log_filepath
+):
     """Complete verification of _write_line_terminal for a simple case."""
     monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 20)
     printer = Printer(log_filepath)
@@ -369,7 +377,9 @@ def test_writelineterminal_ephemeral_message_too_long(capsys, monkeypatch, log_f
 
 
 @pytest.mark.usefixtures("ansi_escape_support")
-def test_writelineterminal_having_previous_message_ephemeral(capsys, monkeypatch, log_filepath):
+def test_writelineterminal_having_previous_message_ephemeral(
+    capsys, monkeypatch, log_filepath
+):
     """There is a previous message to be overwritten."""
     monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
     printer = Printer(log_filepath)
@@ -428,13 +438,17 @@ def test_writelineterminal_spintext_message_too_long(capsys, monkeypatch, log_fi
 
 
 @pytest.mark.usefixtures("ansi_escape_support")
-def test_writelineterminal_spintext_length_just_exceeded(capsys, monkeypatch, log_filepath):
+def test_writelineterminal_spintext_length_just_exceeded(
+    capsys, monkeypatch, log_filepath
+):
     """A message that would fit, but it just exceeds the line length because of the spin text."""
     monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 20)
     printer = Printer(log_filepath)
 
     msg = _MessageInfo(sys.stdout, "0x1x2x3x4x5x6x7x8x")  # len 16, it would fit!
-    printer._write_line_terminal(msg, spintext=" * 3.15s")  # adding this would exceed the length
+    printer._write_line_terminal(
+        msg, spintext=" * 3.15s"
+    )  # adding this would exceed the length
 
     out, err = capsys.readouterr()
     assert not err
@@ -467,7 +481,9 @@ def test_writelineterminal_ephemeral_spam(capsys, monkeypatch, log_filepath, tes
     assert out == printermod._fill_line(test_text)
 
 
-@pytest.mark.parametrize(("ephemeral", "end_line"), [(False, False), (False, True), (True, True)])
+@pytest.mark.parametrize(
+    ("ephemeral", "end_line"), [(False, False), (False, True), (True, True)]
+)
 @pytest.mark.parametrize("text", ["", "Some test text"])
 @pytest.mark.usefixtures("ansi_escape_support")
 def test_writelineterminal_rewrites_same_message(
@@ -533,7 +549,9 @@ def test_writelineterminal_rewrites_same_message_with_spintext(
         "a very long, long text -" * 20,
     ],
 )
-def test_writelinecaptured_simple_complete(capsys, monkeypatch, log_filepath, test_text):
+def test_writelinecaptured_simple_complete(
+    capsys, monkeypatch, log_filepath, test_text
+):
     """Complete verification of _write_line_captured several text cases."""
     printer = Printer(log_filepath)
 
@@ -669,11 +687,15 @@ def test_writebarterminal_too_long_artifacts(capsys, monkeypatch, log_filepath):
     printer = Printer(log_filepath)
 
     test_text = "01234567890123456"  # this would really fit
-    msg = _MessageInfo(sys.stdout, test_text, bar_progress=2000, bar_total=100000)  # big numbers!
+    msg = _MessageInfo(
+        sys.stdout, test_text, bar_progress=2000, bar_total=100000
+    )  # big numbers!
     printer._write_bar_terminal(msg)
 
     out, _ = capsys.readouterr()
-    assert out == "01234567890123456"  # just the message, no space for "a whole progress bar"
+    assert (
+        out == "01234567890123456"
+    )  # just the message, no space for "a whole progress bar"
 
 
 def test_writebarterminal_different_stream(capsys, monkeypatch, log_filepath):
@@ -693,7 +715,9 @@ def test_writebarterminal_different_stream(capsys, monkeypatch, log_filepath):
     assert err == "test text [██████████          ] 50/100"
 
 
-def test_writebarterminal_having_previous_message_out(capsys, monkeypatch, log_filepath):
+def test_writebarterminal_having_previous_message_out(
+    capsys, monkeypatch, log_filepath
+):
     """There is a previous message to be completed (in stdout)."""
     monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
     printer = Printer(log_filepath)
@@ -708,7 +732,9 @@ def test_writebarterminal_having_previous_message_out(capsys, monkeypatch, log_f
     assert not err
 
 
-def test_writebarterminal_having_previous_message_err(capsys, monkeypatch, log_filepath):
+def test_writebarterminal_having_previous_message_err(
+    capsys, monkeypatch, log_filepath
+):
     """There is a previous message to be completed (in stderr)."""
     monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
     printer = Printer(log_filepath)
@@ -723,7 +749,9 @@ def test_writebarterminal_having_previous_message_err(capsys, monkeypatch, log_f
     assert err == "\n"
 
 
-def test_writebarterminal_having_previous_message_complete(capsys, monkeypatch, log_filepath):
+def test_writebarterminal_having_previous_message_complete(
+    capsys, monkeypatch, log_filepath
+):
     """There is a previous message which is already complete."""
     monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
     printer = Printer(log_filepath)
@@ -738,7 +766,9 @@ def test_writebarterminal_having_previous_message_complete(capsys, monkeypatch, 
     assert not err
 
 
-def test_writebarterminal_having_previous_message_ephemeral(capsys, monkeypatch, log_filepath):
+def test_writebarterminal_having_previous_message_ephemeral(
+    capsys, monkeypatch, log_filepath
+):
     """There is a previous message to be overwritten."""
     monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
     printer = Printer(log_filepath)
@@ -875,7 +905,9 @@ def test_show_defaults_terminal(stream, monkeypatch, recording_printer):
     assert msg.bar_total is None
 
     # check it was properly stored for the future
-    assert recording_printer.prv_msg is msg  # verify it's the same (not rebuilt) for timestamp
+    assert (
+        recording_printer.prv_msg is msg
+    )  # verify it's the same (not rebuilt) for timestamp
 
     # check it was also logged
     (logged,) = recording_printer.logged
@@ -907,7 +939,9 @@ def test_show_defaults_captured(stream, monkeypatch, recording_printer):
     assert msg.bar_total is None
 
     # check it was properly stored for the future
-    assert recording_printer.prv_msg is msg  # verify it's the same (not rebuilt) for timestamp
+    assert (
+        recording_printer.prv_msg is msg
+    )  # verify it's the same (not rebuilt) for timestamp
 
     # check it was also logged
     (logged,) = recording_printer.logged
@@ -976,7 +1010,9 @@ def test_progress_bar_valid_streams_terminal(stream, recording_printer, monkeypa
     assert before <= msg.created_at <= datetime.now()
 
     # check it was properly stored for the future
-    assert recording_printer.prv_msg is msg  # verify it's the same (not rebuilt) for timestamp
+    assert (
+        recording_printer.prv_msg is msg
+    )  # verify it's the same (not rebuilt) for timestamp
 
     # the spinner message was removed
     assert recording_printer.spinner.supervised == [None]
@@ -1011,7 +1047,9 @@ def test_progress_bar_valid_streams_captured(stream, recording_printer, monkeypa
     assert before <= msg.created_at <= datetime.now()
 
     # check it was properly stored for the future
-    assert recording_printer.prv_msg is msg  # verify it's the same (not rebuilt) for timestamp
+    assert (
+        recording_printer.prv_msg is msg
+    )  # verify it's the same (not rebuilt) for timestamp
 
     # the spinner message was removed
     assert recording_printer.spinner.supervised == [None]
@@ -1038,7 +1076,9 @@ def test_spin(isatty, monkeypatch, recording_printer):
 
 def test_progress_bar_no_stream(recording_printer):
     """No stream no message."""
-    recording_printer.progress_bar(None, "test text", progress=20, total=100, use_timestamp=False)
+    recording_printer.progress_bar(
+        None, "test text", progress=20, total=100, use_timestamp=False
+    )
     assert not recording_printer.written_terminal_lines
     assert not recording_printer.written_terminal_bars
     assert not recording_printer.written_captured_lines
@@ -1282,8 +1322,12 @@ def test_spinner_two_messages(spinner, monkeypatch):
     spinner.supervise(None)
 
     # check we have two set of messages
-    spinned_1 = [sp_text for sp_msg, sp_text in spinner.printer.spinned if sp_msg == msg1]
-    spinned_2 = [sp_text for sp_msg, sp_text in spinner.printer.spinned if sp_msg == msg2]
+    spinned_1 = [
+        sp_text for sp_msg, sp_text in spinner.printer.spinned if sp_msg == msg1
+    ]
+    spinned_2 = [
+        sp_text for sp_msg, sp_text in spinner.printer.spinned if sp_msg == msg2
+    ]
     assert spinned_1
     assert spinned_2
 

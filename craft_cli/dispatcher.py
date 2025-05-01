@@ -163,7 +163,9 @@ class BaseCommand:
         mandatory = ("name", "help_msg", "overview")
         for attr_name in mandatory:
             if getattr(self, attr_name, None) is None:
-                raise ValueError(f"Bad command configuration: missing value in '{attr_name}'.")
+                raise ValueError(
+                    f"Bad command configuration: missing value in '{attr_name}'."
+                )
         if self.common and self.hidden:
             raise ValueError("Common commands can not be hidden.")
 
@@ -211,7 +213,9 @@ class _CustomArgumentParser(argparse.ArgumentParser):
         raise ArgumentParsingError(full_msg)
 
 
-def _get_commands_info(commands_groups: list[CommandGroup]) -> dict[str, type[BaseCommand]]:
+def _get_commands_info(
+    commands_groups: list[CommandGroup],
+) -> dict[str, type[BaseCommand]]:
     """Process the commands groups structure for easier programmatic access."""
     commands: dict[str, type[BaseCommand]] = {}
     for command_group in commands_groups:
@@ -252,7 +256,9 @@ class Dispatcher:
     ) -> None:
         self._default_command = default_command
         self._docs_base_url = docs_base_url
-        self._help_builder = HelpBuilder(appname, summary, commands_groups, docs_base_url)
+        self._help_builder = HelpBuilder(
+            appname, summary, commands_groups, docs_base_url
+        )
 
         self.global_arguments = _DEFAULT_GLOBAL_ARGS[:]
         if extra_global_args is not None:
@@ -273,7 +279,9 @@ class Dispatcher:
         self._loaded_command = self._command_class(app_config)
 
         # load and parse the command specific options/params
-        parser = _CustomArgumentParser(self._help_builder, prog=self._loaded_command.name)
+        parser = _CustomArgumentParser(
+            self._help_builder, prog=self._loaded_command.name
+        )
         self._loaded_command.fill_parser(parser)
         self._parsed_command_args = parser.parse_args(self._command_args)
         emit.trace(f"Command parsed sysargs: {self._parsed_command_args}")
@@ -312,7 +320,9 @@ class Dispatcher:
         return ArgumentParsingError(self._help_builder.get_usage_message(text))
 
     def _get_requested_help(  # noqa: PLR0912 (too many branches)
-        self, parameters: list[str], app_config: Any  # noqa: ANN401
+        self,
+        parameters: list[str],
+        app_config: Any,  # noqa: ANN401
     ) -> str:
         """Produce the requested help depending on the rest of the command line params."""
         if len(parameters) == 0:
@@ -338,10 +348,14 @@ class Dispatcher:
             raise self._build_usage_exc(msg)
 
         try:
-            output_format = OutputFormat[option_format] if option_format else OutputFormat.plain
+            output_format = (
+                OutputFormat[option_format] if option_format else OutputFormat.plain
+            )
         except KeyError:
             allowed = (repr(of.name) for of in OutputFormat)
-            msg = f"Invalid value for --format; allowed are: {', '.join(sorted(allowed))}"
+            msg = (
+                f"Invalid value for --format; allowed are: {', '.join(sorted(allowed))}"
+            )
             raise self._build_usage_exc(msg) from None
 
         if len(filtered_params) == 1:
@@ -364,7 +378,9 @@ class Dispatcher:
 
         # instantiate the command and fill its arguments
         command = cmd_class(app_config)
-        parser = _CustomArgumentParser(self._help_builder, prog=command.name, add_help=False)
+        parser = _CustomArgumentParser(
+            self._help_builder, prog=command.name, add_help=False
+        )
         command.fill_parser(parser)
 
         # produce the complete help message for the command
@@ -383,7 +399,9 @@ class Dispatcher:
                     dest = action.metavar
                 command_options.append((dest, help_text))
 
-        return self._help_builder.get_command_help(command, command_options, output_format)
+        return self._help_builder.get_command_help(
+            command, command_options, output_format
+        )
 
     def _build_no_command_error(self, missing_command: str) -> str:
         """Build the error help text for missing command, providing options."""
@@ -445,7 +463,9 @@ class Dispatcher:
 
             arg = arg_per_option[option]
             if not value:
-                raise self._build_usage_exc(f"The {arg.name!r} option expects one argument.")
+                raise self._build_usage_exc(
+                    f"The {arg.name!r} option expects one argument."
+                )
             if arg.choices is not None:
                 if not arg.case_sensitive:
                     value = value.lower()
@@ -459,7 +479,11 @@ class Dispatcher:
             global_args[arg.name] = validator(value)
         return global_args, filtered_sysargs
 
-    def pre_parse_args(self, sysargs: list[str], app_config: Any = None) -> dict[str, Any]:  # noqa: ANN401
+    def pre_parse_args(
+        self,
+        sysargs: list[str],
+        app_config: Any = None,  # noqa: ANN401
+    ) -> dict[str, Any]:
         """Pre-parse sys args.
 
         Several steps:
@@ -472,7 +496,9 @@ class Dispatcher:
 
         If provided, ``app_config`` is passed to the command to be validated.
         """
-        global_args, filtered_sysargs = self._parse_options(self.global_arguments, sysargs)
+        global_args, filtered_sysargs = self._parse_options(
+            self.global_arguments, sysargs
+        )
 
         # control and use quiet/verbose/verbosity options
         if sum(1 for key in ("quiet", "verbose", "verbosity") if global_args[key]) > 1:
@@ -485,7 +511,9 @@ class Dispatcher:
             emit.set_mode(EmitterMode.VERBOSE)
         elif verbosity := global_args["verbosity"]:
             emit.set_mode(verbosity)
-        emit.trace(f"Raw pre-parsed sysargs: args={global_args} filtered={filtered_sysargs}")
+        emit.trace(
+            f"Raw pre-parsed sysargs: args={global_args} filtered={filtered_sysargs}"
+        )
 
         # handle requested help through -h/--help options
         if global_args["help"]:
@@ -523,6 +551,8 @@ class Dispatcher:
     def run(self) -> int | None:
         """Really run the command."""
         if self._loaded_command is None:
-            raise RuntimeError("Need to load the command (call 'load_command') before running it.")
+            raise RuntimeError(
+                "Need to load the command (call 'load_command') before running it."
+            )
         assert self._parsed_command_args is not None  # noqa: S101 (use of assert)
         return self._loaded_command.run(self._parsed_command_args)

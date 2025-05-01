@@ -108,7 +108,9 @@ class CraftCommandError(CraftError):
     is helpful enough to the user to be worth the extra text output.
     """
 
-    def __init__(self, message: str, *, stderr: str | bytes | None, **kwargs: Any) -> None:
+    def __init__(
+        self, message: str, *, stderr: str | bytes | None, **kwargs: Any
+    ) -> None:
         super().__init__(message, **kwargs)
         self._stderr = stderr
 

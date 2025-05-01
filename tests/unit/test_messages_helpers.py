@@ -105,7 +105,9 @@ def test_getlogpath_hit_rotation_limit(test_log_dir, monkeypatch):
         fpath = _get_log_filepath("testapp")
         fpath.touch()
         previous_fpaths.append(fpath)
-        time.sleep(0.01)  # sleep a little so different log files have different timestamps
+        time.sleep(
+            0.01
+        )  # sleep a little so different log files have different timestamps
     new_fpath = _get_log_filepath("testapp")
     new_fpath.touch()
     present_logs = sorted((test_log_dir / "testapp").iterdir())
@@ -120,7 +122,9 @@ def test_getlogpath_exceeds_rotation_limit(test_log_dir, monkeypatch):
         fpath = _get_log_filepath("testapp")
         fpath.touch()
         previous_fpaths.append(fpath)
-        time.sleep(0.01)  # sleep a little so different log files have different timestamps
+        time.sleep(
+            0.01
+        )  # sleep a little so different log files have different timestamps
     new_fpath = _get_log_filepath("testapp")
     new_fpath.touch()
     present_logs = sorted((test_log_dir / "testapp").iterdir())
@@ -135,7 +139,9 @@ def test_getlogpath_supports_missing_file_to_unlink(test_log_dir, monkeypatch):
         fpath = _get_log_filepath("testapp")
         fpath.touch()
         previous_fpaths.append(fpath)
-        time.sleep(0.01)  # sleep a little so different log files have different timestamps
+        time.sleep(
+            0.01
+        )  # sleep a little so different log files have different timestamps
 
     # hook a MITM function to remove the file before it was unlinked
     orig_method = pathlib.Path.unlink
@@ -162,7 +168,9 @@ def test_getlogpath_ignore_other_files(test_log_dir, monkeypatch):
         fpath = _get_log_filepath("testapp")
         fpath.touch()
         previous_fpaths.append(fpath)
-        time.sleep(0.01)  # sleep a little so different log files have different timestamps
+        time.sleep(
+            0.01
+        )  # sleep a little so different log files have different timestamps
 
     # other stuff that should not be removed
     parent = test_log_dir / "testapp"
@@ -212,10 +220,18 @@ def test_progresser_absolute_mode():
         progresser.advance(30.0)
 
     assert fake_printer.mock_calls == [
-        call.show(stream, "test text (--->)", ephemeral=ephemeral, use_timestamp=use_timestamp),
-        call.progress_bar(stream, text, progress=20, total=total, use_timestamp=use_timestamp),
-        call.progress_bar(stream, text, progress=30.0, total=total, use_timestamp=use_timestamp),
-        call.show(stream, "test text (<---)", ephemeral=ephemeral, use_timestamp=use_timestamp),
+        call.show(
+            stream, "test text (--->)", ephemeral=ephemeral, use_timestamp=use_timestamp
+        ),
+        call.progress_bar(
+            stream, text, progress=20, total=total, use_timestamp=use_timestamp
+        ),
+        call.progress_bar(
+            stream, text, progress=30.0, total=total, use_timestamp=use_timestamp
+        ),
+        call.show(
+            stream, "test text (<---)", ephemeral=ephemeral, use_timestamp=use_timestamp
+        ),
     ]
 
 
@@ -240,10 +256,18 @@ def test_progresser_delta_mode():
         progresser.advance(30)
 
     assert fake_printer.mock_calls == [
-        call.show(stream, "test text (--->)", ephemeral=ephemeral, use_timestamp=use_timestamp),
-        call.progress_bar(stream, text, progress=20.5, total=total, use_timestamp=use_timestamp),
-        call.progress_bar(stream, text, progress=50.5, total=total, use_timestamp=use_timestamp),
-        call.show(stream, "test text (<---)", ephemeral=ephemeral, use_timestamp=use_timestamp),
+        call.show(
+            stream, "test text (--->)", ephemeral=ephemeral, use_timestamp=use_timestamp
+        ),
+        call.progress_bar(
+            stream, text, progress=20.5, total=total, use_timestamp=use_timestamp
+        ),
+        call.progress_bar(
+            stream, text, progress=50.5, total=total, use_timestamp=use_timestamp
+        ),
+        call.show(
+            stream, "test text (<---)", ephemeral=ephemeral, use_timestamp=use_timestamp
+        ),
     ]
 
 
@@ -251,7 +275,15 @@ def test_progresser_delta_mode():
 def test_progresser_negative_values(delta):
     """The progress cannot be negative."""
     fake_printer = MagicMock()
-    with _Progresser(fake_printer, 123, "test text", sys.stdout, delta, True, True) as progresser:  # noqa: FBT003
+    with _Progresser(
+        fake_printer,
+        123,
+        "test text",
+        sys.stdout,
+        delta,
+        True,  # noqa: FBT003
+        True,  # noqa: FBT003
+    ) as progresser:
         with pytest.raises(ValueError, match="The advance amount cannot be negative"):
             progresser.advance(-1)
 
@@ -386,7 +418,9 @@ def test_handler_emit_trace(handler):
         call.show(sys.stderr, "test warning", use_timestamp=True, ephemeral=False),
         call.show(sys.stderr, "test info", use_timestamp=True, ephemeral=False),
         call.show(sys.stderr, "test debug", use_timestamp=True, ephemeral=False),
-        call.show(sys.stderr, "test custom sub-debug", use_timestamp=True, ephemeral=False),
+        call.show(
+            sys.stderr, "test custom sub-debug", use_timestamp=True, ephemeral=False
+        ),
     ]
 
 

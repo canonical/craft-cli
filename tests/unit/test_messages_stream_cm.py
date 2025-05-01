@@ -258,7 +258,11 @@ def test_pipereader_tabs(recording_printer, stream):
 
 @pytest.mark.parametrize(
     ("invalid_text", "expected"),
-    [(b"\xf0\x28\x8c\xbc", "�(��"), (b"\xf0\x90\x28\xbc", "�(�"), (b"\xf0\x90\x8c\x28", "�(")],
+    [
+        (b"\xf0\x28\x8c\xbc", "�(��"),
+        (b"\xf0\x90\x28\xbc", "�(�"),
+        (b"\xf0\x90\x8c\x28", "�("),
+    ],
 )
 def test_pipereader_invalid_utf8(recording_printer, invalid_text, expected):
     """Check that bytes that aren't valid utf-8 text don't crash."""

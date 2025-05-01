@@ -51,7 +51,12 @@ def test_dispatcher_pre_parsing():
     groups = [CommandGroup("title", [create_command("somecommand")])]
     dispatcher = Dispatcher("appname", groups)
     global_args = dispatcher.pre_parse_args(["-q", "somecommand"])
-    assert global_args == {"help": False, "verbose": False, "quiet": True, "verbosity": None}
+    assert global_args == {
+        "help": False,
+        "verbose": False,
+        "quiet": True,
+        "verbosity": None,
+    }
 
 
 def test_dispatcher_command_loading():
@@ -80,7 +85,9 @@ def test_dispatcher_parsed_args():
 
     groups = [CommandGroup("title", [MyCommand])]
     dispatcher = Dispatcher("appname", groups)
-    dispatcher.pre_parse_args(["somecommand", "--option1", "1", "--option2", "--option3"])
+    dispatcher.pre_parse_args(
+        ["somecommand", "--option1", "1", "--option2", "--option3"]
+    )
 
     # Before loading the command: error
     with pytest.raises(RuntimeError, match="Need to load the command"):
@@ -115,7 +122,9 @@ def test_dispatcher_command_default_with_options():
     cmd2 = create_command("somecommand2")
     groups = [CommandGroup("title", [cmd1, cmd2])]
     dispatcher = Dispatcher("appname", groups, default_command=cmd2)
-    dispatcher.pre_parse_args(["--option", "-v"])  # extra global one that is NOT for the command
+    dispatcher.pre_parse_args(
+        ["--option", "-v"]
+    )  # extra global one that is NOT for the command
     assert dispatcher._command_class is cmd2
     assert dispatcher._command_args == ["--option"]
 
@@ -141,7 +150,10 @@ def test_dispatcher_missing_loading():
     dispatcher.pre_parse_args(["-q", "somecommand"])
     with pytest.raises(RuntimeError) as exc_cm:
         dispatcher.run()
-    assert str(exc_cm.value) == "Need to load the command (call 'load_command') before running it."
+    assert (
+        str(exc_cm.value)
+        == "Need to load the command (call 'load_command') before running it."
+    )
 
 
 def test_dispatcher_command_execution_ok():
@@ -304,7 +316,9 @@ def test_dispatcher_generic_setup_verbosity_option(options):
         (EmitterMode.BRIEF, "TRACE", EmitterMode.TRACE),
     ],
 )
-def test_dispatcher_generic_setup_verbosity_levels_ok(initial_level, requested_level, setup_level):
+def test_dispatcher_generic_setup_verbosity_levels_ok(
+    initial_level, requested_level, setup_level
+):
     """Generic parameter handling for verbosity setup indicating the specific level."""
     cmd = create_command("somecommand")
     groups = [CommandGroup("title", [cmd])]
@@ -391,7 +405,9 @@ def test_dispatcher_generic_setup_paramglobal_with_param(options):
     """Generic parameter handling for a param type global arg, directly or after the cmd."""
     cmd = create_command("somecommand")
     groups = [CommandGroup("title", [cmd])]
-    extra = GlobalArgument("globalparam", "option", "-g", "--globalparam", "Test global param.")
+    extra = GlobalArgument(
+        "globalparam", "option", "-g", "--globalparam", "Test global param."
+    )
     dispatcher = Dispatcher("appname", groups, extra_global_args=[extra])
     global_args = dispatcher.pre_parse_args(options)
     assert global_args["globalparam"] == "foobar"
@@ -410,7 +426,9 @@ def test_dispatcher_generic_setup_paramglobal_without_param_simple(options):
     """Generic parameter handling for a param type global arg without the requested parameter."""
     cmd = create_command("somecommand")
     groups = [CommandGroup("title", [cmd])]
-    extra = GlobalArgument("globalparam", "option", "-g", "--globalparam", "Test global param.")
+    extra = GlobalArgument(
+        "globalparam", "option", "-g", "--globalparam", "Test global param."
+    )
     dispatcher = Dispatcher("appname", groups, extra_global_args=[extra])
     with pytest.raises(ArgumentParsingError) as err:
         dispatcher.pre_parse_args(options)
@@ -435,7 +453,9 @@ def test_dispatcher_generic_setup_paramglobal_without_param_confusing(options):
     """Generic parameter handling for a param type global arg confusing the command as the arg."""
     cmd = create_command("somecommand")
     groups = [CommandGroup("title", [cmd])]
-    extra = GlobalArgument("globalparam", "option", "-g", "--globalparam", "Test global param.")
+    extra = GlobalArgument(
+        "globalparam", "option", "-g", "--globalparam", "Test global param."
+    )
     dispatcher = Dispatcher("appname", groups, extra_global_args=[extra])
     with patch("craft_cli.helptexts.HelpBuilder.get_full_help") as mock_helper:
         mock_helper.return_value = "help text"
@@ -450,7 +470,9 @@ def test_dispatcher_generic_setup_paramglobal_no_short():
     """Generic parameter handling for a param type global arg without short option."""
     cmd = create_command("somecommand")
     groups = [CommandGroup("title", [cmd])]
-    extra = GlobalArgument("globalparam", "option", None, "--globalparam", "Test global param.")
+    extra = GlobalArgument(
+        "globalparam", "option", None, "--globalparam", "Test global param."
+    )
     dispatcher = Dispatcher("appname", groups, extra_global_args=[extra])
 
     global_args = dispatcher.pre_parse_args(["somecommand", "--globalparam=foobar"])
@@ -631,7 +653,9 @@ def test_basecommand_mandatory_attribute_help_message():
 
     with pytest.raises(ValueError) as exc_cm:  # noqa: PT011
         TestCommand(None)
-    assert str(exc_cm.value) == "Bad command configuration: missing value in 'help_msg'."
+    assert (
+        str(exc_cm.value) == "Bad command configuration: missing value in 'help_msg'."
+    )
 
 
 def test_basecommand_mandatory_attribute_overview():
@@ -648,13 +672,17 @@ def test_basecommand_mandatory_attribute_overview():
 
     with pytest.raises(ValueError) as exc_cm:  # noqa: PT011
         TestCommand(None)
-    assert str(exc_cm.value) == "Bad command configuration: missing value in 'overview'."
+    assert (
+        str(exc_cm.value) == "Bad command configuration: missing value in 'overview'."
+    )
 
 
 @pytest.mark.parametrize("cmd_name", ["name", None])
 @pytest.mark.parametrize("cmd_overview", ["overview", None])
 @pytest.mark.parametrize("cmd_help_msg", ["help_msg", None])
-def test_basecommand_mandatory_attributes_not_none(cmd_name, cmd_overview, cmd_help_msg):
+def test_basecommand_mandatory_attributes_not_none(
+    cmd_name, cmd_overview, cmd_help_msg
+):
     """BaseCommand subclasses must provide non-None values for name, overview and help_message."""
     if cmd_name and cmd_overview and cmd_help_msg:
         pytest.skip("name, overview and help_msg all valid; skipping failure test.")
@@ -669,7 +697,9 @@ def test_basecommand_mandatory_attributes_not_none(cmd_name, cmd_overview, cmd_h
         def run(self, parsed_args):
             pass
 
-    with pytest.raises(ValueError, match=r"Bad command configuration: missing value in .*"):
+    with pytest.raises(
+        ValueError, match=r"Bad command configuration: missing value in .*"
+    ):
         TestCommand(None)
 
 

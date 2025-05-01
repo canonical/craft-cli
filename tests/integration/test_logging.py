@@ -41,7 +41,10 @@ def test_logging_in_multiprocess(tmp_path):
     emitter_log = tmp_path / "emitter_log.txt"
     greeting = "hi"
     emit.init(
-        mode=EmitterMode.QUIET, appname="testapp", greeting=greeting, log_filepath=emitter_log
+        mode=EmitterMode.QUIET,
+        appname="testapp",
+        greeting=greeting,
+        log_filepath=emitter_log,
     )
 
     logger.info("Message 1 from PARENT process")

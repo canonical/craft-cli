@@ -139,7 +139,10 @@ class _Progresser:
     def __enter__(self) -> Self:
         text = f"{self.text} (--->)"
         self.printer.show(
-            self.stream, text, ephemeral=self.ephemeral_context, use_timestamp=self.use_timestamp
+            self.stream,
+            text,
+            ephemeral=self.ephemeral_context,
+            use_timestamp=self.use_timestamp,
         )
         return self
 
@@ -151,7 +154,10 @@ class _Progresser:
     ) -> Literal[False]:
         text = f"{self.text} (<---)"
         self.printer.show(
-            self.stream, text, ephemeral=self.ephemeral_context, use_timestamp=self.use_timestamp
+            self.stream,
+            text,
+            ephemeral=self.ephemeral_context,
+            use_timestamp=self.use_timestamp,
         )
         return False  # do not consume any exception
 
@@ -207,7 +213,9 @@ class _PipeReaderThread(threading.Thread):
             # ignoring the type of the first parameter below, as documentation allows to use None
             # to make it use a NULL security descriptor:
             #     https://www.markjour.com/docs/pywin32-docs/PySECURITY_ATTRIBUTES.html
-            self.read_pipe, self.write_pipe = win32pipe.FdCreatePipe(None, 0, binary_mode)  # type: ignore[reportGeneralTypeIssues]
+            self.read_pipe, self.write_pipe = win32pipe.FdCreatePipe(
+                None, 0, binary_mode
+            )  # type: ignore[reportGeneralTypeIssues]
         else:
             self.read_pipe, self.write_pipe = os.pipe()
 
@@ -396,7 +404,9 @@ class _Handler(logging.Handler):
             ephemeral = True
 
         use_timestamp = self.mode in (EmitterMode.DEBUG, EmitterMode.TRACE)
-        self.printer.show(stream, text, use_timestamp=use_timestamp, ephemeral=ephemeral)
+        self.printer.show(
+            stream, text, use_timestamp=use_timestamp, ephemeral=ephemeral
+        )
 
 
 FuncT = TypeVar("FuncT", bound=Callable[..., Any])
@@ -493,7 +503,9 @@ class Emitter:
 
         # create a log file, bootstrap the printer, and before anything else send the greeting
         # to the file
-        self._log_filepath = _get_log_filepath(appname) if log_filepath is None else log_filepath
+        self._log_filepath = (
+            _get_log_filepath(appname) if log_filepath is None else log_filepath
+        )
         self._printer = Printer(self._log_filepath)
         self._printer.show(None, greeting)
 
@@ -530,7 +542,11 @@ class Emitter:
             ]
             for msg in msgs:
                 self._printer.show(
-                    sys.stderr, msg, use_timestamp=use_timestamp, avoid_logging=True, end_line=True
+                    sys.stderr,
+                    msg,
+                    use_timestamp=use_timestamp,
+                    avoid_logging=True,
+                    end_line=True,
                 )
 
     @_active_guard()
@@ -640,7 +656,9 @@ class Emitter:
             # Clear the "new thing" prefix, as this is a new progress message.
             self._printer.set_terminal_prefix("")
 
-        self._printer.show(stream, text, ephemeral=ephemeral, use_timestamp=use_timestamp)
+        self._printer.show(
+            stream, text, ephemeral=ephemeral, use_timestamp=use_timestamp
+        )
 
         if self._mode == EmitterMode.BRIEF and ephemeral and self._streaming_brief:
             # Set the "progress prefix" for upcoming non-permanent messages.
@@ -662,7 +680,9 @@ class Emitter:
         pass the total so far).
         """
         stream, use_timestamp, ephemeral = self._get_progress_params(permanent=False)
-        return _Progresser(self._printer, total, text, stream, delta, use_timestamp, ephemeral)
+        return _Progresser(
+            self._printer, total, text, stream, delta, use_timestamp, ephemeral
+        )
 
     @_active_guard()
     def open_stream(self, text: str | None = None) -> _StreamContextManager:
@@ -732,19 +752,25 @@ class Emitter:
         # The initial message. Print every line individually to correctly clear
         # previous lines, if necessary.
         for line in str(error).splitlines():
-            self._printer.show(sys.stderr, line, use_timestamp=use_timestamp, end_line=True)
+            self._printer.show(
+                sys.stderr, line, use_timestamp=use_timestamp, end_line=True
+            )
 
         if isinstance(error, errors.CraftCommandError):
             stderr = error.stderr
             if stderr:
                 text = f"Captured error:\n{stderr}"
-                self._printer.show(sys.stderr, text, use_timestamp=use_timestamp, end_line=True)
+                self._printer.show(
+                    sys.stderr, text, use_timestamp=use_timestamp, end_line=True
+                )
 
         # detailed information and/or original exception
         if error.details:
             text = f"Detailed information: {error.details}"
             details_stream = None if self._mode == EmitterMode.QUIET else sys.stderr
-            self._printer.show(details_stream, text, use_timestamp=use_timestamp, end_line=True)
+            self._printer.show(
+                details_stream, text, use_timestamp=use_timestamp, end_line=True
+            )
         if error.__cause__:
             for line in _get_traceback_lines(error.__cause__):
                 self._printer.show(
@@ -754,7 +780,9 @@ class Emitter:
         # hints for the user to know more
         if error.resolution:
             text = f"Recommended resolution: {error.resolution}"
-            self._printer.show(sys.stderr, text, use_timestamp=use_timestamp, end_line=True)
+            self._printer.show(
+                sys.stderr, text, use_timestamp=use_timestamp, end_line=True
+            )
 
         doc_url = None
         if self._docs_base_url and error.doc_slug:
@@ -764,12 +792,16 @@ class Emitter:
 
         if doc_url:
             text = f"For more information, check out: {doc_url}"
-            self._printer.show(sys.stderr, text, use_timestamp=use_timestamp, end_line=True)
+            self._printer.show(
+                sys.stderr, text, use_timestamp=use_timestamp, end_line=True
+            )
 
         # expose the logfile path only if indicated
         if error.logpath_report:
             text = f"Full execution log: {str(self._log_filepath)!r}"
-            self._printer.show(sys.stderr, text, use_timestamp=use_timestamp, end_line=True)
+            self._printer.show(
+                sys.stderr, text, use_timestamp=use_timestamp, end_line=True
+            )
 
     @_active_guard(ignore_when_stopped=True)
     def error(self, error: errors.CraftError) -> None:
