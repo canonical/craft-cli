@@ -1108,9 +1108,7 @@ def test_logging_in_verbose_mode(capsys, logger):
         Line("--warning--"),
         Line("--info--"),
     ]
-    expected_log = expected_err + [
-        Line("--debug--"),
-    ]
+    expected_log = [*expected_err, Line("--debug--")]
     assert_outputs(capsys, emit, expected_err=expected_err, expected_log=expected_log)
 
 
@@ -1298,7 +1296,7 @@ def _parse_timestamp(text):
 
 
 @pytest.mark.parametrize(
-    "loops, sleep, max_repetitions",
+    ("loops", "sleep", "max_repetitions"),
     [
         (100, 0.01, 30),
         (1000, 0.001, 100),

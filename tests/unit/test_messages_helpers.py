@@ -109,7 +109,7 @@ def test_getlogpath_hit_rotation_limit(test_log_dir, monkeypatch):
     new_fpath = _get_log_filepath("testapp")
     new_fpath.touch()
     present_logs = sorted((test_log_dir / "testapp").iterdir())
-    assert present_logs == previous_fpaths + [new_fpath]
+    assert present_logs == [*previous_fpaths, new_fpath]
 
 
 def test_getlogpath_exceeds_rotation_limit(test_log_dir, monkeypatch):

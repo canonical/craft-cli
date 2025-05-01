@@ -33,7 +33,7 @@ from overrides import override
 
 
 @pytest.mark.parametrize(
-    "input, expected",
+    ("input", "expected"),
     [
         pytest.param(Action(0), [], id="no-flags"),
         pytest.param(Action.alias, [Action.alias], id="one-flag"),
@@ -49,7 +49,7 @@ def test_get_set_flags(input: Action, expected: list[Action]) -> None:
 
 
 @pytest.mark.parametrize(
-    "input, expected",
+    ("input", "expected"),
     [
         pytest.param({}, "compgen", id="no-args"),
         pytest.param(
@@ -126,7 +126,7 @@ def test_arg_from_action() -> None:
 
 
 @pytest.mark.parametrize(
-    "args, expected_args",
+    ("args", "expected_args"),
     [
         pytest.param(
             [Argument(["--foo"], completion_command="")],

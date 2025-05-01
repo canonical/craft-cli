@@ -290,7 +290,7 @@ def test_dispatcher_generic_setup_verbosity_option(options):
 
 
 @pytest.mark.parametrize(
-    "initial_level, requested_level, setup_level",
+    ("initial_level", "requested_level", "setup_level"),
     [
         (EmitterMode.BRIEF, "quiet", EmitterMode.QUIET),
         (EmitterMode.QUIET, "brief", EmitterMode.BRIEF),
@@ -539,7 +539,7 @@ def test_dispatcher_global_arguments_extra_arguments():
 
     extra_arg = GlobalArgument("other", "flag", "-o", "--other", "Other stuff")
     dispatcher = Dispatcher("appname", groups, extra_global_args=[extra_arg])
-    assert dispatcher.global_arguments == _DEFAULT_GLOBAL_ARGS + [extra_arg]
+    assert dispatcher.global_arguments == [*_DEFAULT_GLOBAL_ARGS, extra_arg]
 
 
 # --- Tests for the base command
@@ -674,7 +674,7 @@ def test_basecommand_mandatory_attributes_not_none(cmd_name, cmd_overview, cmd_h
 
 
 @pytest.mark.parametrize(
-    "common_, hidden_, is_ok",
+    ("common_", "hidden_", "is_ok"),
     [
         (True, True, False),
         (True, False, True),

@@ -50,7 +50,9 @@ class FakeCpCommand(craft_cli.BaseCommand):
         parser.add_argument("src", type=Path)
         parser.add_argument("dest", type=Path)
 
-def get_app_info_func(commands: list[type[craft_cli.BaseCommand]], config: dict[str, Any] = {}) -> Callable[[], DispatcherAndConfig]:
+def get_app_info_func(commands: list[type[craft_cli.BaseCommand]], config: dict[str, Any] | None = None) -> Callable[[], DispatcherAndConfig]:
+    if config is None:
+        config = {}
     basic_group = craft_cli.CommandGroup("basic", commands)
 
     def _inner() -> DispatcherAndConfig:

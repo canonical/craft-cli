@@ -87,7 +87,7 @@ def get_initiated_emitter(tmp_path, monkeypatch):
 
         yield func
 
-def emitter_methods(init: bool, stop: bool = True, exclude: list[str] = []) -> list[Callable[..., Any]]:
+def emitter_methods(init: bool, stop: bool = True, exclude: list[str] | None = None) -> list[Callable[..., Any]]:
     """Provide a list of all public methods on an Emitter object.
 
     :param init: Whether or not to initialize the emitter first
@@ -95,6 +95,8 @@ def emitter_methods(init: bool, stop: bool = True, exclude: list[str] = []) -> l
         Defaults to true.
     :param exclude: A list of method names to exclude from the final output. Defaults to empty.
     """
+    if exclude is None:
+        exclude = []
     emitter = Emitter()
     if init:
         emitter.init(EmitterMode.QUIET, "testappname", "default greeting")
@@ -111,9 +113,8 @@ def emitter_methods(init: bool, stop: bool = True, exclude: list[str] = []) -> l
     all_methods = [getattr(emitter, item) for item in all_methods]
 
     # Filter out anything that isn't actually a method
-    all_methods = [item for item in all_methods if isinstance(item, Callable)]
+    return [item for item in all_methods if isinstance(item, Callable)]
 
-    return all_methods
 
 
 # -- tests for init and setting/getting mode
@@ -1206,7 +1207,6 @@ def test_reporterror_command_error_no_stderr(get_initiated_emitter, stderr):
     emitter = get_initiated_emitter(EmitterMode.BRIEF)
     emitter.error(error)
 
-    expected = "Captured error:\n:: an error occurred\n:: on this line ^^\n"
 
     # No "Captured error (...)" output
     assert emitter.printer_calls == [
@@ -1336,5 +1336,5 @@ def test_prompt_does_not_allow_empty_input(
     """The emitter should not allow empty input."""
     mocker.patch("builtins.input", fake_input(""))
 
-    with pytest.raises(CraftError, match="input cannot be empty") as error:
+    with pytest.raises(CraftError, match="input cannot be empty"):
         initiated_emitter.prompt("prompt")

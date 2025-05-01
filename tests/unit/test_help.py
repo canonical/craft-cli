@@ -1498,7 +1498,7 @@ def test_tool_exec_help_when_globalarg_without_short_form(monkeypatch):
         "--xyz",
         "An option without short form",
     )
-    new_default_globals = dispatcher_mod._DEFAULT_GLOBAL_ARGS + [new_global]
+    new_default_globals = [*dispatcher_mod._DEFAULT_GLOBAL_ARGS, new_global]
     monkeypatch.setattr(dispatcher_mod, "_DEFAULT_GLOBAL_ARGS", new_default_globals)
 
     dispatcher = Dispatcher("testapp", [])
@@ -1622,7 +1622,7 @@ def test_helprequested_format_noncommand(parameters):
 
 
 @pytest.mark.parametrize(
-    "parameters,expected_format",
+    ("parameters", "expected_format"),
     [
         (["--format=plain", "somecmd"], OutputFormat.plain),
         (["somecmd", "--format=plain"], OutputFormat.plain),

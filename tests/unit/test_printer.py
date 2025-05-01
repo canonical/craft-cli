@@ -219,7 +219,7 @@ def test_writelineterminal_simple_too_long(capsys, monkeypatch, log_filepath):
 
     # output is NOT truncated, and it's completed so the cursor at the second line is still
     # to the right
-    assert out.endswith(printermod.ANSI_CLEAR_LINE_TO_END) or out.endswith(" " * 9)
+    assert out.endswith((printermod.ANSI_CLEAR_LINE_TO_END, " " * 9))
     assert out == printermod._fill_line(test_text)
 
 
@@ -1284,7 +1284,8 @@ def test_spinner_two_messages(spinner, monkeypatch):
     # check we have two set of messages
     spinned_1 = [sp_text for sp_msg, sp_text in spinner.printer.spinned if sp_msg == msg1]
     spinned_2 = [sp_text for sp_msg, sp_text in spinner.printer.spinned if sp_msg == msg2]
-    assert spinned_1 and spinned_2
+    assert spinned_1
+    assert spinned_2
 
     # in both cases, the final message should be to clean the spinner
     assert spinned_1[-1] == " "
