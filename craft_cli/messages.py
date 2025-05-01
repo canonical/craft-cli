@@ -114,7 +114,7 @@ def _get_traceback_lines(exc: BaseException) -> Generator[str, None, None]:
 class _Progresser:
     """A context manager to follow progress on any specific action."""
 
-    def __init__(  # noqa: PLR0913 (too many arguments)
+    def __init__(
         self,
         printer: Printer,
         total: float,
@@ -461,7 +461,7 @@ class Emitter:
         self._streaming_brief = False
         self._docs_base_url: str | None = None
 
-    def init(  # noqa: PLR0913 (too many arguments)
+    def init(
         self,
         mode: EmitterMode,
         appname: str,

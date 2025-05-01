@@ -18,15 +18,15 @@
 
 import logging
 import sys
+from collections.abc import Callable
+from typing import Any, cast
 from unittest import mock
 from unittest.mock import call, patch
-from typing import Any, cast, Callable
 
 import pytest
 import pytest_mock
-
 from craft_cli import messages
-from craft_cli.errors import CraftError, CraftCommandError
+from craft_cli.errors import CraftCommandError, CraftError
 from craft_cli.messages import Emitter, EmitterMode, _Handler
 
 FAKE_LOG_NAME = "fakelog.log"
@@ -844,7 +844,7 @@ def test_paused_resumed_error(get_initiated_emitter, tmp_path):
 
             # something bad goes here; note the exception should not be hidden (that's why
             # all this is inside a `pytest.raises`, but the emitter should resume ok
-            raise ValueError()
+            raise ValueError
 
     # a new Printer is created, with same logpath and the resuming message is shown
     assert emitter.printer_calls == [

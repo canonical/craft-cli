@@ -13,12 +13,14 @@
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 import craft_cli
 from craft_cli.completion import complete
 from craft_cli.completion.completion import DispatcherAndConfig
-from typing import Any, Callable, Type
+
 
 class FakeLsCommand(craft_cli.BaseCommand):
     """A copycat ls command."""
@@ -48,7 +50,7 @@ class FakeCpCommand(craft_cli.BaseCommand):
         parser.add_argument("src", type=Path)
         parser.add_argument("dest", type=Path)
 
-def get_app_info_func(commands: list[Type[craft_cli.BaseCommand]], config: dict[str, Any] = {}) -> Callable[[], DispatcherAndConfig]:
+def get_app_info_func(commands: list[type[craft_cli.BaseCommand]], config: dict[str, Any] = {}) -> Callable[[], DispatcherAndConfig]:
     basic_group = craft_cli.CommandGroup("basic", commands)
 
     def _inner() -> DispatcherAndConfig:

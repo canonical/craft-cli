@@ -25,7 +25,6 @@ import time
 from datetime import datetime
 
 import pytest
-
 from craft_cli import printer as printermod
 from craft_cli.printer import Printer, _MessageInfo, _Spinner
 

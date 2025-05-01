@@ -22,7 +22,6 @@ import threading
 import time
 
 import pytest
-
 from craft_cli import messages, printer
 from craft_cli.messages import _PipeReaderThread, _StreamContextManager
 
@@ -181,7 +180,7 @@ def test_streamcm_dont_consume_exceptions(recording_printer):
             use_timestamp=False,
             ephemeral_mode=False,
         ):
-            raise ValueError()
+            raise ValueError
 
 
 # -- tests for the pipe reader

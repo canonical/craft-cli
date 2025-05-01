@@ -18,7 +18,6 @@ import textwrap
 from unittest.mock import patch
 
 import pytest
-
 from craft_cli import EmitterMode, emit
 from craft_cli.dispatcher import (
     _DEFAULT_GLOBAL_ARGS,
@@ -28,6 +27,7 @@ from craft_cli.dispatcher import (
     GlobalArgument,
 )
 from craft_cli.errors import ArgumentParsingError
+
 from tests.factory import create_command
 
 # --- Tests for the Dispatcher
@@ -210,7 +210,7 @@ def test_dispatcher_command_execution_crash():
         overview = "fake overview"
 
         def run(self, parsed_args):
-            raise ValueError()
+            raise ValueError
 
     groups = [CommandGroup("title", [MyCommand])]
     dispatcher = Dispatcher("appname", groups)

@@ -28,14 +28,13 @@ import subprocess
 import sys
 import textwrap
 import time
+from collections.abc import Collection
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Collection
 from unittest.mock import patch
 
 import pytest
-
-from craft_cli import messages, printer, errors
+from craft_cli import errors, messages, printer
 from craft_cli.errors import CraftError
 from craft_cli.messages import Emitter, EmitterMode
 
@@ -156,7 +155,7 @@ def assert_outputs(capsys, emit, expected_out=None, expected_err=None, expected_
 
     # get the logged text, always validating a valid timestamp format at the beginning
     # of each line
-    with open(emit._log_filepath, "rt", encoding="utf8") as filehandler:
+    with open(emit._log_filepath, encoding="utf8") as filehandler:
         log_lines = filehandler.readlines()
     logged_texts = []
     for line in log_lines:
@@ -1340,7 +1339,7 @@ def test_capture_delays(tmp_path, loops, sleep, max_repetitions):
     emit.ended_ok()
 
     timestamps = []
-    with open(emit._log_filepath, "rt", encoding="utf8") as filehandler:  # type: ignore
+    with open(emit._log_filepath, encoding="utf8") as filehandler:  # type: ignore
         for line in filehandler:
             match = re.match(rf"({TIMESTAMP_FORMAT}):: ({TIMESTAMP_FORMAT}).*\n", line)
             if not match:

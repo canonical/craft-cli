@@ -17,8 +17,7 @@
 """Tests for errors."""
 
 import pytest
-
-from craft_cli.errors import CraftError, CraftCommandError
+from craft_cli.errors import CraftCommandError, CraftError
 
 
 def test_crafterror_is_comparable():

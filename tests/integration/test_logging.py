@@ -18,7 +18,7 @@ import multiprocessing
 import sys
 from textwrap import dedent
 
-from craft_cli import emit, EmitterMode
+from craft_cli import EmitterMode, emit
 
 logger = logging.getLogger()
 

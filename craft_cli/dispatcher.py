@@ -240,7 +240,7 @@ class Dispatcher:
     :param docs_base_url: The base address of the documentation, for help messages.
     """
 
-    def __init__(  # noqa: PLR0913 (too-many-arguments)
+    def __init__(
         self,
         appname: str,
         commands_groups: list[CommandGroup],

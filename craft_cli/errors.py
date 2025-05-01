@@ -56,7 +56,7 @@ class CraftError(Exception):
     retcode: int
     """The code to return when the application finishes."""
 
-    def __init__(  # noqa: PLR0913 (too many arguments)
+    def __init__(
         self,
         message: str,
         *,

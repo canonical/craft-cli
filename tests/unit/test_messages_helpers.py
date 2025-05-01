@@ -26,7 +26,6 @@ from unittest.mock import MagicMock, call
 
 import platformdirs
 import pytest
-
 from craft_cli import messages
 from craft_cli.messages import (
     EmitterMode,
@@ -262,7 +261,7 @@ def test_progresser_dont_consume_exceptions():
     fake_printer = MagicMock()
     with pytest.raises(ValueError):
         with _Progresser(fake_printer, 123, "test text", sys.stdout, True, True, True):
-            raise ValueError()
+            raise ValueError
 
 
 # -- tests for the _Handler class

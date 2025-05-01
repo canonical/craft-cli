@@ -417,7 +417,7 @@ class Printer:
         if _stream_is_terminal(message.stream):
             self._write_line_terminal(message, spintext=spintext)
 
-    def show(  # noqa: PLR0913 (too many parameters)
+    def show(
         self,
         stream: TextIO | None,
         text: str,

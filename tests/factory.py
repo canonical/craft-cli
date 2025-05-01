@@ -13,7 +13,6 @@
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from typing import Type
 
 from craft_cli import BaseCommand
 
@@ -26,7 +25,7 @@ def create_command(
     hidden: bool = False,
     overview: str = "",
     class_name: str = "MyCommand",
-) -> Type["BaseCommand"]:
+) -> type["BaseCommand"]:
     """Helper to create commands."""
     attribs = {
         "name": name,

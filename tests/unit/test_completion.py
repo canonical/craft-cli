@@ -16,12 +16,20 @@
 """Completion auto-gen unit tests"""
 
 import argparse
-from craft_cli import GlobalArgument
-from craft_cli.completion.completion import Action, Arg, Option, Argument, CompGen, get_set_flags, CommandMapping
-from overrides import override
-from typing import List, Dict, Any
+from typing import Any
 
 import pytest
+from craft_cli import GlobalArgument
+from craft_cli.completion.completion import (
+    Action,
+    Arg,
+    Argument,
+    CommandMapping,
+    CompGen,
+    Option,
+    get_set_flags,
+)
+from overrides import override
 
 
 @pytest.mark.parametrize(
@@ -36,7 +44,7 @@ import pytest
         ),
     ],
 )
-def test_get_set_flags(input: Action, expected: List[Action]) -> None:
+def test_get_set_flags(input: Action, expected: list[Action]) -> None:
     assert get_set_flags(input) == expected
 
 
@@ -79,7 +87,7 @@ def test_get_set_flags(input: Action, expected: List[Action]) -> None:
         ),
     ],
 )
-def test_compgen(input: Dict[str, Any], expected: str) -> None:
+def test_compgen(input: dict[str, Any], expected: str) -> None:
     compgen = CompGen(**input)
     assert str(compgen) == expected
 
@@ -132,7 +140,7 @@ def test_arg_from_action() -> None:
         ),
     ],
 )
-def test_commandmapping_all_args(args: List[Argument], expected_args) -> None:
+def test_commandmapping_all_args(args: list[Argument], expected_args) -> None:
     mapping = CommandMapping(options=[], args=args, params="")
 
     assert mapping.all_args == expected_args

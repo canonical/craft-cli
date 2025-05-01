@@ -18,19 +18,24 @@ import re
 import textwrap
 from argparse import ArgumentParser
 from unittest.mock import patch
-from typing import Optional
 
 import pytest
-
-from craft_cli import dispatcher as dispatcher_mod, BaseCommand
+from craft_cli import BaseCommand
+from craft_cli import dispatcher as dispatcher_mod
 from craft_cli.dispatcher import CommandGroup, Dispatcher, GlobalArgument
 from craft_cli.errors import ArgumentParsingError, ProvideHelpException
-from craft_cli.helptexts import HIDDEN, HelpBuilder, OutputFormat, process_overview_for_markdown
+from craft_cli.helptexts import (
+    HIDDEN,
+    HelpBuilder,
+    OutputFormat,
+    process_overview_for_markdown,
+)
+
 from tests.factory import create_command
 
 
 @pytest.fixture(params=[None, "www.craft-app.com/docs/3.14159/"])
-def docs_url(request) -> Optional[str]:
+def docs_url(request) -> str | None:
     return request.param
 
 
@@ -118,7 +123,7 @@ def test_default_help_text(docs_url):
     text = help_builder.get_full_help(global_options)
 
     expected = textwrap.dedent(
-        f"""\
+        """\
         Usage:
             testapp [help] <command>
 
@@ -357,7 +362,7 @@ def test_command_help_text_strip_backticks():
         """\
     Usage:
         testapp thecommand [options]
-        
+
     Summary:
         An insightful overview. Look - it even has code!
 
@@ -401,7 +406,7 @@ def test_command_help_text_backticks_markdown():
     ```text
     testapp thecommand [options]
     ```
-        
+
     ## Summary:
 
     An insightful overview. Look - it even has code!
@@ -1715,8 +1720,8 @@ class AppConfigCommand(BaseCommand):
 @pytest.mark.parametrize(
     "sysargs",
     [
-        "testapp app-config --help".split()[1:],
-        "testapp help app-config".split()[1:],
+        ["testapp", "app-config", "--help"][1:],
+        ["testapp", "help", "app-config"][1:],
     ],
 )
 def test_helprequested_command_app_config(sysargs):
@@ -1741,15 +1746,15 @@ class NoConfigCommand(BaseCommand):
 
         parser.add_argument(
             "config",
-            help=f"Config was correctly None",
+            help="Config was correctly None",
         )
 
 
 @pytest.mark.parametrize(
     "sysargs",
     [
-        "testapp no-config --help".split()[1:],
-        "testapp help no-config".split()[1:],
+        ["testapp", "no-config", "--help"][1:],
+        ["testapp", "help", "no-config"][1:],
     ],
 )
 def test_helprequested_command_no_app_config(sysargs):
