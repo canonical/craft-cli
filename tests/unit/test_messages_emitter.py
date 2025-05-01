@@ -119,7 +119,7 @@ def emitter_methods(
     all_methods = [getattr(emitter, item) for item in all_methods]
 
     # Filter out anything that isn't actually a method
-    return [item for item in all_methods if isinstance(item, Callable)]
+    return [item for item in all_methods if callable(item)]
 
 
 # -- tests for init and setting/getting mode
