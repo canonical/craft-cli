@@ -1465,5 +1465,5 @@ def test_secrets_terminal_prefix(capsys, log_filepath, monkeypatch):
     ]
 
     _, stderr = capsys.readouterr()
-    obtained = [remove_control_characters(l).rstrip() for l in stderr.splitlines()]
+    obtained = [remove_control_characters(l).rstrip() for l in stderr.splitlines()]  # noqa: E741
     assert obtained == expected

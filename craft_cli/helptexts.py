@@ -74,7 +74,7 @@ def _build_item_plain(title: str, text: str, title_space: int) -> list[str]:
 
     # the rest (if any) still aligned but without title
     for line in wrapped_lines[1:]:
-        result.append(" " * (title_space + not_title_space) + line)
+        result.append(" " * (title_space + not_title_space) + line)  # noqa: PERF401
 
     return result
 

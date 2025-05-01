@@ -412,7 +412,7 @@ def _active_guard(ignore_when_stopped: bool = False) -> Callable[..., Any]:  # n
 
     def decorator(wrapped_func: FuncT) -> FuncT:
         @functools.wraps(wrapped_func)
-        def func(self: Emitter, *args: Any, **kwargs: Any) -> Any:
+        def func(self: Emitter, *args: Any, **kwargs: Any) -> Any:  # noqa: ANN401
             if not self._initiated:
                 raise RuntimeError("Emitter needs to be initiated first")
             if self._stopped:

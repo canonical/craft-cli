@@ -155,7 +155,7 @@ def assert_outputs(capsys, emit, expected_out=None, expected_err=None, expected_
 
     # get the logged text, always validating a valid timestamp format at the beginning
     # of each line
-    with open(emit._log_filepath, encoding="utf8") as filehandler:
+    with open(emit._log_filepath, encoding="utf8") as filehandler:  # noqa: PTH123
         log_lines = filehandler.readlines()
     logged_texts = []
     for line in log_lines:
@@ -179,11 +179,11 @@ def test_exposed_api():
 
     assert isinstance(emit, messages.Emitter)
 
-    from craft_cli import EmitterMode as test_em
+    from craft_cli import EmitterMode as test_em  # noqa: N813
 
     assert test_em is EmitterMode
 
-    from craft_cli import CraftError as test_cs
+    from craft_cli import CraftError as test_cs  # noqa: N813
 
     assert test_cs is CraftError
 
@@ -997,7 +997,7 @@ def test_error_unexpected_quietly(capsys, mode):
     emit = Emitter()
     emit.init(mode, "testapp", GREETING)
     try:
-        raise ValueError("pumba")
+        raise ValueError("pumba")  # noqa: TRY301
     except ValueError as exc:
         error = CraftError("First message.")
         error.__cause__ = exc
@@ -1030,7 +1030,7 @@ def test_error_unexpected_debugish(capsys, mode):
     emit = Emitter()
     emit.init(mode, "testapp", GREETING)
     try:
-        raise ValueError("pumba")
+        raise ValueError("pumba")  # noqa: TRY301
     except ValueError as exc:
         error = CraftError("First message.")
         error.__cause__ = exc
@@ -1337,7 +1337,7 @@ def test_capture_delays(tmp_path, loops, sleep, max_repetitions):
     emit.ended_ok()
 
     timestamps = []
-    with open(emit._log_filepath, encoding="utf8") as filehandler:  # type: ignore
+    with open(emit._log_filepath, encoding="utf8") as filehandler:  # type: ignore  # noqa: PTH123, PGH003
         for line in filehandler:
             match = re.match(rf"({TIMESTAMP_FORMAT}):: ({TIMESTAMP_FORMAT}).*\n", line)
             if not match:

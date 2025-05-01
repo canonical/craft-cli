@@ -219,7 +219,7 @@ def complete(shell_cmd: str, get_app_info: Callable[[], DispatcherAndConfig]) ->
         cmd.fill_parser(parser)  # type: ignore[arg-type]
         # reason: for this module, we don't need the help/error
         # capabilities of _CustomArgumentParser
-        actions = parser._actions
+        actions = parser._actions  # noqa: SLF001
 
         options: list[OptionArgument] = []
         args: list[Argument] = []

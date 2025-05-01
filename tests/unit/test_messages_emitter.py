@@ -87,7 +87,7 @@ def get_initiated_emitter(tmp_path, monkeypatch):
 
         yield func
 
-def emitter_methods(init: bool, stop: bool = True, exclude: list[str] | None = None) -> list[Callable[..., Any]]:
+def emitter_methods(init: bool, stop: bool = True, exclude: list[str] | None = None) -> list[Callable[..., Any]]:  # noqa: FBT001, FBT002
     """Provide a list of all public methods on an Emitter object.
 
     :param init: Whether or not to initialize the emitter first
@@ -834,7 +834,7 @@ def test_paused_resumed_error(get_initiated_emitter, tmp_path):
     """The Emitter is paused and resumed fine even if an exception is raised."""
     emitter = get_initiated_emitter(EmitterMode.QUIET)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # noqa: PT011, PT012
         with emitter.pause():
             assert emitter.printer_calls == [
                 # the pausing message is shown and emitter is stopped
@@ -953,7 +953,7 @@ def test_reporterror_chained_exception_final_user_modes(mode, get_initiated_emit
     orig_exception = None
     try:
         try:
-            raise ValueError("original")
+            raise ValueError("original")  # noqa: TRY301
         except ValueError as err:
             orig_exception = err
             raise CraftError("test message") from err
@@ -984,7 +984,7 @@ def test_reporterror_chained_exception_developer_modes(mode, get_initiated_emitt
     orig_exception = None
     try:
         try:
-            raise ValueError("original")
+            raise ValueError("original")  # noqa: TRY301
         except ValueError as err:
             orig_exception = err
             raise CraftError("test message") from err
@@ -1079,7 +1079,7 @@ def test_reporterror_full_complete(get_initiated_emitter):
     emitter = get_initiated_emitter(EmitterMode.TRACE)
     try:
         try:
-            raise ValueError("original")
+            raise ValueError("original")  # noqa: TRY301
         except ValueError as err:
             raise CraftError(
                 "test message",

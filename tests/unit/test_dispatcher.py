@@ -216,7 +216,7 @@ def test_dispatcher_command_execution_crash():
     dispatcher = Dispatcher("appname", groups)
     dispatcher.pre_parse_args(["cmdname"])
     dispatcher.load_command(None)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # noqa: PT011
         dispatcher.run()
 
 
@@ -474,9 +474,9 @@ def test_dispatcher_build_commands_ok():
 
 def test_dispatcher_build_commands_repeated():
     """Error while loading commands with repeated name."""
-    Foo = create_command(name="repeated", class_name="Foo")
-    Bar = create_command(name="cool", class_name="Bar")
-    Baz = create_command(name="repeated", class_name="Baz")
+    Foo = create_command(name="repeated", class_name="Foo")  # noqa: N806
+    Bar = create_command(name="cool", class_name="Bar")  # noqa: N806
+    Baz = create_command(name="repeated", class_name="Baz")  # noqa: N806
 
     groups = [
         CommandGroup("whatever title", [Foo, Bar]),
@@ -612,7 +612,7 @@ def test_basecommand_mandatory_attribute_name():
         def run(self, parsed_args):
             pass
 
-    with pytest.raises(ValueError) as exc_cm:
+    with pytest.raises(ValueError) as exc_cm:  # noqa: PT011
         TestCommand(None)
     assert str(exc_cm.value) == "Bad command configuration: missing value in 'name'."
 
@@ -629,7 +629,7 @@ def test_basecommand_mandatory_attribute_help_message():
         def run(self, parsed_args):
             pass
 
-    with pytest.raises(ValueError) as exc_cm:
+    with pytest.raises(ValueError) as exc_cm:  # noqa: PT011
         TestCommand(None)
     assert str(exc_cm.value) == "Bad command configuration: missing value in 'help_msg'."
 
@@ -646,7 +646,7 @@ def test_basecommand_mandatory_attribute_overview():
         def run(self, parsed_args):
             pass
 
-    with pytest.raises(ValueError) as exc_cm:
+    with pytest.raises(ValueError) as exc_cm:  # noqa: PT011
         TestCommand(None)
     assert str(exc_cm.value) == "Bad command configuration: missing value in 'overview'."
 
@@ -700,6 +700,6 @@ def test_basecommand_common_xor_hidden(common_, hidden_, is_ok):
     if is_ok:
         TestCommand(None)
     else:
-        with pytest.raises(ValueError) as exc_cm:
+        with pytest.raises(ValueError) as exc_cm:  # noqa: PT011
             TestCommand(None)
         assert str(exc_cm.value) == "Common commands can not be hidden."

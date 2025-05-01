@@ -251,7 +251,7 @@ def test_progresser_delta_mode():
 def test_progresser_negative_values(delta):
     """The progress cannot be negative."""
     fake_printer = MagicMock()
-    with _Progresser(fake_printer, 123, "test text", sys.stdout, delta, True, True) as progresser:
+    with _Progresser(fake_printer, 123, "test text", sys.stdout, delta, True, True) as progresser:  # noqa: FBT003
         with pytest.raises(ValueError, match="The advance amount cannot be negative"):
             progresser.advance(-1)
 
@@ -259,8 +259,8 @@ def test_progresser_negative_values(delta):
 def test_progresser_dont_consume_exceptions():
     """It lets the exceptions go through."""
     fake_printer = MagicMock()
-    with pytest.raises(ValueError):
-        with _Progresser(fake_printer, 123, "test text", sys.stdout, True, True, True):
+    with pytest.raises(ValueError):  # noqa: PT011
+        with _Progresser(fake_printer, 123, "test text", sys.stdout, True, True, True):  # noqa: FBT003
             raise ValueError
 
 
@@ -281,7 +281,7 @@ def test_handler_init(handler):
     """Default _Handler values."""
     assert isinstance(handler, logging.Handler)
     assert handler.level == 0
-    assert handler.mode == EmitterMode.QUIET  # type: ignore
+    assert handler.mode == EmitterMode.QUIET  # type: ignore  # noqa: PGH003
 
 
 def test_handler_emit_full_message(handler):
@@ -396,7 +396,7 @@ def test_handler_emit_trace(handler):
 def test_traceback_lines_simple():
     """Extract traceback lines from an exception."""
     try:
-        raise ValueError("pumba")
+        raise ValueError("pumba")  # noqa: TRY301
     except ValueError as err:
         tbacklines = list(_get_traceback_lines(err))
 

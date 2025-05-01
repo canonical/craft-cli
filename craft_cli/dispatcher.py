@@ -264,7 +264,7 @@ class Dispatcher:
         self._loaded_command: BaseCommand | None = None
         self._parsed_command_args: argparse.Namespace | None = None
 
-    def load_command(self, app_config: Any) -> BaseCommand:
+    def load_command(self, app_config: Any) -> BaseCommand:  # noqa: ANN401
         """Load a command."""
         if self._command_class is None:
             raise RuntimeError(
@@ -312,7 +312,7 @@ class Dispatcher:
         return ArgumentParsingError(self._help_builder.get_usage_message(text))
 
     def _get_requested_help(  # noqa: PLR0912 (too many branches)
-        self, parameters: list[str], app_config: Any
+        self, parameters: list[str], app_config: Any  # noqa: ANN401
     ) -> str:
         """Produce the requested help depending on the rest of the command line params."""
         if len(parameters) == 0:
@@ -369,7 +369,7 @@ class Dispatcher:
 
         # produce the complete help message for the command
         command_options = self._get_global_options()
-        for action in parser._actions:
+        for action in parser._actions:  # noqa: SLF001
             # store the different options if present, otherwise it's just the dest
             help_text = "" if action.help is None else action.help
             if action.option_strings:
@@ -459,7 +459,7 @@ class Dispatcher:
             global_args[arg.name] = validator(value)
         return global_args, filtered_sysargs
 
-    def pre_parse_args(self, sysargs: list[str], app_config: Any = None) -> dict[str, Any]:
+    def pre_parse_args(self, sysargs: list[str], app_config: Any = None) -> dict[str, Any]:  # noqa: ANN401
         """Pre-parse sys args.
 
         Several steps:

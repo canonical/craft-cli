@@ -172,7 +172,7 @@ def test_streamcm_usage_lifecycle(recording_printer):
 
 def test_streamcm_dont_consume_exceptions(recording_printer):
     """It lets the exceptions go through."""
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # noqa: PT011
         with _StreamContextManager(
             recording_printer,
             "initial text",
@@ -321,9 +321,9 @@ def test_ensure_pipes_are_closed(recording_printer):
     prt = _PipeReaderThread(recording_printer, sys.stdout, flags)
     prt.start()
     prt.stop()
-    with pytest.raises(OSError) as err:
+    with pytest.raises(OSError) as err:  # noqa: PT011
         os.fstat(prt.read_pipe)
     assert err.value.errno == 9
-    with pytest.raises(OSError) as err:
+    with pytest.raises(OSError) as err:  # noqa: PT011
         os.fstat(prt.write_pipe)
     assert err.value.errno == 9

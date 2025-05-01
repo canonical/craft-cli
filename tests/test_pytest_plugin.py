@@ -156,7 +156,7 @@ def test_emitter_record_progress_bar_ok(emitter):
 
 def test_emitter_record_progress_bar_safe(emitter):
     """Mocking the progress bar context manager does not hide exceptions."""
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # noqa: PT011
         with messages.emit.progress_bar("title", 20):
             raise ValueError
 

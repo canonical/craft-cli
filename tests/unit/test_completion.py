@@ -44,7 +44,7 @@ from overrides import override
         ),
     ],
 )
-def test_get_set_flags(input: Action, expected: list[Action]) -> None:
+def test_get_set_flags(input: Action, expected: list[Action]) -> None:  # noqa: A002
     assert get_set_flags(input) == expected
 
 
@@ -87,7 +87,7 @@ def test_get_set_flags(input: Action, expected: list[Action]) -> None:
         ),
     ],
 )
-def test_compgen(input: dict[str, Any], expected: str) -> None:
+def test_compgen(input: dict[str, Any], expected: str) -> None:  # noqa: A002
     compgen = CompGen(**input)
     assert str(compgen) == expected
 

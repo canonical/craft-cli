@@ -26,7 +26,7 @@ logger = logging.getLogger()
 def strip_timestamps(text: str) -> str:
     lines = []
     for line in text.splitlines():
-        lines.append(line.split(" ", maxsplit=2)[-1])
+        lines.append(line.split(" ", maxsplit=2)[-1])  # noqa: PERF401
     return "\n".join(lines)
 
 
