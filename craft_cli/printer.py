@@ -20,19 +20,19 @@ from __future__ import annotations
 import itertools
 import math
 import os
+import pathlib
 import platform
 import queue
 import shutil
 import sys
 import threading
 import time
+import weakref
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any, Callable, TextIO
-
-if TYPE_CHECKING:
-    import pathlib
+from typing import Any, TextIO
 
 # the char used to draw the progress bar ('FULL BLOCK')
 _PROGRESS_BAR_SYMBOL = "█"
@@ -229,6 +229,7 @@ class Printer:
             self.spinner.start()
             if _supports_ansi_escape_sequences() and _stream_is_terminal(sys.stderr):
                 print(ANSI_HIDE_CURSOR, end="", file=sys.stderr, flush=True)
+        weakref.finalize(self, self.stop)
 
     def set_terminal_prefix(self, prefix: str) -> None:
         """Set the string to be prepended to every message shown to the terminal."""

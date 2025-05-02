@@ -18,12 +18,15 @@
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import difflib
-from typing import Any, Literal, NamedTuple, NoReturn, Optional, Sequence
+from collections.abc import Callable, Sequence
+from typing import Any, Literal, NamedTuple, NoReturn, Optional
 
 from craft_cli import EmitterMode, emit
 from craft_cli.errors import ArgumentParsingError, ProvideHelpException
 from craft_cli.helptexts import HelpBuilder, OutputFormat
+from craft_cli.utils import humanize_list
 
 
 class CommandGroup(NamedTuple):
@@ -43,7 +46,8 @@ class CommandGroup(NamedTuple):
     """Whether the commands in this group are already in the correct order (defaults to False)."""
 
 
-class GlobalArgument(NamedTuple):
+@dataclasses.dataclass
+class GlobalArgument:
     """Definition of a global argument to be handled by the Dispatcher."""
 
     name: str
@@ -63,6 +67,27 @@ class GlobalArgument(NamedTuple):
 
     help_message: str
     """the one-line text that describes the argument, for building the help texts."""
+
+    choices: list[str] | None = dataclasses.field(default=None)
+    """Valid choices for this option."""
+
+    validator: Callable[[str], Any] | None = dataclasses.field(default=None)
+    """A validator callable that converts the option input into the correct value.
+
+    The validator is called when parsing the argument. If it raises an exception, the
+    exception message will be used as part of the usage output. Otherwise, the return
+    value will be used as the content of this option.
+    """
+
+    case_sensitive: bool = True
+    """Whether the choices are case sensitive. Only used if choices are set."""
+
+    def __post_init__(self) -> None:
+        if self.type == "flag":
+            if self.choices is not None or self.validator is not None:
+                raise TypeError("A flag argument cannot have choices or a validator.")
+        elif self.choices and not self.case_sensitive:
+            self.choices = [choice.lower() for choice in self.choices]
 
 
 _DEFAULT_GLOBAL_ARGS = [
@@ -93,6 +118,9 @@ _DEFAULT_GLOBAL_ARGS = [
         None,
         "--verbosity",
         "Set the verbosity level to 'quiet', 'brief', 'verbose', 'debug' or 'trace'",
+        choices=[mode.name.lower() for mode in EmitterMode],
+        validator=lambda mode: EmitterMode[mode.upper()],
+        case_sensitive=False,
     ),
 ]
 
@@ -201,7 +229,7 @@ def _get_commands_info(commands_groups: list[CommandGroup]) -> dict[str, type[Ba
 class Dispatcher:
     """Set up infrastructure and let the needed command run.
 
-    ♪♫"Leeeeeet, the command ruuun"♪♫ https://www.youtube.com/watch?v=cv-0mmVnxPA
+    `♪♫"Leeeeeet, the command ruuun"♪♫ <https://www.youtube.com/watch?v=cv-0mmVnxPA>`_
 
     :param appname: the name of the application
     :param commands_groups: a list of command groups available to the user
@@ -381,7 +409,7 @@ class Dispatcher:
         """Parse arguments."""
         # get all arguments (default to what's specified) and those per options, to filter sysargs
         global_args: dict[str, Any] = {}
-        arg_per_option = {}
+        arg_per_option: dict[str, GlobalArgument] = {}
         options_with_equal = []
         for arg in defined_arguments:
             if arg.short_option is not None:
@@ -402,20 +430,33 @@ class Dispatcher:
                 arg = arg_per_option[sysarg]
                 if arg.type == "flag":
                     global_args[arg.name] = True
-                else:
-                    try:
-                        global_args[arg.name] = next(sysargs_it)
-                    except StopIteration:
-                        msg = f"The {arg.name!r} option expects one argument."
-                        raise self._build_usage_exc(msg) from None
+                    continue
+                option = sysarg
+                try:
+                    value = next(sysargs_it)
+                except StopIteration:
+                    msg = f"The {arg.name!r} option expects one argument."
+                    raise self._build_usage_exc(msg) from None
             elif sysarg.startswith(tuple(options_with_equal)):
                 option, value = sysarg.split("=", 1)
-                arg = arg_per_option[option]
-                if not value:
-                    raise self._build_usage_exc(f"The {arg.name!r} option expects one argument.")
-                global_args[arg.name] = value
             else:
                 filtered_sysargs.append(sysarg)
+                continue
+
+            arg = arg_per_option[option]
+            if not value:
+                raise self._build_usage_exc(f"The {arg.name!r} option expects one argument.")
+            if arg.choices is not None:
+                if not arg.case_sensitive:
+                    value = value.lower()
+                if value not in arg.choices:
+                    choices = humanize_list([f"'{choice}'" for choice in arg.choices])
+                    raise self._build_usage_exc(
+                        f"Bad {arg.name} {value!r}; valid values are {choices}."
+                    )
+
+            validator = arg.validator or str
+            global_args[arg.name] = validator(value)
         return global_args, filtered_sysargs
 
     def pre_parse_args(self, sysargs: list[str], app_config: Any = None) -> dict[str, Any]:
@@ -442,15 +483,8 @@ class Dispatcher:
             emit.set_mode(EmitterMode.QUIET)
         elif global_args["verbose"]:
             emit.set_mode(EmitterMode.VERBOSE)
-        elif global_args["verbosity"]:
-            try:
-                verbosity_level = EmitterMode[global_args["verbosity"].upper()]
-            except KeyError:
-                raise self._build_usage_exc(
-                    "Bad verbosity level; valid values are "
-                    "'quiet', 'brief', 'verbose', 'debug' and 'trace'."
-                ) from None
-            emit.set_mode(verbosity_level)
+        elif verbosity := global_args["verbosity"]:
+            emit.set_mode(verbosity)
         emit.trace(f"Raw pre-parsed sysargs: args={global_args} filtered={filtered_sysargs}")
 
         # handle requested help through -h/--help options

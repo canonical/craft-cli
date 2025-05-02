@@ -7,8 +7,10 @@ authors = [
 ]
 dependencies = [
     "platformdirs",
-    "pyyaml",
-    "pywin32; sys_platform == 'win32'"
+    "pywin32; sys_platform == 'win32'",
+    "jinja2>=3.1.5",
+    "overrides>=7.7.0",
+    "typing-extensions",
 ]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -19,11 +21,11 @@ classifiers = [
     "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX :: Linux",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
 ]
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 
 [project.license]
 file = "LICENSE"
@@ -47,7 +49,7 @@ dev = [
     "pytest==8.3.3",
     "pytest-cov==5.0.0",
     "pytest-mock==3.14.0",
-    "pytest-subprocess"
+    "pytest-subprocess",
 ]
 lint = [
     "codespell[toml]==2.3.0",
@@ -120,7 +122,7 @@ exclude_also = [
 
 [tool.pyright]
 #strict = ["craft_cli"] # NOTE: disabled pending fix of the many errors (see gh issue #147)
-pythonVersion = "3.8"
+pythonVersion = "3.10"
 pythonPlatform = "Linux"
 ignore = [
     "build/**",
@@ -129,7 +131,7 @@ ignore = [
 ]
 
 [tool.mypy]
-python_version = "3.8"
+python_version = "3.10"
 exclude = [
     "build",
     "tests",
@@ -156,7 +158,7 @@ strict = false
 
 [tool.ruff]
 line-length = 99
-target-version = "py38"
+target-version = "py310"
 src = ["craft_cli", "tests"]
 extend-exclude = [
     "docs",
@@ -244,6 +246,7 @@ lint.ignore = [
 
     "ANN401", # Disallow Any in parameters (reason: too restrictive)
     "ISC001", # Avoid potential issues with formatting
+    "TC003",  # Allow imported types only used in type checking outside of typecheck guard
 ]
 
 [tool.ruff.lint.per-file-ignores]

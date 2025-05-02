@@ -4,12 +4,14 @@ APIs
 balancer
 Charmhub
 CLI
+DD
 dropdown
 Diátaxis
 EBS
 EKS
 favicon
 Furo
+getter
 Grafana
 IAM
 installable
@@ -18,6 +20,7 @@ Juju
 Kubernetes
 Kubeflow
 Makefile
+MMM
 MyST
 namespace
 namespaces
@@ -33,6 +36,10 @@ RTD
 subdirectories
 subtree
 subfolders
+Subpackages
+testcraft
 UI
+utils
 VM
 YAML
+YYYY

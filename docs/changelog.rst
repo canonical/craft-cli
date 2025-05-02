@@ -7,10 +7,34 @@ Changelog
 See the `Releases page`_ on GitHub for a complete list of commits that are
 included in each version.
 
-2.14.0 (2025-Jan-DD)
+3.0.0 (2025-Mar-27)
+-------------------
+
+Breaking changes
+
+    - Deprecates support for Python 3.8 and adds support for Python 3.11
+      and 3.12.
+
+New features
+
+    - Add an ``append_to_log`` method to the emitter, which reads from a file
+      and dumps it directly into the log.
+    - Add a ``log_filepath`` read-only property to the emitter.
+
+2.15.0 (2025-Jan-23)
+--------------------
+
+This release deprecates craft-cli 2.14.0, which is considered broken and
+should not be used.
+
+- Fixes an error with the ``completion`` module's interaction with newer
+  projects based on craft-application.
+
+2.14.0 (2025-Jan-21)
 --------------------
 
 - Add a ``prompt`` method to the emitter for asking user for an input.
+- Add a ``completion`` module for generating bash auto-completion scripts.
 
 2.13.0 (2024-Dec-16)
 --------------------

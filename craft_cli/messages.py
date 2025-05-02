@@ -33,9 +33,10 @@ import select
 import sys
 import threading
 import traceback
+from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Callable, Generator, Literal, TextIO, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Literal, TextIO, TypeVar, cast
 
 import platformdirs
 
@@ -420,7 +421,7 @@ def _active_guard(ignore_when_stopped: bool = False) -> Callable[..., Any]:  # n
                 raise RuntimeError("Emitter is stopped already")
             return wrapped_func(self, *args, **kwargs)
 
-        return cast(FuncT, func)
+        return cast("FuncT", func)
 
     return decorator
 
@@ -780,6 +781,18 @@ class Emitter:
         self._stop()
 
     @_active_guard()
+    def append_to_log(self, file: TextIO, prefix: str = ":: ") -> None:
+        """Dump the contents of an external log file into the emitter log.
+
+        :param file: A file I/O object to read from
+        :param prefix: A prefix for every line printed. Defaults to ":: ".
+        """
+        for line in file:
+            text = f"{prefix}{line}"
+            self._printer.log.write(text)
+        self._printer.log.flush()
+
+    @_active_guard()
     def set_secrets(self, secrets: list[str]) -> None:
         """Set the list of strings that should be masked out in all output."""
         self._printer.set_secrets(secrets)
@@ -828,6 +841,11 @@ class Emitter:
         if not val:
             raise errors.CraftError("input cannot be empty")
         return val
+
+    @property
+    def log_filepath(self) -> pathlib.Path:
+        """The path to the log file."""
+        return self._log_filepath
 
 
 # module-level instantiated Emitter; this is the instance all code shall use and Emitter

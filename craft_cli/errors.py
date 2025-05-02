@@ -20,7 +20,7 @@ __all__ = [
     "CraftError",
 ]
 
-from typing import Any, Optional, Union, cast
+from typing import Any, cast
 
 
 class CraftError(Exception):
@@ -31,18 +31,18 @@ class CraftError(Exception):
       according to the different modes); note that in some cases the log location will be
       attached to this message."""
 
-    details: Optional[str]
+    details: str | None
     """The full error details received from a third party which originated the error
       situation."""
 
-    resolution: Optional[str]
+    resolution: str | None
     """An extra line indicating to the user how the error may be fixed or avoided (to be
       shown together with ``message``)."""
 
-    docs_url: Optional[str]
+    docs_url: str | None
     """An URL to point the user to documentation (to be shown together with ``message``)."""
 
-    doc_slug: Optional[str]
+    doc_slug: str | None
     """The slug to the user documentation. Needs a base url to form a full address.
       Note that ``docs_url`` has preference if it is set."""
 
@@ -60,13 +60,13 @@ class CraftError(Exception):
         self,
         message: str,
         *,
-        details: Optional[str] = None,
-        resolution: Optional[str] = None,
-        docs_url: Optional[str] = None,
+        details: str | None = None,
+        resolution: str | None = None,
+        docs_url: str | None = None,
         logpath_report: bool = True,
         reportable: bool = True,
         retcode: int = 1,
-        doc_slug: Optional[str] = None,
+        doc_slug: str | None = None,
     ) -> None:
         super().__init__(message)
         self.details = details
@@ -108,18 +108,16 @@ class CraftCommandError(CraftError):
     is helpful enough to the user to be worth the extra text output.
     """
 
-    def __init__(
-        self, message: str, *, stderr: Optional[Union[str, bytes]], **kwargs: Any
-    ) -> None:
+    def __init__(self, message: str, *, stderr: str | bytes | None, **kwargs: Any) -> None:
         super().__init__(message, **kwargs)
         self._stderr = stderr
 
     @property
-    def stderr(self) -> Optional[str]:
+    def stderr(self) -> str | None:
         if isinstance(self._stderr, bytes):
             return self._stderr.decode("utf8", errors="replace")
         # pyright needs the cast here
-        return cast(Optional[str], self._stderr)  # type: ignore[redundant-cast]
+        return cast("str | None", self._stderr)  # type: ignore[redundant-cast]
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, CraftCommandError):
