@@ -173,7 +173,7 @@ class HelpBuilder:
         - all commands grouped, just listed
         - more help and documentation
         """
-        textblocks = []
+        textblocks: list[str] = []
 
         # title
         textblocks.append(HEADER.format(appname=self.appname))
@@ -185,7 +185,7 @@ class HelpBuilder:
         max_title_len = 0
 
         # collect common commands
-        common_commands = []
+        common_commands: list[type[BaseCommand]] = []
         for command_group in self.command_groups:
             max_title_len = max(len(command_group.name), max_title_len)
             for cmd in command_group.commands:
@@ -249,7 +249,7 @@ class HelpBuilder:
         - all commands shown with description, grouped
         - more help and documentation
         """
-        textblocks = []
+        textblocks: list[str] = []
 
         # title
         textblocks.append(HEADER.format(appname=self.appname))
@@ -310,7 +310,7 @@ class HelpBuilder:
         - other related commands
         - help for all commands and documentation
         """
-        textblocks = []
+        textblocks: list[str] = []
 
         textblocks.append(
             textwrap.dedent(
@@ -328,7 +328,7 @@ class HelpBuilder:
         textblocks.append(f"Summary:{overview}")
 
         # column alignment is dictated by longest options title
-        max_title_len = max(len(title) for title, text in options)
+        max_title_len = max(len(title) for title, _ in options)
 
         if parameters:
             # command positional arguments
@@ -385,7 +385,7 @@ class HelpBuilder:
         - options
         - other related commands
         """
-        textblocks = []
+        textblocks: list[str] = []
 
         textblocks.append(
             textwrap.dedent(
@@ -452,8 +452,8 @@ class HelpBuilder:
         """
         # separate all arguments into the parameters and optional ones, just checking
         # if first char is a dash
-        parameters = []
-        options = []
+        parameters: list[tuple[str, str]] = []
+        options: list[tuple[str, str]] = []
         for name, title in arguments:
             if title is HIDDEN:
                 continue

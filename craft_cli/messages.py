@@ -40,13 +40,6 @@ from typing import TYPE_CHECKING, Any, Literal, TextIO, TypeVar, cast
 
 import platformdirs
 
-try:
-    import win32pipe  # type: ignore[import]
-
-    _WINDOWS_MODE = True
-except ImportError:
-    _WINDOWS_MODE = False
-
 from craft_cli import errors
 from craft_cli.printer import Printer
 
@@ -207,7 +200,9 @@ class _PipeReaderThread(threading.Thread):
         # one which is to be written externally (and also used internally under windows
         # to unblock the reading); also note that the pipe pair themselves depend
         # on the platform
-        if _WINDOWS_MODE:
+        if sys.platform == "win32":
+            import win32pipe
+
             # parameters: default security, default buffer size, binary mode
             binary_mode = os.O_BINARY
             # ignoring the type of the first parameter below, as documentation allows to use None
@@ -290,7 +285,7 @@ class _PipeReaderThread(threading.Thread):
 
     def run(self) -> None:
         """Run the thread."""
-        if _WINDOWS_MODE:
+        if sys.platform == "win32":
             self._run_windows()
         else:
             self._run_posix()
@@ -304,7 +299,7 @@ class _PipeReaderThread(threading.Thread):
         Under Windows it inserts an extra byte in the pipe to unblock the reading.
         """
         self.stop_flag = True
-        if _WINDOWS_MODE:
+        if sys.platform == "win32":
             os.write(self.write_pipe, self.UNBLOCK_BYTE)
         self.join()
         os.close(self.read_pipe)
@@ -423,9 +418,9 @@ def _active_guard(ignore_when_stopped: bool = False) -> Callable[..., Any]:  # n
     def decorator(wrapped_func: FuncT) -> FuncT:
         @functools.wraps(wrapped_func)
         def func(self: Emitter, *args: Any, **kwargs: Any) -> Any:  # noqa: ANN401
-            if not self._initiated:
+            if not self._initiated:  # type: ignore[reportPrivateUsage]
                 raise RuntimeError("Emitter needs to be initiated first")
-            if self._stopped:
+            if self._stopped:  # type: ignore[reportPrivateUsage]
                 if ignore_when_stopped:
                     return None
                 raise RuntimeError("Emitter is stopped already")

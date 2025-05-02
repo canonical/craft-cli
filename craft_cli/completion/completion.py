@@ -27,8 +27,7 @@ from pathlib import Path
 from typing import Any, cast
 
 import jinja2
-from overrides import override
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 import craft_cli
 
@@ -97,7 +96,7 @@ class CompGen:
     glob_pattern: str | None = None
     prefix: str | None = None
     suffix: str | None = None
-    words: list[str] = dataclasses.field(default_factory=list)
+    words: list[str] = cast("list[str]", dataclasses.field(default_factory=list))
     filter_pattern: str | None = None
 
     def __str__(self) -> str:

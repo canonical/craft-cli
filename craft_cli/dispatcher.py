@@ -297,7 +297,7 @@ class Dispatcher:
 
     def _get_global_options(self) -> list[tuple[str, str]]:
         """Return the global flags ready to present in the help messages as options."""
-        options = []
+        options: list[tuple[str, str]] = []
         for arg in self.global_arguments:
             if arg.short_option is None:
                 indicator = f"{arg.long_option}"
@@ -428,7 +428,7 @@ class Dispatcher:
         # get all arguments (default to what's specified) and those per options, to filter sysargs
         global_args: dict[str, Any] = {}
         arg_per_option: dict[str, GlobalArgument] = {}
-        options_with_equal = []
+        options_with_equal: list[str] = []
         for arg in defined_arguments:
             if arg.short_option is not None:
                 arg_per_option[arg.short_option] = arg
@@ -441,7 +441,7 @@ class Dispatcher:
             else:
                 raise ValueError("Bad args structure.")
 
-        filtered_sysargs = []
+        filtered_sysargs: list[str] = []
         sysargs_it = iter(sysargs)
         for sysarg in sysargs_it:
             if sysarg in arg_per_option:
