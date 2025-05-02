@@ -1370,6 +1370,7 @@ def _parse_timestamp(text):
     return tstamp
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize(
     ("loops", "sleep", "max_repetitions"),
     [
@@ -1613,6 +1614,7 @@ def init_emitter():
     """Empty fixture to disable the "global", autouse init_emitter."""
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("output_is_terminal", [True])
 def test_streaming_brief_spinner(capsys, logger, monkeypatch, init_emitter):
     """Test the interaction between the "streaming brief" mode and the spinner."""
