@@ -179,7 +179,9 @@ def example_16() -> None:
     emit.progress("Deciding to build a computer or upload it...")
     time.sleep(1.5)
 
-    with emit.progress_bar("Uploading computer: planetary model", 1788, delta=False) as progress:
+    with emit.progress_bar(
+        "Uploading computer: planetary model", 1788, delta=False
+    ) as progress:
         for uploaded in [500, 1000, 1500, 1788]:
             progress.advance(uploaded)
             time.sleep(1.5)
@@ -207,7 +209,9 @@ def example_18() -> None:
     """Show information that comes from a subprocess execution as a stream."""
     emit.set_mode(EmitterMode.TRACE)
 
-    with emit.open_stream("Running a two parts something that will take time") as stream:
+    with emit.open_stream(
+        "Running a two parts something that will take time"
+    ) as stream:
         cmd = ["bash", "-c", "sleep 5 && echo Part 1 && sleep 5 && echo Part 2"]
         subprocess.run(cmd, stdout=stream, stderr=stream, check=True)
     emit.message("All done.")
@@ -227,7 +231,9 @@ def example_20() -> None:
     emit.set_mode(EmitterMode.TRACE)
 
     with emit.open_stream("Running a simple Windows command") as stream:
-        subprocess.run(["python.exe", "-V"], stdout=stream, stderr=subprocess.STDOUT, check=True)
+        subprocess.run(
+            ["python.exe", "-V"], stdout=stream, stderr=subprocess.STDOUT, check=True
+        )
     emit.message("Great!")
 
 
@@ -258,7 +264,11 @@ def _run_subprocess_with_emitter(mode: EmitterMode) -> None:
         emit.progress("We're about to test a sub app")
         time.sleep(3)
         with emit.pause():
-            subprocess.run([sys.executable, file.name, mode.name], env={"PYTHONPATH": Path.cwd()}, check=True)
+            subprocess.run(
+                [sys.executable, file.name, mode.name],
+                env={"PYTHONPATH": Path.cwd()},
+                check=True,
+            )
             # note we cannot use `emit` while paused!
     emit.message("All done!")
 
@@ -296,9 +306,17 @@ def example_23() -> None:
         file.write(example_test_sub_app)
         emit.progress("Running subprocess...")
         cmd = [sys.executable, file.name]
-        proc = subprocess.run(cmd, env={"PYTHONPATH": Path.cwd()}, capture_output=True, text=True, check=True)
+        proc = subprocess.run(
+            cmd,
+            env={"PYTHONPATH": Path.cwd()},
+            capture_output=True,
+            text=True,
+            check=True,
+        )
     emit.message("Captured output:")
-    for line in filter(None, itertools.chain(proc.stderr.split("\n"), proc.stdout.split("\n"))):
+    for line in filter(
+        None, itertools.chain(proc.stderr.split("\n"), proc.stdout.split("\n"))
+    ):
         emit.message(f":: {line}")
 
 
@@ -369,13 +387,21 @@ def example_26() -> None:
         time.sleep(2)
         with emit.pause():
             cmd = [sys.executable, file.name]
-            subprocess.run(cmd, env={"PYTHONPATH": Path.cwd()}, capture_output=False, text=True, check=True)
+            subprocess.run(
+                cmd,
+                env={"PYTHONPATH": Path.cwd()},
+                capture_output=False,
+                text=True,
+                check=True,
+            )
     emit.progress("seamless progress #4")
     time.sleep(2)
     emit.message("Application End.")
 
 
-def _run_noisy_subprocess(mode_name: str, total_messages: int, subprocess_code: str) -> None:
+def _run_noisy_subprocess(
+    mode_name: str, total_messages: int, subprocess_code: str
+) -> None:
     """Capture the output of a noisy subprocess in different modes."""
     mode = EmitterMode[mode_name.upper()]
     emit.set_mode(mode)
@@ -444,7 +470,7 @@ def example_28(mode_name: str, total_messages: int = 10) -> None:
 
 def example_29(
     mode_name: str,
-    streaming_brief: bool = False  # noqa: FBT001, FBT002
+    streaming_brief: bool = False,  # noqa: FBT001, FBT002
 ) -> None:
     """Support some library logging."""
     logger = logging.getLogger()
@@ -492,7 +518,8 @@ def example_30() -> None:
         emit.progress("SPAM SPAM SPAM SPAM")
         time.sleep(0.001)
     emit.progress(
-        "Now two separate messages will be spammed and no spinner appear.", permanent=True
+        "Now two separate messages will be spammed and no spinner appear.",
+        permanent=True,
     )
     end_time = time.monotonic() + 10
     while time.monotonic() < end_time:

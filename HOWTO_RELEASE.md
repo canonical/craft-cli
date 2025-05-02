@@ -6,7 +6,6 @@ To use this doc: just replace X.Y.Z with the major.minor.patch version of
 the release. The sequence of commands below should be good to copy and
 paste, but please pay attention to details!
 
-
 ## Preparation
 
 - update main and run tests to verify all is green
@@ -14,7 +13,6 @@ paste, but please pay attention to details!
     git fetch upstream
     git merge upstream/main
     make tests
-
 
 ### if it's a minor release (Z == 0)
 
@@ -36,7 +34,6 @@ paste, but please pay attention to details!
     git tag -s X.Y.Z
     git push --tags
 
-
 ### if it's a micro release (Z != 0)
 
 - go to the release branch
@@ -45,8 +42,8 @@ paste, but please pay attention to details!
 
 - cherry pick the needed commits from main:
 
-   git cherry-pick -m 1 COMMIT-HASH
-   ...
+    git cherry-pick -m 1 COMMIT-HASH
+    ...
 
 - create release notes from the selected commits
 
@@ -56,7 +53,6 @@ paste, but please pay attention to details!
 
     git tag -s X.Y.Z
     git push --tags
-
 
 ## Check all is ready
 
@@ -72,18 +68,17 @@ paste, but please pay attention to details!
     mkdir /tmp/testrelease
     cp dist/craft-cli-X.Y.Z.tar.gz /tmp/testrelease/
     cd /tmp/testrelease/
-    deactivate  # to be sure nothing is picked from a previous virtualenv
+    deactivate # to be sure nothing is picked from a previous virtualenv
     tar -xf craft-cli-X.Y.Z.tar.gz
     python3 -m venv env
     env/bin/pip install file:///tmp/testrelease/craft-cli-X.Y.Z
     PYTHONPATH=craft-cli-X.Y.Z env/bin/python -c "
-        from craft_cli import EmitterMode, emit
-        emit.init(EmitterMode.BRIEF, 'explorator', 'Greetings earthlings')
-        emit.message('The meaning of life is 42.')
-        "
+    from craft_cli import EmitterMode, emit
+    emit.init(EmitterMode.BRIEF, 'explorator', 'Greetings earthlings')
+    emit.message('The meaning of life is 42.')
+    "
     deactivate
     cd -
-
 
 ## Release
 
@@ -101,8 +96,7 @@ paste, but please pay attention to details!
 
 - release to PyPI
 
-    fades -d twine -x twine upload --verbose dist/*
-
+    fades -d twine -x twine upload --verbose dist/\*
 
 ## Final details
 

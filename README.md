@@ -6,10 +6,10 @@ Interface](https://discourse.ubuntu.com/c/design/cli-guidelines/62).
 
 The library provides two main functionalities:
 
--   a framework to define and execute application commands, which
-    involves argument parsing and the provision of help texts
--   infrastructure to handle the terminal and present all the outputs
-    for the different application needs
+- a framework to define and execute application commands, which
+  involves argument parsing and the provision of help texts
+- infrastructure to handle the terminal and present all the outputs
+  for the different application needs
 
 ## Documentation
 
