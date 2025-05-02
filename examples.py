@@ -1,32 +1,35 @@
 #!/bin/env python3
 
+"""Usage examples for Craft CLI."""
+
 import itertools
 import logging
-import os
 import subprocess
 import sys
 import tempfile
 import textwrap
 import time
+from pathlib import Path
+from typing import NoReturn
 
 from craft_cli import CraftError, EmitterMode, emit
 
 USAGE = """
-USAGE: explorator.py <test_id> [<extra1>, [...]]")
+USAGE: examples.py <test_id> [<extra1>, [...]]")
 
 E.g.:
-    explorator.py 04
-    explorator.py 32 brief extrastuff
+    examples.py 04
+    examples.py 32 brief extrastuff
 """
 
 
-def example_01():
+def example_01() -> None:
     """Show a simple message, the expected command result."""
     value = 42
     emit.message(f"The meaning of life is {value}.")
 
 
-def example_02():
+def example_02() -> None:
     """Show some progress, then the result."""
     emit.message("We need to know!")
     emit.progress("Building computer...")
@@ -36,7 +39,7 @@ def example_02():
     emit.message("The meaning of life is 42.")
 
 
-def example_03():
+def example_03() -> None:
     """Show some progress, with one long delay message, then the result."""
     emit.message("We need to know!")
     emit.progress("Building computer...")
@@ -46,7 +49,7 @@ def example_03():
     emit.message("The meaning of life is 42.")
 
 
-def example_04():
+def example_04() -> None:
     """Show a progress bar in brief mode."""
     emit.message("We need to know!")
     emit.progress("Deciding to build a computer or upload it...")
@@ -62,52 +65,52 @@ def example_04():
     emit.message("The meaning of life is 42.")
 
 
-def example_05():
+def example_05() -> None:
     """Show a verbose/debug/trace messages when it makes sense."""
     # set _mode directly to avoid the greeting and log messages that appear when using set_mode()
     for mode in EmitterMode:
-        emit._mode = mode
+        emit._mode = mode  # noqa: SLF001
         emit.verbose(f"Verbose message when mode={mode}")
     for mode in EmitterMode:
-        emit._mode = mode
+        emit._mode = mode  # noqa: SLF001
         emit.debug(f"Debug message when mode={mode}")
     for mode in EmitterMode:
-        emit._mode = mode
+        emit._mode = mode  # noqa: SLF001
         emit.trace(f"Trace message when mode={mode}")
 
 
-def example_06():
+def example_06() -> None:
     """Very long emit."""
     msg = ""
     for i in range(30):
-        msg += "progress ephemeral blah {} ".format(i)
+        msg += f"progress ephemeral blah {i} "
     emit.progress(msg)
 
     time.sleep(5)
 
     msg = ""
     for i in range(30):
-        msg += "progress permanent blah {} ".format(i)
+        msg += f"progress permanent blah {i} "
     emit.progress(msg, permanent=True)
 
     time.sleep(5)
 
     msg = ""
     for i in range(30):
-        msg += "final bleh {} ".format(i)
+        msg += f"final bleh {i} "
     emit.message(msg)
 
 
-def example_07():
+def example_07() -> None:
     """Show information that comes from a subprocess execution as a stream."""
     emit.set_mode(EmitterMode.TRACE)
 
     with emit.open_stream("Running ls") as stream:
-        subprocess.run(["ls", "-l"], stdout=stream, stderr=stream)
+        subprocess.run(["ls", "-l"], stdout=stream, stderr=stream, check=True)
     emit.message("Great!")
 
 
-def example_08():
+def example_08() -> None:
     """Show some progress that are permanent, mixed with ephemeral, then the result."""
     emit.message("We need to know!")
     emit.progress("Building computer...", permanent=True)
@@ -119,38 +122,36 @@ def example_08():
     emit.message("The meaning of life is 42.")
 
 
-def example_09():
+def example_09() -> None:
     """Show a very simple error."""
     path = "/dev/null"
     raise CraftError(f"The file is broken; path={path!r}")
 
 
-def example_10():
-    """An error from a 3rd API, normal mode."""
-    # emit.set_mode(EmitterMode.TRACE)
+def example_10() -> None:
+    """Show an error from a 3rd API, normal mode."""
     error = {"message": "Invalid channel", "code": "BAD-CHANNEL"}
     raise CraftError("Invalid channel (code 'BAD-CHANNEL')", details=repr(error))
 
 
-def example_11():
+def example_11() -> None:
     """Unexpected problem, normal mode."""
     raise ValueError("pumba")
 
 
-def example_12():
+def example_12() -> None:
     """Unexpected problem, verbose."""
     emit.set_mode(EmitterMode.TRACE)
     raise ValueError("pumba")
 
 
-def example_13():
+def example_13() -> None:
     """User cancelled."""
-    # emit.set_mode(EmitterMode.TRACE)
     emit.progress("Will hang...")
     time.sleep(120)
 
 
-def example_14():
+def example_14() -> None:
     """Support some library logging."""
     logger = logging.getLogger()
     logger.setLevel(0)
@@ -164,7 +165,7 @@ def example_14():
         logger.log(5, "   some logging in custom level 5")
 
 
-def example_15():
+def example_15() -> None:
     """Specific combination of long message with final message in TRACE."""
     emit.set_mode(EmitterMode.TRACE)
     emit.progress("Asking question...")
@@ -172,7 +173,7 @@ def example_15():
     emit.message("The meaning of life is 42.")
 
 
-def example_16():
+def example_16() -> None:
     """Show a progress bar, but advancing with totals."""
     emit.message("We need to know!")
     emit.progress("Deciding to build a computer or upload it...")
@@ -188,10 +189,10 @@ def example_16():
     emit.message("The meaning of life is 42.")
 
 
-def example_17():
+def example_17() -> None:
     """Raise an error chaining other."""
 
-    def f():
+    def f() -> None:
         raise ValueError("pumba")
 
     emit.set_mode(EmitterMode.VERBOSE)
@@ -202,17 +203,17 @@ def example_17():
         raise CraftError("Exploded while working :(") from exc
 
 
-def example_18():
+def example_18() -> None:
     """Show information that comes from a subprocess execution as a stream."""
     emit.set_mode(EmitterMode.TRACE)
 
     with emit.open_stream("Running a two parts something that will take time") as stream:
-        cmd = "sleep 5 && echo Part 1 && sleep 5 && echo Part 2"
-        subprocess.run(cmd, stdout=stream, stderr=stream, shell=True)
+        cmd = ["bash", "-c", "sleep 5 && echo Part 1 && sleep 5 && echo Part 2"]
+        subprocess.run(cmd, stdout=stream, stderr=stream, check=True)
     emit.message("All done.")
 
 
-def example_19():
+def example_19() -> None:
     """Support some deep inside library logging."""
     emit.set_mode(EmitterMode.TRACE)
 
@@ -221,16 +222,16 @@ def example_19():
     logger.debug("Some logging in DEBUG")
 
 
-def example_20():
+def example_20() -> None:
     """Show information that comes from a subprocess execution as a stream, Windows version."""
     emit.set_mode(EmitterMode.TRACE)
 
     with emit.open_stream("Running a simple Windows command") as stream:
-        subprocess.run(["python.exe", "-V"], stdout=stream, stderr=subprocess.STDOUT)
+        subprocess.run(["python.exe", "-V"], stdout=stream, stderr=subprocess.STDOUT, check=True)
     emit.message("Great!")
 
 
-def _run_subprocess_with_emitter(mode):
+def _run_subprocess_with_emitter(mode: EmitterMode) -> None:
     """Write a temp app that uses emitter and run it."""
     emit.set_mode(mode)
 
@@ -252,30 +253,27 @@ def _run_subprocess_with_emitter(mode):
         emit.ended_ok()
     """
     )
-    temp_fh, temp_name = tempfile.mkstemp()
-    with open(temp_fh, "wt", encoding="utf8") as fh:
-        fh.write(example_test_sub_app)
-
-    emit.progress("We're about to test a sub app")
-    time.sleep(3)
-    with emit.pause():
-        subprocess.run([sys.executable, temp_name, mode.name], env={"PYTHONPATH": os.getcwd()})
-        # note we cannot use `emit` while paused!
-    os.unlink(temp_name)
+    with tempfile.NamedTemporaryFile("w", encoding="utf8") as file:
+        file.write(example_test_sub_app)
+        emit.progress("We're about to test a sub app")
+        time.sleep(3)
+        with emit.pause():
+            subprocess.run([sys.executable, file.name, mode.name], env={"PYTHONPATH": Path.cwd()}, check=True)
+            # note we cannot use `emit` while paused!
     emit.message("All done!")
 
 
-def example_21():
+def example_21() -> None:
     """Run an app that uses emitter in a subprocess, pausing the external control, brief mode."""
     _run_subprocess_with_emitter(EmitterMode.BRIEF)
 
 
-def example_22():
+def example_22() -> None:
     """Run an app that uses emitter in a subprocess, pausing the external control, trace mode."""
     _run_subprocess_with_emitter(EmitterMode.TRACE)
 
 
-def example_23():
+def example_23() -> None:
     """Capture output from an app that uses emitter."""
     emit.set_mode(EmitterMode.TRACE)
 
@@ -294,20 +292,17 @@ def example_23():
         emit.ended_ok()
     """
     )
-    temp_fh, temp_name = tempfile.mkstemp()
-    with open(temp_fh, "wt", encoding="utf8") as fh:
-        fh.write(example_test_sub_app)
-
-    emit.progress("Running subprocess...")
-    cmd = [sys.executable, temp_name]
-    proc = subprocess.run(cmd, env={"PYTHONPATH": os.getcwd()}, capture_output=True, text=True)
-    os.unlink(temp_name)
+    with tempfile.NamedTemporaryFile("w", encoding="utf8") as file:
+        file.write(example_test_sub_app)
+        emit.progress("Running subprocess...")
+        cmd = [sys.executable, file.name]
+        proc = subprocess.run(cmd, env={"PYTHONPATH": Path.cwd()}, capture_output=True, text=True, check=True)
     emit.message("Captured output:")
     for line in filter(None, itertools.chain(proc.stderr.split("\n"), proc.stdout.split("\n"))):
         emit.message(f":: {line}")
 
 
-def example_24():
+def example_24() -> None:
     """Show a progress bar in verbose mode."""
     emit.set_mode(EmitterMode.VERBOSE)
 
@@ -325,7 +320,7 @@ def example_24():
     emit.message("The meaning of life is 42.")
 
 
-def example_25():
+def example_25() -> None:
     """Show a progress bar in debug mode."""
     emit.set_mode(EmitterMode.DEBUG)
 
@@ -343,7 +338,7 @@ def example_25():
     emit.message("The meaning of life is 42.")
 
 
-def example_26():
+def example_26() -> None:
     """Show emitter progress message handover.
 
     This example demonstrates seamless emitter progress message handover
@@ -366,41 +361,37 @@ def example_26():
         emit.ended_ok()
     """
     )
-    temp_fh, temp_name = tempfile.mkstemp()
-    with open(temp_fh, "wt", encoding="utf8") as fh:
-        fh.write(lxd_craft_tool)
+    with tempfile.NamedTemporaryFile(mode="w", encoding="utf8") as file:
+        file.write(lxd_craft_tool)
 
-    emit.message("Application Start.")
-    emit.progress("seamless progress #1")
-    time.sleep(2)
-    with emit.pause():
-        cmd = [sys.executable, temp_name]
-        subprocess.run(cmd, env={"PYTHONPATH": os.getcwd()}, capture_output=False, text=True)
-        os.unlink(temp_name)
+        emit.message("Application Start.")
+        emit.progress("seamless progress #1")
+        time.sleep(2)
+        with emit.pause():
+            cmd = [sys.executable, file.name]
+            subprocess.run(cmd, env={"PYTHONPATH": Path.cwd()}, capture_output=False, text=True, check=True)
     emit.progress("seamless progress #4")
     time.sleep(2)
     emit.message("Application End.")
 
 
-def _run_noisy_subprocess(mode_name, total_messages, subprocess_code):
+def _run_noisy_subprocess(mode_name: str, total_messages: int, subprocess_code: str) -> None:
     """Capture the output of a noisy subprocess in different modes."""
     mode = EmitterMode[mode_name.upper()]
     emit.set_mode(mode)
 
-    temp_fh, temp_name = tempfile.mkstemp()
-    with open(temp_fh, "wt", encoding="utf8") as fh:
-        fh.write(subprocess_code)
+    with tempfile.NamedTemporaryFile("w", encoding="utf8") as file:
+        file.write(subprocess_code)
+        emit.progress("About to run a noisy subprocess")
+        time.sleep(1)
+        with emit.open_stream("Running custom Python app in unbuffered mode") as stream:
+            cmd = [sys.executable, "-u", file.name, str(total_messages)]
+            subprocess.check_call(cmd, stdout=stream, stderr=stream)
 
-    emit.progress("About to run a noisy subprocess")
-    time.sleep(1)
-    with emit.open_stream("Running custom Python app in unbuffered mode") as stream:
-        cmd = [sys.executable, "-u", temp_name, str(total_messages)]
-        subprocess.check_call(cmd, stdout=stream, stderr=stream)
-    os.unlink(temp_name)
     emit.message("All done!")
 
 
-def example_27(mode_name, total_messages=10):
+def example_27(mode_name: str, total_messages: int = 10) -> None:
     """Capture the output of a noisy subprocess in different modes."""
     example_test_sub_app = textwrap.dedent(
         """
@@ -424,7 +415,7 @@ def example_27(mode_name, total_messages=10):
     _run_noisy_subprocess(mode_name, total_messages, example_test_sub_app)
 
 
-def example_28(mode_name, total_messages=10):
+def example_28(mode_name: str, total_messages: int = 10) -> None:
     """Capture the multi-line, tab-containing output of a noisy subprocess."""
     example_test_sub_app = textwrap.dedent(
         """
@@ -451,13 +442,16 @@ def example_28(mode_name, total_messages=10):
     _run_noisy_subprocess(mode_name, total_messages, example_test_sub_app)
 
 
-def example_29(mode_name, streaming_brief):
+def example_29(
+    mode_name: str,
+    streaming_brief: bool = False  # noqa: FBT001, FBT002
+) -> None:
     """Support some library logging."""
     logger = logging.getLogger()
     logger.setLevel(0)
 
     mode = EmitterMode[mode_name.upper()]
-    emit.init(mode, "example_29", "Hi", streaming_brief=bool(int(streaming_brief)))
+    emit.init(mode, "example_29", "Hi", streaming_brief=streaming_brief)
 
     emit.progress(f"Mode set to {mode}", permanent=True)
 
@@ -474,7 +468,7 @@ def example_29(mode_name, streaming_brief):
     emit.progress("Finished lib3", permanent=True)
 
 
-def _call_lib(logger, index):
+def _call_lib(logger: logging.Logger, index: int) -> None:
     lib = f"lib{index}"
 
     time.sleep(2)
@@ -486,8 +480,8 @@ def _call_lib(logger, index):
     time.sleep(2)
 
 
-def example_30():
-    """Message spamming, noting the different spinner behaviour"""
+def example_30() -> None:
+    """Message spamming, noting the different spinner behaviour."""
     emit.progress(
         "Message spamming example. The same message will be spammed for 10s, but "
         "it will appear as one message with a spinner.",
@@ -513,7 +507,7 @@ def example_30():
         time.sleep(0.001)
 
 
-def example_31():
+def example_31() -> None:
     """Multiline error message."""
     emit.progress("Setting up computer for build...")
     time.sleep(1)
@@ -521,25 +515,27 @@ def example_31():
     time.sleep(6)
     raise CraftError("Error 1\nError 2")
 
-def example_32():
+
+def example_32() -> NoReturn:
+    """Showcase the cursor being restored even after an uncaught exception."""
     emit.progress("Look ma, no cursor!")
-    raise BaseException()
+    raise BaseException  # noqa: TRY002
 
 
 # -- end of test cases
 
-if len(sys.argv) < 2:
+if len(sys.argv) < 2:  # noqa: PLR2004, magic value
     print(USAGE)
-    exit()
+    sys.exit()
 
 name = f"example_{int(sys.argv[1]):02d}"
 func = globals().get(name)
 if func is None:
     print(f"ERROR: function {name!r} not found")
-    exit()
+    sys.exit()
 
-if int(sys.argv[1]) != 29:
-    emit.init(EmitterMode.BRIEF, "explorator", "Greetings earthlings")
+if int(sys.argv[1]) != 29:  # noqa: PLR2004, magic value
+    emit.init(EmitterMode.BRIEF, "examples", "Greetings earthlings")
 try:
     func(*sys.argv[2:])
 except CraftError as err:
@@ -549,7 +545,7 @@ except KeyboardInterrupt as exc:
     error = CraftError(msg)
     error.__cause__ = exc
     emit.error(error)
-except Exception as exc:
+except Exception as exc:  # noqa: BLE001, blind exception, fine since these are examples
     msg = f"Unexpected internal exception: {exc!r}"
     error = CraftError(msg)
     error.__cause__ = exc
