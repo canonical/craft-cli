@@ -371,6 +371,7 @@ docs = [
 ]
 lint = [
     { name = "codespell", extra = ["toml"] },
+    { name = "sphinx" },
     { name = "yamllint" },
 ]
 tics = [
@@ -410,6 +411,7 @@ docs = [
 ]
 lint = [
     { name = "codespell", extras = ["toml"], specifier = "==2.3.0" },
+    { name = "sphinx", specifier = ">=7.4.7" },
     { name = "yamllint", specifier = "==1.35.1" },
 ]
 tics = [

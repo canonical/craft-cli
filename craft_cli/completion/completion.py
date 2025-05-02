@@ -201,7 +201,7 @@ def complete(shell_cmd: str, get_app_info: Callable[[], DispatcherAndConfig]) ->
 
     :param shell_cmd: The name of the command being completed for
     :param get_app_info: A function that returns a populated craft-cli dispatcher and the config
-    needed to create its commands
+        needed to create its commands
     :return: A bash completion script for ``shell_cmd``
     """
     dispatcher, app_config = get_app_info()
