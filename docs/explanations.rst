@@ -7,17 +7,24 @@ Explanations
 About the appropriate mode to initiate ``emit``
 ===============================================
 
-The first mandatory parameter of the ``emit`` object is ``mode``, which controls the initial verbosity level of the system.
+The first mandatory parameter of the ``emit`` object is ``mode``, which controls the
+initial verbosity level of the system.
 
-As the user can change the level later using global arguments when executing the application (this is the application default level), it's recommended to use ``EmitterMode.BRIEF``, unless the application needs to honour any external configuration or indication (e.g. a ``DEBUG`` environment variable).
+As the user can change the level later using global arguments when executing the
+application (this is the application default level), it's recommended to use
+``EmitterMode.BRIEF``, unless the application needs to honour any external configuration
+or indication (e.g. a ``DEBUG`` environment variable).
 
 The values for ``mode`` are the following attributes of the ``EmitterMode`` enumerator:
 
 - ``EmitterMode.QUIET``: to present only error messages, if they happen
 - ``EmitterMode.BRIEF``: error and info messages, with nice progress indications
-- ``EmitterMode.VERBOSE``: for more verbose outputs, showing extra information to the user
-- ``EmitterMode.DEBUG``: aimed to provide useful information to the application developers; this includes timestamps on each line
-- ``EmitterMode.TRACE``: to also expose system-generated information (in general too overwhelming for debugging purposes but sometimes needed for particular analysis)
+- ``EmitterMode.VERBOSE``: for more verbose outputs, showing extra information to the
+  user
+- ``EmitterMode.DEBUG``: aimed to provide useful information to the application
+  developers; this includes timestamps on each line
+- ``EmitterMode.TRACE``: to also expose system-generated information (in general too
+  overwhelming for debugging purposes but sometimes needed for particular analysis)
 
 
 .. _expl_log_management:
@@ -25,13 +32,19 @@ The values for ``mode`` are the following attributes of the ``EmitterMode`` enum
 How Craft CLI manage the application logs
 =========================================
 
-Unless overridden when ``emit`` is initiated (see :ref:`how to do that <change_logfile>`), the application logs will be managed by the Craft CLI library, according to the following rules:
+Unless overridden when ``emit`` is initiated (see :ref:`how to do that
+<change_logfile>`), the application logs will be managed by the Craft CLI library,
+according to the following rules:
 
-- one log file is always produced for each application run (only exposed to the user if the application ends in error or a verbose run was requested, for example by ``--verbose``), naming the files with a timestamp so they are unique
+- one log file is always produced for each application run (only exposed to the user if
+  the application ends in error or a verbose run was requested, for example by
+  ``--verbose``), naming the files with a timestamp so they are unique
 
-- log files are located in a directory with the application name under the user's log directory
+- log files are located in a directory with the application name under the user's log
+  directory
 
-- only 5 files are kept, when reaching this limit the older file will be removed when creating the one for current run
+- only 5 files are kept, when reaching this limit the older file will be removed when
+  creating the one for current run
 
 
 .. _expl_global_args:
@@ -39,7 +52,10 @@ Unless overridden when ``emit`` is initiated (see :ref:`how to do that <change_l
 Global and command specific arguments
 =====================================
 
-One of the functionalities that the Dispatcher provides is global arguments handling: options that will be recognised and used no matter the position in the command line because they are not specific to any command, but global to all commands and the application itself.
+One of the functionalities that the Dispatcher provides is global arguments handling:
+options that will be recognised and used no matter the position in the command line
+because they are not specific to any command, but global to all commands and the
+application itself.
 
 For example, all these application executions are equivalent:
 
@@ -47,44 +63,68 @@ For example, all these application executions are equivalent:
     <app> <command> --verbose <command-parameter>
     <app> <command> <command-parameter> --verbose
 
-The Dispatcher automatically provides the following global arguments, but more can be specified through the ``extra_global_args`` option (see :ref:`how to do that <use_global_args>`):
+The Dispatcher automatically provides the following global arguments, but more can be
+specified through the ``extra_global_args`` option (see :ref:`how to do that
+<use_global_args>`):
 
 - ``-h`` / ``--help``: provides a help text for the application or command
 - ``-q`` / ``--quiet``: sets the ``emit`` output level to QUIET
 - ``-v`` / ``--verbose``: sets the ``emit`` output level to VERBOSE
-- ``--verbosity=LEVEL``: sets the ``emit`` output level to the specified level (allowed are ``quiet``, ``brief``, ``verbose``, ``debug`` and ``trace``).
+- ``--verbosity=LEVEL``: sets the ``emit`` output level to the specified level (allowed
+  are ``quiet``, ``brief``, ``verbose``, ``debug`` and ``trace``).
 
-Each command can also specify its own arguments parsing rules using the ``fill_parser`` method, which receives an `ArgumentParser <https://docs.python.org/dev/library/argparse.html>`_ with all its features for parsing a command line argument. The parsing result will be passed to the command on execution, as the ``parsed_args`` parameter of the ``run`` method.
+Each command can also specify its own arguments parsing rules using the ``fill_parser``
+method, which receives an `ArgumentParser
+<https://docs.python.org/dev/library/argparse.html>`_ with all its features for parsing
+a command line argument. The parsing result will be passed to the command on execution,
+as the ``parsed_args`` parameter of the ``run`` method.
 
 
 Group of commands
 =================
 
-The Dispatcher's ``command_groups`` parameter is just a list ``CommandGroup`` objects, each of one grouping different commands for the different types of functionalities that may offer the application. See `its reference here <craft_cli.dispatcher.html#craft_cli.dispatcher.CommandGroup>`_, but its use is quite straightforward. E.g.::
+The Dispatcher's ``command_groups`` parameter is just a list ``CommandGroup`` objects,
+each of one grouping different commands for the different types of functionalities that
+may offer the application. See `its reference here
+<craft_cli.dispatcher.html#craft_cli.dispatcher.CommandGroup>`_, but its use is quite
+straightforward. E.g.::
 
     CommandGroup("Basic", [LoginCommand, LogoutCommand])
 
-A list of these command groups is what is passed to the ``Dispatcher`` to run them as part of the application.
+A list of these command groups is what is passed to the ``Dispatcher`` to run them as
+part of the application.
 
-This grouping is uniquely for building the help exposed to the user, which improves the UX of the application.
+This grouping is uniquely for building the help exposed to the user, which improves the
+UX of the application.
 
-When requesting the full application help, all commands will be grouped and presented in the order declared in each ``CommandGroup`` and in the list given to the ``Dispatcher``, and when requesting help for one command, other commands from the same group are suggested to the user as related to the requested one.
+When requesting the full application help, all commands will be grouped and presented in
+the order declared in each ``CommandGroup`` and in the list given to the ``Dispatcher``,
+and when requesting help for one command, other commands from the same group are
+suggested to the user as related to the requested one.
 
 
 What are hidden and common commands?
 ====================================
 
-When preparing the automatic help messages Craft CLI will consider if a message is common or hidden.
+When preparing the automatic help messages Craft CLI will consider if a message is
+common or hidden.
 
-Common commands are those that surely the users will use more frequently and to be learned first, and Craft CLI will list and describe shortly after the summary in the full help.
+Common commands are those that surely the users will use more frequently and to be
+learned first, and Craft CLI will list and describe shortly after the summary in the
+full help.
 
-Hidden commands, on the other hand, will not appear at all in the help messages (but will just work if used), which is useful for deprecated commands (as they will disappear in a near future they should not be advertised) or aliases (multiple commands with different names but same functionality).
+Hidden commands, on the other hand, will not appear at all in the help messages (but
+will just work if used), which is useful for deprecated commands (as they will disappear
+in a near future they should not be advertised) or aliases (multiple commands with
+different names but same functionality).
 
 
 Presenting messages to the user
 ===============================
 
-The main interface for the application to emit messages is the ``emit`` object. It handles everything that goes to screen and to the log file, even interfacing with the formal logging infrastructure to get messages from it.
+The main interface for the application to emit messages is the ``emit`` object. It
+handles everything that goes to screen and to the log file, even interfacing with the
+formal logging infrastructure to get messages from it.
 
 It's a singleton, just import it wherever it needs to be used::
 
@@ -95,7 +135,9 @@ Before using it, though, it must be initiated. For example::
     emit.init(EmitterMode.BRIEF, "example-app", "Starting example app v1.")
 
 
-After bootstrapping the library as shown before, and importing ``emit`` wherever is needed, all its usage is just sending information to the user. The following sections describe the different ways of doing that.
+After bootstrapping the library as shown before, and importing ``emit`` wherever is
+needed, all its usage is just sending information to the user. The following sections
+describe the different ways of doing that.
 
 
 Regular messages
@@ -115,11 +157,14 @@ E.g.::
 Progress messages
 ~~~~~~~~~~~~~~~~~
 
-The ``progress`` method is to present all the messages that provide information on what the application is currently doing.
+The ``progress`` method is to present all the messages that provide information on what
+the application is currently doing.
 
-Messages shown this way are ephemeral in ``QUIET`` or ``BRIEF`` modes (overwritten by the next line) and will be truncated to the terminal's width in that case.
+Messages shown this way are ephemeral in ``QUIET`` or ``BRIEF`` modes (overwritten by
+the next line) and will be truncated to the terminal's width in that case.
 
-If a progress message is important enough that it should not be overwritten by the next ones, use ``permanent=True``.
+If a progress message is important enough that it should not be overwritten by the next
+ones, use ``permanent=True``.
 
 ::
 
@@ -133,9 +178,15 @@ E.g.::
 Progress bar
 ~~~~~~~~~~~~
 
-The ``progress_bar`` method is to be used in a potentially long-running single step of a command (e.g. a download or provisioning step).
+The ``progress_bar`` method is to be used in a potentially long-running single step of a
+command (e.g. a download or provisioning step).
 
-It receives a ``text`` that should reflect the operation that is about to start, a ``total`` that will be the number to reach when the operation is completed, and optionally a ``delta=False`` to indicate that calls to ``.advance`` method should pass the total so far (by default is True, which implies that calls to ``.advance`` indicates the delta in the operation progress). Returns a context manager with the  ``.advance`` method to call on each progress.
+It receives a ``text`` that should reflect the operation that is about to start, a
+``total`` that will be the number to reach when the operation is completed, and
+optionally a ``delta=False`` to indicate that calls to ``.advance`` method should pass
+the total so far (by default is True, which implies that calls to ``.advance`` indicates
+the delta in the operation progress). Returns a context manager with the  ``.advance``
+method to call on each progress.
 
 ::
 
@@ -157,7 +208,8 @@ E.g.::
 Verbose messages
 ~~~~~~~~~~~~~~~~
 
-Verbose messages are useful to provide more information to the user that shouldn't be exposed when in brief mode for clarity and simplicity.
+Verbose messages are useful to provide more information to the user that shouldn't be
+exposed when in brief mode for clarity and simplicity.
 
 ::
 
@@ -172,7 +224,9 @@ E.g.::
 Debug messages
 ~~~~~~~~~~~~~~
 
-The ``debug`` method is to record everything that the user may not want to normally see but useful for the app developers to understand why things are failing or performing forensics on the produced logs.
+The ``debug`` method is to record everything that the user may not want to normally see
+but useful for the app developers to understand why things are failing or performing
+forensics on the produced logs.
 
 ::
 
@@ -186,9 +240,12 @@ E.g.::
 Trace messages
 ~~~~~~~~~~~~~~
 
-The ``trace`` method is a way to expose system-generated information, about the general process or particular information, which in general would be too overwhelming for debugging purposes but sometimes needed for particular analysis.
+The ``trace`` method is a way to expose system-generated information, about the general
+process or particular information, which in general would be too overwhelming for
+debugging purposes but sometimes needed for particular analysis.
 
-It only produces information to the screen and into the logs if the Emitters is set to TRACE mode.
+It only produces information to the screen and into the logs if the Emitters is set to
+TRACE mode.
 
 ::
 
@@ -202,9 +259,11 @@ E.g.::
 Get messages from subprocesses
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The ``open_stream`` returns a context manager that can be used to get the standard output and/or error from the executed subprocess.
+The ``open_stream`` returns a context manager that can be used to get the standard
+output and/or error from the executed subprocess.
 
-This way all the outputs of the subprocess will be captured by ``craft-cli`` and shown or not to the screen (according to verbosity setup) and always logged.
+This way all the outputs of the subprocess will be captured by ``craft-cli`` and shown
+or not to the screen (according to verbosity setup) and always logged.
 
 ::
 
@@ -230,13 +289,21 @@ E.g.::
         log_filepath=logpath,
     )
 
-It is only after this point that ``emit`` can be used for printing. Note that the mode is typically initialised to ``EmitterMode.BRIEF``. The user can control the emitter mode through global arguments. The ``Dispatcher``, as mentioned earlier, handles global arguments (including help). However, the ``Dispatcher`` only applies emitter mode changes during ``pre_parse_args()`` when parsing the global arguments (e.g. ``--verbosity=trace``) later on in the code.
+It is only after this point that ``emit`` can be used for printing. Note that the mode
+is typically initialised to ``EmitterMode.BRIEF``. The user can control the emitter mode
+through global arguments. The ``Dispatcher``, as mentioned earlier, handles global
+arguments (including help). However, the ``Dispatcher`` only applies emitter mode
+changes during ``pre_parse_args()`` when parsing the global arguments (e.g.
+``--verbosity=trace``) later on in the code.
 
 E.g.::
 
     dispatcher.pre_parse_args(sys.argv[1:])
 
-The implication of the two step process above is that between ``init()`` and ``pre_parse_args()`` tracing type messages will be dropped. If you wish to support configurable message verbosity levels during early initialisation, only do that after the dispatcher's ``pre_parse_args()``.
+The implication of the two step process above is that between ``init()`` and
+``pre_parse_args()`` tracing type messages will be dropped. If you wish to support
+configurable message verbosity levels during early initialisation, only do that after
+the dispatcher's ``pre_parse_args()``.
 
 Proposed emitter and dispatcher startup::
 
@@ -253,7 +320,9 @@ Proposed emitter and dispatcher startup::
 How to easily try different message types
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-There is a collection of examples in the project, in the ``examples.py`` file. Some examples are very simple, exercising only one message type, but others use different combinations so it's easy to explore more complex behaviours.
+There is a collection of examples in the project, in the ``examples.py`` file. Some
+examples are very simple, exercising only one message type, but others use different
+combinations so it's easy to explore more complex behaviours.
 
 To run them using the library, a virtual environment needs to be setup::
 
@@ -265,15 +334,19 @@ After that, is just a matter of running the file specifying which example to use
 
     ./examples.py 18
 
-We encourage you to adapt/improve/hack the examples in the file to play with different combinations of message types to learn and "feel" how the output would be in the different cases.
+We encourage you to adapt/improve/hack the examples in the file to play with different
+combinations of message types to learn and "feel" how the output would be in the
+different cases.
 
 
 Understanding which/how messages are shown/logged
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This is how texts are exposed to the screen for the different situations according to the selected verbosity level by the user running the application.
+This is how texts are exposed to the screen for the different situations according to
+the selected verbosity level by the user running the application.
 
-The last column of the table though is not about the screen: it indicates if the information will be present in the log created automatically by Craft CLI.
+The last column of the table though is not about the screen: it indicates if the
+information will be present in the log created automatically by Craft CLI.
 
 .. list-table::
    :header-rows: 1
@@ -433,9 +506,15 @@ The last column of the table though is not about the screen: it indicates if the
      - | only when
        | level=trace
 
-(*) when redirected to a file it doesn't make sense to have "transient" messages, so 'progress' messages will always end in a newline, and 'progress_bar' will just send its message line but without the progress indication.
+(*) when redirected to a file it doesn't make sense to have "transient" messages, so
+'progress' messages will always end in a newline, and 'progress_bar' will just send its
+message line but without the progress indication.
 
-When the application ends in error it should call the ``emit.error()`` method passing a ``CraftError`` instance. According to the verbosity level some information will be exposed or not. The following table details what happens in each case: which ``CraftError`` attribute is exposed and how the information is shown (similar to the other table above):
+When the application ends in error it should call the ``emit.error()`` method passing a
+``CraftError`` instance. According to the verbosity level some information will be
+exposed or not. The following table details what happens in each case: which
+``CraftError`` attribute is exposed and how the information is shown (similar to the
+other table above):
 
 .. list-table::
    :header-rows: 1

@@ -3,7 +3,9 @@
 Set a default command for the application
 =========================================
 
-To allow the application to run a command if none was given in the command line, you need to set a default command in the application when instantiating :class:`craft_cli.dispatcher.Dispatcher`::
+To allow the application to run a command if none was given in the command line, you
+need to set a default command in the application when instantiating
+:class:`craft_cli.dispatcher.Dispatcher`::
 
     dispatcher = Dispatcher(..., default_command=MyImportantCommand)
 
