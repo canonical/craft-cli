@@ -252,6 +252,8 @@ def complete(shell_cmd: str, get_app_info: Callable[[], DispatcherAndConfig]) ->
         commands=command_map,
         global_args=dispatcher.global_arguments,
         global_opts=global_opts,
+        # The shebang is initially omitted to avoid it being linted by shellcheck
+        shebang="#!/usr/bin/env bash",
     )
 
 
