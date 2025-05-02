@@ -438,5 +438,7 @@ def test_traceback_lines_simple():
     assert tbacklines[1].startswith("  File ")
     assert tbacklines[1].endswith(", in test_traceback_lines_simple")
     assert tbacklines[2] == '    raise ValueError("pumba")  # noqa: TRY301'
-    assert tbacklines[3] == "    ^^^^^^^^^^^^^^^^^^^^^^^^^"
-    assert tbacklines[4] == "ValueError: pumba"
+    # Python 3.11+ uses carets to point at the guilty expression
+    if sys.version_info >= (3, 11):
+        assert tbacklines[3] == "    ^^^^^^^^^^^^^^^^^^^^^^^^^"
+    assert tbacklines[-1] == "ValueError: pumba"
