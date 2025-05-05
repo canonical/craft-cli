@@ -37,6 +37,7 @@ from .errors import (
     CraftCommandError,
     ProvideHelpException,
 )
+from .helptexts import HIDDEN
 
 __all__ = [
     "ArgumentParsingError",
@@ -47,6 +48,7 @@ __all__ = [
     "Dispatcher",
     "EmitterMode",
     "GlobalArgument",
+    "HIDDEN",
     "ProvideHelpException",
     "emit",
 ]
