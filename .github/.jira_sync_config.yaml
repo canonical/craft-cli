@@ -1,6 +1,6 @@
 settings:
   components:
-    - Starbase
+    - Craft CLI
   labels:
     - "Status: Triaged"
   # Adds a comment with the JIRA ID
