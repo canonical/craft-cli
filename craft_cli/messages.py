@@ -205,9 +205,6 @@ class _PipeReaderThread(threading.Thread):
 
             # parameters: default security, default buffer size, binary mode
             binary_mode = os.O_BINARY
-            # ignoring the type of the first parameter below, as documentation allows to use None
-            # to make it use a NULL security descriptor:
-            #     https://www.markjour.com/docs/pywin32-docs/PySECURITY_ATTRIBUTES.html
             self.read_pipe, self.write_pipe = win32pipe.FdCreatePipe(
                 None, 0, binary_mode
             )
