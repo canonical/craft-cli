@@ -526,6 +526,27 @@ def example_32():
     raise BaseException()
 
 
+def example_32():
+    """Logger affects emitter."""
+    logger = logging.getLogger()
+    # This doesn't work (streaming_brief=True)
+    emit.init(EmitterMode.BRIEF, "explorator", "Greetings earthlings", streaming_brief=True)
+    # This works
+    # emit.init(EmitterMode.BRIEF, "explorator", "Greetings earthlings")
+    logger.setLevel(logging.DEBUG)
+
+    # it only fails if following message contains whitespace characters inside string
+    logger.info("Message from external logger 2")
+
+    # examples of failing cases
+    # emit.progress("Final\tmessage")
+    emit.message("Final message\nMultiline")
+
+    # but those would work
+    # emit.message("Single message")
+    # emit.progress("Final message\n")
+
+
 # -- end of test cases
 
 if len(sys.argv) < 2:
@@ -538,7 +559,7 @@ if func is None:
     print(f"ERROR: function {name!r} not found")
     exit()
 
-if int(sys.argv[1]) != 29:
+if int(sys.argv[1]) not in (29, 32):
     emit.init(EmitterMode.BRIEF, "explorator", "Greetings earthlings")
 try:
     func(*sys.argv[2:])
