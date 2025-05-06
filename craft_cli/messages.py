@@ -210,7 +210,7 @@ class _PipeReaderThread(threading.Thread):
             #     https://www.markjour.com/docs/pywin32-docs/PySECURITY_ATTRIBUTES.html
             self.read_pipe, self.write_pipe = win32pipe.FdCreatePipe(
                 None, 0, binary_mode
-            )  # type: ignore[reportGeneralTypeIssues]
+            )
         else:
             self.read_pipe, self.write_pipe = os.pipe()
 
