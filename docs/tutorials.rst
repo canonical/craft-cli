@@ -6,17 +6,22 @@ Tutorials
 Run a command based application with craft-cli
 ==============================================
 
-This tutorial will explain how to use Craft CLI to run an application that is based on commands.
+This tutorial will explain how to use Craft CLI to run an application that is based on
+commands.
 
-Along the way you will define a simple command (named ``unlink``, with the functionality of removing files), and call the appropriate library mechanisms for that command to be executed when running the application.
+Along the way you will define a simple command (named ``unlink``, with the functionality
+of removing files), and call the appropriate library mechanisms for that command to be
+executed when running the application.
 
 
 Prerequisites
 -------------
 
-Craft CLI is a standard Python library, so the best way to have it available is installed in a virtual environment.
+Craft CLI is a standard Python library, so the best way to have it available is
+installed in a virtual environment.
 
-The first step, then, is to create a virtual environment (you may skip this test if you already have one)::
+The first step, then, is to create a virtual environment (you may skip this test if you
+already have one)::
 
 
     $ python3 -m venv env
@@ -33,7 +38,10 @@ Then enable the virtual environment and install Craft CLI::
 Define the command and run it using the Dispatcher
 --------------------------------------------------
 
-First start with a class sub-classing ``BaseCommand`` with the appropriate attributes to name it and have automatic help texts, then provide a ``fill_parser`` method to declare what arguments are possible for this command, and finally a ``run`` method where the "real" functionality is implemented::
+First start with a class sub-classing ``BaseCommand`` with the appropriate attributes to
+name it and have automatic help texts, then provide a ``fill_parser`` method to declare
+what arguments are possible for this command, and finally a ``run`` method where the
+"real" functionality is implemented::
 
     import pathlib
     import textwrap
@@ -106,7 +114,10 @@ Then initiate the ``emit`` object and call the ``Dispatcher`` functionality::
     else:
         emit.ended_ok()
 
-Finally, put both chunks of code in a ``example-app.py`` file, and (having the virtual environment you prepared at the beginning still activated), run it. You should see the help message for the whole application (as a command is missing, which would be the same output if you pass the ``help``, ``-h`` or ``--help`` parameters)::
+Finally, put both chunks of code in a ``example-app.py`` file, and (having the virtual
+environment you prepared at the beginning still activated), run it. You should see the
+help message for the whole application (as a command is missing, which would be the same
+output if you pass the ``help``, ``-h`` or ``--help`` parameters)::
 
     $ python example-app.py
     Usage:
@@ -165,7 +176,8 @@ Time to run the command on a file, you should see the successful message::
     $ ls testfile
     ls: cannot access 'testfile': No such file or directory
 
-Explore different error situations, first trying to remove a directory, then trying to remove a file but with "unexpected" problems::
+Explore different error situations, first trying to remove a directory, then trying to
+remove a file but with "unexpected" problems::
 
     $ mkdir testdir
     $ python example-app.py unlink testdir
@@ -177,4 +189,5 @@ Explore different error situations, first trying to remove a directory, then try
     Problem removing the file: [Errno 1] Operation not permitted: '/tmp/testfile'.
     Full execution log: '/home/user/.cache/example-app/log/example-app-20220114-120745.861866.log'
 
-Congratulations! You have built a complete application with good UX by using Craft CLI and implementing the functionality in one command.
+Congratulations! You have built a complete application with good UX by using Craft CLI
+and implementing the functionality in one command.

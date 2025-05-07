@@ -74,7 +74,7 @@ def _build_item_plain(title: str, text: str, title_space: int) -> list[str]:
 
     # the rest (if any) still aligned but without title
     for line in wrapped_lines[1:]:
-        result.append(" " * (title_space + not_title_space) + line)
+        result.append(" " * (title_space + not_title_space) + line)  # noqa: PERF401
 
     return result
 
@@ -173,7 +173,7 @@ class HelpBuilder:
         - all commands grouped, just listed
         - more help and documentation
         """
-        textblocks = []
+        textblocks: list[str] = []
 
         # title
         textblocks.append(HEADER.format(appname=self.appname))
@@ -185,7 +185,7 @@ class HelpBuilder:
         max_title_len = 0
 
         # collect common commands
-        common_commands = []
+        common_commands: list[type[BaseCommand]] = []
         for command_group in self.command_groups:
             max_title_len = max(len(command_group.name), max_title_len)
             for cmd in command_group.commands:
@@ -204,12 +204,16 @@ class HelpBuilder:
 
         common_lines = ["Starter commands:"]
         for cmd in sorted(common_commands, key=attrgetter("name")):
-            common_lines.extend(_build_item_plain(cmd.name, cmd.help_msg, max_title_len))
+            common_lines.extend(
+                _build_item_plain(cmd.name, cmd.help_msg, max_title_len)
+            )
         textblocks.append("\n".join(common_lines))
 
         grouped_lines = ["Commands can be classified as follows:"]
         for command_group in sorted(self.command_groups, key=attrgetter("name")):
-            command_names = [cmd.name for cmd in command_group.commands if not cmd.hidden]
+            command_names = [
+                cmd.name for cmd in command_group.commands if not cmd.hidden
+            ]
             if not command_group.ordered:
                 command_names.sort()
             command_names_str = ", ".join(command_names)
@@ -225,9 +229,7 @@ class HelpBuilder:
         )
         # append documentation links to block for more help
         if self._docs_base_url:
-            more_help_text += (
-                f"\nFor more information about {self.appname}, check out: {self._docs_base_url}"
-            )
+            more_help_text += f"\nFor more information about {self.appname}, check out: {self._docs_base_url}"
         textblocks.append(more_help_text)
 
         # join all stripped blocks, leaving ONE empty blank line between
@@ -247,7 +249,7 @@ class HelpBuilder:
         - all commands shown with description, grouped
         - more help and documentation
         """
-        textblocks = []
+        textblocks: list[str] = []
 
         # title
         textblocks.append(HEADER.format(appname=self.appname))
@@ -276,16 +278,14 @@ class HelpBuilder:
             for cmd in command_group.commands:
                 if cmd.hidden:
                     continue
-                group_lines.extend(_build_item_plain(cmd.name, cmd.help_msg, max_title_len))
+                group_lines.extend(
+                    _build_item_plain(cmd.name, cmd.help_msg, max_title_len)
+                )
             textblocks.append("\n".join(group_lines))
 
-        more_help_text = (
-            f"For more information about a specific command, run '{self.appname} help <command>'."
-        )
+        more_help_text = f"For more information about a specific command, run '{self.appname} help <command>'."
         if self._docs_base_url:
-            more_help_text += (
-                f"\nFor more information about {self.appname}, check out: {self._docs_base_url}"
-            )
+            more_help_text += f"\nFor more information about {self.appname}, check out: {self._docs_base_url}"
         textblocks.append(more_help_text)
 
         # join all stripped blocks, leaving ONE empty blank line between
@@ -310,7 +310,7 @@ class HelpBuilder:
         - other related commands
         - help for all commands and documentation
         """
-        textblocks = []
+        textblocks: list[str] = []
 
         textblocks.append(
             textwrap.dedent(
@@ -328,16 +328,20 @@ class HelpBuilder:
         textblocks.append(f"Summary:{overview}")
 
         # column alignment is dictated by longest options title
-        max_title_len = max(len(title) for title, text in options)
+        max_title_len = max(len(title) for title, _ in options)
 
         if parameters:
             # command positional arguments
             positional_args_lines: list[str] = []
             for title, text in parameters:
-                positional_args_lines.extend(_build_item_plain(title, text, max_title_len))
+                positional_args_lines.extend(
+                    _build_item_plain(title, text, max_title_len)
+                )
             # Only populate if we have collected parameters.
             if positional_args_lines:
-                textblocks.append("\n".join(["Positional arguments:", *positional_args_lines]))
+                textblocks.append(
+                    "\n".join(["Positional arguments:", *positional_args_lines])
+                )
 
         # command options
         option_lines = ["Options:"]
@@ -347,11 +351,15 @@ class HelpBuilder:
 
         if other_command_names:
             see_also_block = ["See also:"]
-            see_also_block.extend(("    " + name) for name in sorted(other_command_names))
+            see_also_block.extend(
+                ("    " + name) for name in sorted(other_command_names)
+            )
             textblocks.append("\n".join(see_also_block))
 
         # help for all commands
-        more_help_text = f"For a summary of all commands, run '{self.appname} help --all'."
+        more_help_text = (
+            f"For a summary of all commands, run '{self.appname} help --all'."
+        )
         if self._docs_base_url:
             command_url = f"{self._docs_base_url}/reference/commands/{command.name}"
             more_help_text += f"\nFor more information, check out: {command_url}"
@@ -377,7 +385,7 @@ class HelpBuilder:
         - options
         - other related commands
         """
-        textblocks = []
+        textblocks: list[str] = []
 
         textblocks.append(
             textwrap.dedent(
@@ -444,8 +452,8 @@ class HelpBuilder:
         """
         # separate all arguments into the parameters and optional ones, just checking
         # if first char is a dash
-        parameters = []
-        options = []
+        parameters: list[tuple[str, str]] = []
+        options: list[tuple[str, str]] = []
         for name, title in arguments:
             if title is HIDDEN:
                 continue
@@ -459,7 +467,10 @@ class HelpBuilder:
             usage += " " + " ".join(f"<{parameter[0]}>" for parameter in parameters)
 
         for command_group in self.command_groups:
-            if any(isinstance(command, command_class) for command_class in command_group.commands):
+            if any(
+                isinstance(command, command_class)
+                for command_class in command_group.commands
+            ):
                 break
         else:
             raise RuntimeError("Internal inconsistency in commands groups")

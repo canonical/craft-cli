@@ -22,7 +22,6 @@ import threading
 import time
 
 import pytest
-
 from craft_cli import messages, printer
 from craft_cli.messages import _PipeReaderThread, _StreamContextManager
 
@@ -173,7 +172,7 @@ def test_streamcm_usage_lifecycle(recording_printer):
 
 def test_streamcm_dont_consume_exceptions(recording_printer):
     """It lets the exceptions go through."""
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # noqa: PT011
         with _StreamContextManager(
             recording_printer,
             "initial text",
@@ -181,7 +180,7 @@ def test_streamcm_dont_consume_exceptions(recording_printer):
             use_timestamp=False,
             ephemeral_mode=False,
         ):
-            raise ValueError()
+            raise ValueError
 
 
 # -- tests for the pipe reader
@@ -259,7 +258,11 @@ def test_pipereader_tabs(recording_printer, stream):
 
 @pytest.mark.parametrize(
     ("invalid_text", "expected"),
-    [(b"\xf0\x28\x8c\xbc", "�(��"), (b"\xf0\x90\x28\xbc", "�(�"), (b"\xf0\x90\x8c\x28", "�(")],
+    [
+        (b"\xf0\x28\x8c\xbc", "�(��"),
+        (b"\xf0\x90\x28\xbc", "�(�"),
+        (b"\xf0\x90\x8c\x28", "�("),
+    ],
 )
 def test_pipereader_invalid_utf8(recording_printer, invalid_text, expected):
     """Check that bytes that aren't valid utf-8 text don't crash."""
@@ -322,9 +325,9 @@ def test_ensure_pipes_are_closed(recording_printer):
     prt = _PipeReaderThread(recording_printer, sys.stdout, flags)
     prt.start()
     prt.stop()
-    with pytest.raises(OSError) as err:
+    with pytest.raises(OSError) as err:  # noqa: PT011
         os.fstat(prt.read_pipe)
     assert err.value.errno == 9
-    with pytest.raises(OSError) as err:
+    with pytest.raises(OSError) as err:  # noqa: PT011
         os.fstat(prt.write_pipe)
     assert err.value.errno == 9

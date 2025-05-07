@@ -28,14 +28,13 @@ import subprocess
 import sys
 import textwrap
 import time
+from collections.abc import Collection
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Collection
 from unittest.mock import patch
 
 import pytest
-
-from craft_cli import messages, printer, errors
+from craft_cli import errors, messages, printer
 from craft_cli.errors import CraftError
 from craft_cli.messages import Emitter, EmitterMode
 
@@ -65,7 +64,9 @@ def force_output_behaviour(monkeypatch, output_is_terminal):
     Note that it's always safer to use this fixture, as the very effect of running the
     tests makes the output to be captured, so it's a good idea to be explicit.
     """
-    monkeypatch.setattr(printer, "_stream_is_terminal", lambda stream: output_is_terminal)
+    monkeypatch.setattr(
+        printer, "_stream_is_terminal", lambda stream: output_is_terminal
+    )
 
 
 @pytest.fixture
@@ -139,7 +140,9 @@ def compare_lines(expected_lines: Collection[Line], raw_stream: str, std_stream)
             assert match.groups()[0] == expected.text
 
 
-def assert_outputs(capsys, emit, expected_out=None, expected_err=None, expected_log=None):
+def assert_outputs(
+    capsys, emit, expected_out=None, expected_err=None, expected_log=None
+):
     """Verify that the outputs are correct according to the expected lines."""
     # check the expected stdout and stderr outputs
     out, err = capsys.readouterr()
@@ -156,7 +159,7 @@ def assert_outputs(capsys, emit, expected_out=None, expected_err=None, expected_
 
     # get the logged text, always validating a valid timestamp format at the beginning
     # of each line
-    with open(emit._log_filepath, "rt", encoding="utf8") as filehandler:
+    with open(emit._log_filepath, encoding="utf8") as filehandler:  # noqa: PTH123
         log_lines = filehandler.readlines()
     logged_texts = []
     for line in log_lines:
@@ -180,11 +183,11 @@ def test_exposed_api():
 
     assert isinstance(emit, messages.Emitter)
 
-    from craft_cli import EmitterMode as test_em
+    from craft_cli import EmitterMode as test_em  # noqa: N813
 
     assert test_em is EmitterMode
 
-    from craft_cli import CraftError as test_cs
+    from craft_cli import CraftError as test_cs  # noqa: N813
 
     assert test_cs is CraftError
 
@@ -376,14 +379,25 @@ def test_progressbar_brief_terminal(capsys, monkeypatch):
     with emit.progress_bar("Uploading stuff", 1788) as progress:
         for uploaded in [700, 700, 388]:
             progress.advance(uploaded)
-    emit.progress("And so on")  # just a line so last progress line is not artificially permanent
+    emit.progress(
+        "And so on"
+    )  # just a line so last progress line is not artificially permanent
     emit.ended_ok()
 
     expected_screen = [
         Line("Uploading stuff (--->)", permanent=False),
-        Line("Uploading stuff [████████████                    ] 700/1788", permanent=False),
-        Line("Uploading stuff [████████████████████████       ] 1400/1788", permanent=False),
-        Line("Uploading stuff [███████████████████████████████] 1788/1788", permanent=False),
+        Line(
+            "Uploading stuff [████████████                    ] 700/1788",
+            permanent=False,
+        ),
+        Line(
+            "Uploading stuff [████████████████████████       ] 1400/1788",
+            permanent=False,
+        ),
+        Line(
+            "Uploading stuff [███████████████████████████████] 1788/1788",
+            permanent=False,
+        ),
         Line("Uploading stuff (<---)", permanent=False),
         Line("And so on", permanent=False),
         # This cleaner line is inserted by the printer stop
@@ -395,7 +409,9 @@ def test_progressbar_brief_terminal(capsys, monkeypatch):
         Line("Uploading stuff (<---)"),
         Line("And so on"),
     ]
-    assert_outputs(capsys, emit, expected_err=expected_screen, expected_log=expected_log)
+    assert_outputs(
+        capsys, emit, expected_err=expected_screen, expected_log=expected_log
+    )
 
 
 @pytest.mark.parametrize("output_is_terminal", [True])
@@ -424,9 +440,18 @@ def test_progressbar_brief_permanent_terminal(capsys, monkeypatch):
 
     expected_screen = [
         Line("Uploading stuff (--->)", permanent=False),
-        Line("Uploading stuff [████████████                    ] 700/1788", permanent=False),
-        Line("Uploading stuff [████████████████████████       ] 1400/1788", permanent=False),
-        Line("Uploading stuff [███████████████████████████████] 1788/1788", permanent=False),
+        Line(
+            "Uploading stuff [████████████                    ] 700/1788",
+            permanent=False,
+        ),
+        Line(
+            "Uploading stuff [████████████████████████       ] 1400/1788",
+            permanent=False,
+        ),
+        Line(
+            "Uploading stuff [███████████████████████████████] 1788/1788",
+            permanent=False,
+        ),
         Line("Uploading stuff (<---)", permanent=False),
         Line("And so on", permanent=True),
     ]
@@ -435,7 +460,9 @@ def test_progressbar_brief_permanent_terminal(capsys, monkeypatch):
         Line("Uploading stuff (<---)"),
         Line("And so on"),
     ]
-    assert_outputs(capsys, emit, expected_err=expected_screen, expected_log=expected_log)
+    assert_outputs(
+        capsys, emit, expected_err=expected_screen, expected_log=expected_log
+    )
 
 
 @pytest.mark.parametrize(
@@ -507,14 +534,27 @@ def test_progressbar_verbose(capsys, monkeypatch):
     with emit.progress_bar("Uploading stuff", 1788) as progress:
         for uploaded in [700, 700, 388]:
             progress.advance(uploaded)
-    emit.progress("And so on")  # just a line so last progress line is not artificially permanent
+    emit.progress(
+        "And so on"
+    )  # just a line so last progress line is not artificially permanent
     emit.ended_ok()
 
     expected_screen = [
-        Line("Uploading stuff (--->)", permanent=True),  # this starting line will endure
-        Line("Uploading stuff [████████████                    ] 700/1788", permanent=False),
-        Line("Uploading stuff [████████████████████████       ] 1400/1788", permanent=False),
-        Line("Uploading stuff [███████████████████████████████] 1788/1788", permanent=False),
+        Line(
+            "Uploading stuff (--->)", permanent=True
+        ),  # this starting line will endure
+        Line(
+            "Uploading stuff [████████████                    ] 700/1788",
+            permanent=False,
+        ),
+        Line(
+            "Uploading stuff [████████████████████████       ] 1400/1788",
+            permanent=False,
+        ),
+        Line(
+            "Uploading stuff [███████████████████████████████] 1788/1788",
+            permanent=False,
+        ),
         Line("Uploading stuff (<---)", permanent=True),  # this closing line will endure
         Line("And so on", permanent=True),
     ]
@@ -523,7 +563,9 @@ def test_progressbar_verbose(capsys, monkeypatch):
         Line("Uploading stuff (<---)"),
         Line("And so on"),
     ]
-    assert_outputs(capsys, emit, expected_err=expected_screen, expected_log=expected_log)
+    assert_outputs(
+        capsys, emit, expected_err=expected_screen, expected_log=expected_log
+    )
 
 
 @pytest.mark.parametrize(
@@ -552,15 +594,21 @@ def test_progressbar_developer_modes(capsys, mode, monkeypatch):
     with emit.progress_bar("Uploading stuff", 1788) as progress:
         for uploaded in [700, 700, 388]:
             progress.advance(uploaded)
-    emit.progress("And so on")  # just a line so last progress line is not artificially permanent
+    emit.progress(
+        "And so on"
+    )  # just a line so last progress line is not artificially permanent
     emit.ended_ok()
 
     expected_screen = [
-        Line("Uploading stuff (--->)", permanent=True, timestamp=True),  # this line will endure
+        Line(
+            "Uploading stuff (--->)", permanent=True, timestamp=True
+        ),  # this line will endure
         Line("Uploading stuff [███     ] 700/1788", permanent=False, timestamp=True),
         Line("Uploading stuff [█████  ] 1400/1788", permanent=False, timestamp=True),
         Line("Uploading stuff [███████] 1788/1788", permanent=False, timestamp=True),
-        Line("Uploading stuff (<---)", permanent=True, timestamp=True),  # this line will endure
+        Line(
+            "Uploading stuff (<---)", permanent=True, timestamp=True
+        ),  # this line will endure
         Line("And so on", permanent=True, timestamp=True),
     ]
     expected_log = [
@@ -568,7 +616,9 @@ def test_progressbar_developer_modes(capsys, mode, monkeypatch):
         Line("Uploading stuff (<---)"),
         Line("And so on"),
     ]
-    assert_outputs(capsys, emit, expected_err=expected_screen, expected_log=expected_log)
+    assert_outputs(
+        capsys, emit, expected_err=expected_screen, expected_log=expected_log
+    )
 
 
 @pytest.mark.parametrize(
@@ -720,7 +770,9 @@ def test_third_party_output_quiet(capsys, tmp_path):
     emit = Emitter()
     emit.init(EmitterMode.QUIET, "testapp", GREETING)
     with emit.open_stream("Testing stream") as stream:
-        subprocess.run([sys.executable, script], stdout=stream, stderr=stream, check=True)
+        subprocess.run(
+            [sys.executable, script], stdout=stream, stderr=stream, check=True
+        )
     emit.ended_ok()
 
     expected = [
@@ -748,7 +800,9 @@ def test_third_party_output_brief_terminal(capsys, tmp_path):
     emit = Emitter()
     emit.init(EmitterMode.BRIEF, "testapp", GREETING)
     with emit.open_stream("Testing stream") as stream:
-        subprocess.run([sys.executable, script], stdout=stream, stderr=stream, check=True)
+        subprocess.run(
+            [sys.executable, script], stdout=stream, stderr=stream, check=True
+        )
     emit.ended_ok()
 
     expected_err = [
@@ -784,7 +838,9 @@ def test_third_party_output_brief_captured(capsys, tmp_path):
     emit = Emitter()
     emit.init(EmitterMode.BRIEF, "testapp", GREETING)
     with emit.open_stream("Testing stream") as stream:
-        subprocess.run([sys.executable, script], stdout=stream, stderr=stream, check=True)
+        subprocess.run(
+            [sys.executable, script], stdout=stream, stderr=stream, check=True
+        )
     emit.ended_ok()
 
     expected = [
@@ -812,7 +868,9 @@ def test_third_party_output_verbose(capsys, tmp_path):
     emit = Emitter()
     emit.init(EmitterMode.VERBOSE, "testapp", GREETING)
     with emit.open_stream("Testing stream") as stream:
-        subprocess.run([sys.executable, script], stdout=stream, stderr=stream, check=True)
+        subprocess.run(
+            [sys.executable, script], stdout=stream, stderr=stream, check=True
+        )
     emit.ended_ok()
 
     expected = [
@@ -847,7 +905,9 @@ def test_third_party_output_developer_modes(capsys, tmp_path, mode):
     emit = Emitter()
     emit.init(mode, "testapp", GREETING)
     with emit.open_stream("Testing stream") as stream:
-        subprocess.run([sys.executable, script], stdout=stream, stderr=stream, check=True)
+        subprocess.run(
+            [sys.executable, script], stdout=stream, stderr=stream, check=True
+        )
     emit.ended_ok()
 
     expected = [
@@ -949,7 +1009,9 @@ def test_error_api_details(capsys, mode):
 
     expected_err = [
         Line("Invalid channel."),
-        Line("Detailed information: {'message': 'Invalid channel.', 'code': 'BAD-CHANNEL'}"),
+        Line(
+            "Detailed information: {'message': 'Invalid channel.', 'code': 'BAD-CHANNEL'}"
+        ),
         Line(f"Full execution log: {str(emit._log_filepath)!r}"),
     ]
     expected_log = [
@@ -998,11 +1060,13 @@ def test_error_unexpected_quietly(capsys, mode):
     emit = Emitter()
     emit.init(mode, "testapp", GREETING)
     try:
-        raise ValueError("pumba")
+        raise ValueError("pumba")  # noqa: TRY301
     except ValueError as exc:
         error = CraftError("First message.")
         error.__cause__ = exc
-        with patch("craft_cli.messages._get_traceback_lines", return_value=["foo", "bar"]):
+        with patch(
+            "craft_cli.messages._get_traceback_lines", return_value=["foo", "bar"]
+        ):
             emit.error(error)
 
     expected_err = [
@@ -1031,11 +1095,13 @@ def test_error_unexpected_debugish(capsys, mode):
     emit = Emitter()
     emit.init(mode, "testapp", GREETING)
     try:
-        raise ValueError("pumba")
+        raise ValueError("pumba")  # noqa: TRY301
     except ValueError as exc:
         error = CraftError("First message.")
         error.__cause__ = exc
-        with patch("craft_cli.messages._get_traceback_lines", return_value=["foo", "bar"]):
+        with patch(
+            "craft_cli.messages._get_traceback_lines", return_value=["foo", "bar"]
+        ):
             emit.error(error)
 
     expected = [
@@ -1109,9 +1175,7 @@ def test_logging_in_verbose_mode(capsys, logger):
         Line("--warning--"),
         Line("--info--"),
     ]
-    expected_log = expected_err + [
-        Line("--debug--"),
-    ]
+    expected_log = [*expected_err, Line("--debug--")]
     assert_outputs(capsys, emit, expected_err=expected_err, expected_log=expected_log)
 
 
@@ -1164,7 +1228,9 @@ def test_initial_messages_quiet_mode(capsys, monkeypatch, tmp_path):
     # use different greeting and file logpath so we can actually test them
     different_greeting = "different greeting to not be ignored"
     different_logpath = tmp_path / "otherfile.log"
-    monkeypatch.setattr(messages, "_get_log_filepath", lambda appname: different_logpath)
+    monkeypatch.setattr(
+        messages, "_get_log_filepath", lambda appname: different_logpath
+    )
 
     emit = Emitter()
     emit.init(EmitterMode.BRIEF, "testapp", different_greeting)
@@ -1190,7 +1256,9 @@ def test_initial_messages_brief_mode(capsys, monkeypatch, tmp_path):
     # use different greeting and file logpath so we can actually test them
     different_greeting = "different greeting to not be ignored"
     different_logpath = tmp_path / "otherfile.log"
-    monkeypatch.setattr(messages, "_get_log_filepath", lambda appname: different_logpath)
+    monkeypatch.setattr(
+        messages, "_get_log_filepath", lambda appname: different_logpath
+    )
 
     emit = Emitter()
     emit.init(EmitterMode.QUIET, "testapp", different_greeting)
@@ -1216,7 +1284,9 @@ def test_initial_messages_verbose(capsys, tmp_path, monkeypatch):
     # use different greeting and file logpath so we can actually test them
     different_greeting = "different greeting to not be ignored"
     different_logpath = tmp_path / "otherfile.log"
-    monkeypatch.setattr(messages, "_get_log_filepath", lambda appname: different_logpath)
+    monkeypatch.setattr(
+        messages, "_get_log_filepath", lambda appname: different_logpath
+    )
 
     emit = Emitter()
     emit.init(EmitterMode.QUIET, "testapp", different_greeting)
@@ -1251,7 +1321,9 @@ def test_initial_messages_developer_modes(capsys, tmp_path, monkeypatch, mode):
     # use different greeting and file logpath so we can actually test them
     different_greeting = "different greeting to not be ignored"
     different_logpath = tmp_path / "otherfile.log"
-    monkeypatch.setattr(messages, "_get_log_filepath", lambda appname: different_logpath)
+    monkeypatch.setattr(
+        messages, "_get_log_filepath", lambda appname: different_logpath
+    )
 
     emit = Emitter()
     emit.init(EmitterMode.QUIET, "testapp", different_greeting)
@@ -1298,8 +1370,9 @@ def _parse_timestamp(text):
     return tstamp
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize(
-    "loops, sleep, max_repetitions",
+    ("loops", "sleep", "max_repetitions"),
     [
         (100, 0.01, 30),
         (1000, 0.001, 100),
@@ -1340,7 +1413,7 @@ def test_capture_delays(tmp_path, loops, sleep, max_repetitions):
     emit.ended_ok()
 
     timestamps = []
-    with open(emit._log_filepath, "rt", encoding="utf8") as filehandler:  # type: ignore
+    with open(emit._log_filepath, encoding="utf8") as filehandler:  # type: ignore  # noqa: PTH123, PGH003
         for line in filehandler:
             match = re.match(rf"({TIMESTAMP_FORMAT}):: ({TIMESTAMP_FORMAT}).*\n", line)
             if not match:
@@ -1357,7 +1430,9 @@ def test_capture_delays(tmp_path, loops, sleep, max_repetitions):
     delays = [t_outside - t_inside for t_outside, t_inside in timestamps]
     too_big = [delay for delay in delays if delay > 0.050]
     if len(too_big) > loops / 20:
-        pytest.fail(f"Delayed capture: {too_big} avg delay is {sum(delays) / len(delays):.3f}")
+        pytest.fail(
+            f"Delayed capture: {too_big} avg delay is {sum(delays) / len(delays):.3f}"
+        )
 
 
 @pytest.mark.parametrize("output_is_terminal", [True])
@@ -1514,7 +1589,9 @@ def test_streaming_brief_error(capsys, logger, monkeypatch):
 
     emit.progress("Doing process.", permanent=False)
 
-    error = errors.CraftError(message="An error happened!", resolution="Detailed resolution.")
+    error = errors.CraftError(
+        message="An error happened!", resolution="Detailed resolution."
+    )
     emit.error(error)
 
     expected_err = [
@@ -1537,6 +1614,7 @@ def init_emitter():
     """Empty fixture to disable the "global", autouse init_emitter."""
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("output_is_terminal", [True])
 def test_streaming_brief_spinner(capsys, logger, monkeypatch, init_emitter):
     """Test the interaction between the "streaming brief" mode and the spinner."""
@@ -1565,7 +1643,11 @@ def test_streaming_brief_spinner(capsys, logger, monkeypatch, init_emitter):
         Line("Begin stage", permanent=False),
         Line("Begin stage :: Opening stream", permanent=False),
         Line("Begin stage :: Info message", permanent=False),
-        Line(r"Begin stage :: Info message - \((0.[7-9]|1.0)s\)", permanent=False, regex=True),
+        Line(
+            r"Begin stage :: Info message - \((0.[7-9]|1.0)s\)",
+            permanent=False,
+            regex=True,
+        ),
         Line("Begin stage :: Info message", permanent=False),
         Line("Done stage", permanent=True),
     ]
@@ -1705,7 +1787,8 @@ def test_open_stream_no_text(capsys, logger, monkeypatch, init_emitter):
     ],
 )
 @pytest.mark.parametrize(
-    "output_is_terminal", [pytest.param(True, id="is_term"), pytest.param(False, id="not_term")]
+    "output_is_terminal",
+    [pytest.param(True, id="is_term"), pytest.param(False, id="not_term")],
 )
 @pytest.mark.usefixtures("init_emitter")
 def test_append_to_log(tmp_path: pathlib.Path, prefix: str, file_contents: str) -> None:

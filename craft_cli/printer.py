@@ -83,7 +83,9 @@ def _supports_ansi_escape_sequences() -> bool:
     """Whether the current environment supports ANSI escape sequences."""
     if platform.system() != "Windows":
         return True
-    return "WT_SESSION" in os.environ  # Windows Terminal supports ANSI escape sequences.
+    return (
+        "WT_SESSION" in os.environ
+    )  # Windows Terminal supports ANSI escape sequences.
 
 
 def _fill_line(text: str) -> str:
@@ -96,7 +98,9 @@ def _fill_line(text: str) -> str:
     return text + " " * n_spaces
 
 
-def _format_term_line(previous_line_end: str, text: str, spintext: str, *, ephemeral: bool) -> str:
+def _format_term_line(
+    previous_line_end: str, text: str, spintext: str, *, ephemeral: bool
+) -> str:
     """Format a line to print to the terminal."""
     # fill with spaces until the very end, on one hand to clear a possible previous message,
     # but also to always have the cursor at the very end
@@ -267,17 +271,25 @@ class Printer:
         # Previous line was ended; complete it.
         return "\n"
 
-    def _write_line_terminal(self, message: _MessageInfo, *, spintext: str = "") -> None:
+    def _write_line_terminal(
+        self, message: _MessageInfo, *, spintext: str = ""
+    ) -> None:
         """Write a simple line message to the screen."""
         # prepare the text with (maybe) the timestamp and remove trailing spaces
         text = self._get_prefixed_message_text(message).rstrip()
 
         if message.use_timestamp:
-            timestamp_str = message.created_at.isoformat(sep=" ", timespec="milliseconds")
+            timestamp_str = message.created_at.isoformat(
+                sep=" ", timespec="milliseconds"
+            )
             text = f"{timestamp_str} {text}"
 
         previous_line_end = self._get_line_end(spintext)
-        if self.prv_msg and self.prv_msg.ephemeral and self.prv_msg.stream != message.stream:
+        if (
+            self.prv_msg
+            and self.prv_msg.ephemeral
+            and self.prv_msg.stream != message.stream
+        ):
             # If the last message's stream is different from this new one,
             # send a carriage return to the original stream only.
             print("\r", flush=True, file=self.prv_msg.stream, end="")
@@ -320,7 +332,9 @@ class Printer:
         """Write a simple line message to a captured output."""
         # prepare the text with (maybe) the timestamp
         if message.use_timestamp:
-            timestamp_str = message.created_at.isoformat(sep=" ", timespec="milliseconds")
+            timestamp_str = message.created_at.isoformat(
+                sep=" ", timespec="milliseconds"
+            )
             text = timestamp_str + " " + message.text
         else:
             text = message.text
@@ -331,7 +345,9 @@ class Printer:
         """Write a progress bar to the screen."""
         # prepare the text with (maybe) the timestamp
         if message.use_timestamp:
-            timestamp_str = message.created_at.isoformat(sep=" ", timespec="milliseconds")
+            timestamp_str = message.created_at.isoformat(
+                sep=" ", timespec="milliseconds"
+            )
             text = timestamp_str + " " + message.text
         else:
             text = message.text
@@ -347,7 +363,9 @@ class Printer:
             maybe_cr = ""
             print(flush=True, file=self.prv_msg.stream)
 
-        if message.bar_progress is None or message.bar_total is None:  # pragma: no cover
+        if (
+            message.bar_progress is None or message.bar_total is None
+        ):  # pragma: no cover
             # Should not happen as the caller checks the message
             raise ValueError("Tried to write a bar message with invalid attributes")
 
@@ -417,7 +435,7 @@ class Printer:
         if _stream_is_terminal(message.stream):
             self._write_line_terminal(message, spintext=spintext)
 
-    def show(  # noqa: PLR0913 (too many parameters)
+    def show(
         self,
         stream: TextIO | None,
         text: str,

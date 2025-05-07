@@ -18,19 +18,24 @@ import re
 import textwrap
 from argparse import ArgumentParser
 from unittest.mock import patch
-from typing import Optional
 
 import pytest
-
-from craft_cli import dispatcher as dispatcher_mod, BaseCommand
+from craft_cli import BaseCommand
+from craft_cli import dispatcher as dispatcher_mod
 from craft_cli.dispatcher import CommandGroup, Dispatcher, GlobalArgument
 from craft_cli.errors import ArgumentParsingError, ProvideHelpException
-from craft_cli.helptexts import HIDDEN, HelpBuilder, OutputFormat, process_overview_for_markdown
+from craft_cli.helptexts import (
+    HIDDEN,
+    HelpBuilder,
+    OutputFormat,
+    process_overview_for_markdown,
+)
+
 from tests.factory import create_command
 
 
 @pytest.fixture(params=[None, "www.craft-app.com/docs/3.14159/"])
-def docs_url(request) -> Optional[str]:
+def docs_url(request) -> str | None:
     return request.param
 
 
@@ -87,9 +92,13 @@ def test_trim_url(docs_url, expected):
 
 def test_default_help_text(docs_url):
     """All different parts for the default help."""
-    cmd1 = create_command("cmd1", "Cmd help which is very long but whatever.", common=True)
+    cmd1 = create_command(
+        "cmd1", "Cmd help which is very long but whatever.", common=True
+    )
     cmd2 = create_command("command-2", "Cmd help.", common=True)
-    cmd3 = create_command("cmd3", "Extremely " + "super crazy long " * 5 + " help.", common=True)
+    cmd3 = create_command(
+        "cmd3", "Extremely " + "super crazy long " * 5 + " help.", common=True
+    )
     cmd4 = create_command("cmd4", "Some help.")
     cmd5 = create_command("cmd5", "More help.")
     cmd6 = create_command("cmd6-really-long", "More help.", common=True)
@@ -118,7 +127,7 @@ def test_default_help_text(docs_url):
     text = help_builder.get_full_help(global_options)
 
     expected = textwrap.dedent(
-        f"""\
+        """\
         Usage:
             testapp [help] <command>
 
@@ -148,17 +157,19 @@ def test_default_help_text(docs_url):
     """
     )
     if docs_url:
-        expected += (
-            "For more information about testapp, check out: www.craft-app.com/docs/3.14159\n"
-        )
+        expected += "For more information about testapp, check out: www.craft-app.com/docs/3.14159\n"
     assert text == expected
 
 
 def test_detailed_help_text(docs_url):
     """All different parts for the detailed help, showing all commands."""
-    cmd1 = create_command("cmd1", "Cmd help which is very long but whatever.", common=True)
+    cmd1 = create_command(
+        "cmd1", "Cmd help which is very long but whatever.", common=True
+    )
     cmd2 = create_command("command-2", "Cmd help.", common=True)
-    cmd3 = create_command("cmd3", "Extremely " + "super crazy long " * 5 + " help.", common=True)
+    cmd3 = create_command(
+        "cmd3", "Extremely " + "super crazy long " * 5 + " help.", common=True
+    )
     cmd4 = create_command("cmd4", "Some help.")
     cmd5 = create_command("cmd5", "More help.")
     cmd6 = create_command("cmd6-really-long", "More help.", common=True)
@@ -220,9 +231,7 @@ def test_detailed_help_text(docs_url):
     """
     )
     if docs_url:
-        expected += (
-            "For more information about testapp, check out: www.craft-app.com/docs/3.14159\n"
-        )
+        expected += "For more information about testapp, check out: www.craft-app.com/docs/3.14159\n"
     assert text == expected
 
 
@@ -242,9 +251,12 @@ def test_detailed_help_text(docs_url):
                     "ordered",
                     [
                         create_command(
-                            "first", "It's important this comes before the other command."
+                            "first",
+                            "It's important this comes before the other command.",
                         ),
-                        create_command("last", "This must come at the end of this command group."),
+                        create_command(
+                            "last", "This must come at the end of this command group."
+                        ),
                     ],
                     ordered=True,
                 ),
@@ -294,9 +306,12 @@ def test_default_help_text_command_order(command_groups, expected_output):
                     "ordered",
                     [
                         create_command(
-                            "first", "It's important this comes before the other command."
+                            "first",
+                            "It's important this comes before the other command.",
                         ),
-                        create_command("last", "This must come at the end of this command group."),
+                        create_command(
+                            "last", "This must come at the end of this command group."
+                        ),
                     ],
                     ordered=True,
                 ),
@@ -341,8 +356,7 @@ def test_command_help_text_strip_backticks():
         For each ``foo``, care must be taken to instantiate a ``bar`` using ``baz``.
 
         ```I am in triple backticks, teehee```
-    """
-    )
+    """)
 
     cmd = create_command("thecommand", "Witty one-liner", overview=overview)
     command_groups = [
@@ -357,7 +371,7 @@ def test_command_help_text_strip_backticks():
         """\
     Usage:
         testapp thecommand [options]
-        
+
     Summary:
         An insightful overview. Look - it even has code!
 
@@ -383,8 +397,7 @@ def test_command_help_text_backticks_markdown():
         For each ``foo``, care must be taken to instantiate a ``bar`` using ``baz``.
 
         ```I am in triple backticks, teehee```
-    """
-    )
+    """)
 
     cmd = create_command("thecommand", "Witty one-liner", overview=overview)
     command_groups = [
@@ -396,12 +409,12 @@ def test_command_help_text_backticks_markdown():
     text = help_builder.get_command_help(cmd(None), options, OutputFormat.markdown)
 
     expected = textwrap.dedent(
-    """\
+        """\
     ## Usage:
     ```text
     testapp thecommand [options]
     ```
-        
+
     ## Summary:
 
     An insightful overview. Look - it even has code!
@@ -418,6 +431,7 @@ def test_command_help_text_backticks_markdown():
     )
 
     assert text == expected
+
 
 @pytest.mark.parametrize("output_format", list(OutputFormat))
 def test_command_help_text_no_parameters(docs_url, output_format):
@@ -502,7 +516,9 @@ def test_command_help_text_no_parameters(docs_url, output_format):
         - `other-cmd-4`
     """
     )
-    assert text == (expected_plain if output_format == OutputFormat.plain else expected_markdown)
+    assert text == (
+        expected_plain if output_format == OutputFormat.plain else expected_markdown
+    )
 
 
 @pytest.mark.parametrize("output_format", list(OutputFormat))
@@ -588,7 +604,9 @@ def test_command_help_text_with_parameters(docs_url, output_format):
         - `other-cmd-2`
     """
     )
-    assert text == (expected_plain if output_format == OutputFormat.plain else expected_markdown)
+    assert text == (
+        expected_plain if output_format == OutputFormat.plain else expected_markdown
+    )
 
 
 @pytest.mark.parametrize("output_format", list(OutputFormat))
@@ -664,7 +682,9 @@ def test_command_help_text_with_parameters_with_no_help(docs_url, output_format)
         - `other-cmd-2`
     """
     )
-    assert text == (expected_plain if output_format == OutputFormat.plain else expected_markdown)
+    assert text == (
+        expected_plain if output_format == OutputFormat.plain else expected_markdown
+    )
 
 
 @pytest.mark.parametrize("output_format", list(OutputFormat))
@@ -768,7 +788,9 @@ def test_command_help_text_complex_overview(docs_url, output_format):
         | `-q, --quiet` | Only show warnings and errors, not progress. |
     """
     )
-    assert text == (expected_plain if output_format == OutputFormat.plain else expected_markdown)
+    assert text == (
+        expected_plain if output_format == OutputFormat.plain else expected_markdown
+    )
 
 
 @pytest.mark.parametrize("output_format", list(OutputFormat))
@@ -832,7 +854,9 @@ def test_command_help_text_loneranger(docs_url, output_format):
         | `-q, --quiet` | Only show warnings and errors, not progress. |
     """
     )
-    assert text == (expected_plain if output_format == OutputFormat.plain else expected_markdown)
+    assert text == (
+        expected_plain if output_format == OutputFormat.plain else expected_markdown
+    )
 
 
 # -- tests for the markdown overview processing
@@ -1370,7 +1394,9 @@ def test_tool_exec_help_command_on_command_complex():
         parser.add_argument("param3", metavar="transformed3", help="help on param2")
         parser.add_argument("--option1", help="help on option1")
         parser.add_argument("-o2", "--option2", help="help on option2")
-        parser.add_argument("--option3", nargs=2, metavar=("ot1", "ot2"), help="help on option3")
+        parser.add_argument(
+            "--option3", nargs=2, metavar=("ot1", "ot2"), help="help on option3"
+        )
 
     cmd = create_command("somecommand", "This command does that.")
     cmd.fill_parser = fill_parser
@@ -1455,7 +1481,9 @@ def test_tool_exec_help_command_on_command_wrong():
     error = exc_cm.value
 
     # check the given information to the help text builder
-    assert mock.call_args[0] == ("command 'wrongcommand' not found to provide help for",)
+    assert mock.call_args[0] == (
+        "command 'wrongcommand' not found to provide help for",
+    )
 
     # check the result of the help builder is what is shown
     assert str(error) == "test help"
@@ -1493,7 +1521,7 @@ def test_tool_exec_help_when_globalarg_without_short_form(monkeypatch):
         "--xyz",
         "An option without short form",
     )
-    new_default_globals = dispatcher_mod._DEFAULT_GLOBAL_ARGS + [new_global]
+    new_default_globals = [*dispatcher_mod._DEFAULT_GLOBAL_ARGS, new_global]
     monkeypatch.setattr(dispatcher_mod, "_DEFAULT_GLOBAL_ARGS", new_default_globals)
 
     dispatcher = Dispatcher("testapp", [])
@@ -1581,7 +1609,9 @@ def test_helprequested_specific_command():
 
     parameters = ["somecmd"]
     with patch("craft_cli.helptexts.HelpBuilder.get_command_help") as mock:
-        with patch("craft_cli.dispatcher.Dispatcher._get_global_options", return_value=[]):
+        with patch(
+            "craft_cli.dispatcher.Dispatcher._get_global_options", return_value=[]
+        ):
             dispatcher._get_requested_help(parameters, None)
     args = mock.call_args[0]
     assert isinstance(args[0], cmd)
@@ -1617,7 +1647,7 @@ def test_helprequested_format_noncommand(parameters):
 
 
 @pytest.mark.parametrize(
-    "parameters,expected_format",
+    ("parameters", "expected_format"),
     [
         (["--format=plain", "somecmd"], OutputFormat.plain),
         (["somecmd", "--format=plain"], OutputFormat.plain),
@@ -1636,7 +1666,9 @@ def test_helprequested_command_format_ok(parameters, expected_format):
     dispatcher = Dispatcher("testapp", command_groups)
 
     with patch("craft_cli.helptexts.HelpBuilder.get_command_help") as mock:
-        with patch("craft_cli.dispatcher.Dispatcher._get_global_options", return_value=[]):
+        with patch(
+            "craft_cli.dispatcher.Dispatcher._get_global_options", return_value=[]
+        ):
             dispatcher._get_requested_help(parameters, None)
     args = mock.call_args[0]
     assert isinstance(args[0], cmd)
@@ -1696,7 +1728,6 @@ def test_helprequested_command_format_truncated(parameters):
 
 
 class AppConfigCommand(BaseCommand):
-
     name: str = "app-config"
     help_msg: str = "Help text"
     overview: str = "Overview"
@@ -1715,8 +1746,8 @@ class AppConfigCommand(BaseCommand):
 @pytest.mark.parametrize(
     "sysargs",
     [
-        "testapp app-config --help".split()[1:],
-        "testapp help app-config".split()[1:],
+        ["testapp", "app-config", "--help"][1:],
+        ["testapp", "help", "app-config"][1:],
     ],
 )
 def test_helprequested_command_app_config(sysargs):
@@ -1724,14 +1755,15 @@ def test_helprequested_command_app_config(sysargs):
     dispatcher = Dispatcher("testapp", command_groups)
 
     app_config = {"choices": [1, 2, 3]}
-    expected_help = re.escape("number:  The number to use. Possible values are [1, 2, 3].")
+    expected_help = re.escape(
+        "number:  The number to use. Possible values are [1, 2, 3]."
+    )
 
     with pytest.raises(ProvideHelpException, match=expected_help):
         dispatcher.pre_parse_args(sysargs, app_config)
 
 
 class NoConfigCommand(BaseCommand):
-
     name: str = "no-config"
     help_msg: str = "Help text"
     overview: str = "Overview"
@@ -1741,15 +1773,15 @@ class NoConfigCommand(BaseCommand):
 
         parser.add_argument(
             "config",
-            help=f"Config was correctly None",
+            help="Config was correctly None",
         )
 
 
 @pytest.mark.parametrize(
     "sysargs",
     [
-        "testapp no-config --help".split()[1:],
-        "testapp help no-config".split()[1:],
+        ["testapp", "no-config", "--help"][1:],
+        ["testapp", "help", "no-config"][1:],
     ],
 )
 def test_helprequested_command_no_app_config(sysargs):

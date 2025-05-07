@@ -17,7 +17,6 @@
 """Generic fixtures for the whole test suite."""
 
 import pytest
-
 from craft_cli.messages import EmitterMode
 from craft_cli.printer import Printer, _Spinner
 

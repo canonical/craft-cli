@@ -18,7 +18,7 @@ import multiprocessing
 import sys
 from textwrap import dedent
 
-from craft_cli import emit, EmitterMode
+from craft_cli import EmitterMode, emit
 
 logger = logging.getLogger()
 
@@ -26,7 +26,7 @@ logger = logging.getLogger()
 def strip_timestamps(text: str) -> str:
     lines = []
     for line in text.splitlines():
-        lines.append(line.split(" ", maxsplit=2)[-1])
+        lines.append(line.split(" ", maxsplit=2)[-1])  # noqa: PERF401
     return "\n".join(lines)
 
 
@@ -41,7 +41,10 @@ def test_logging_in_multiprocess(tmp_path):
     emitter_log = tmp_path / "emitter_log.txt"
     greeting = "hi"
     emit.init(
-        mode=EmitterMode.QUIET, appname="testapp", greeting=greeting, log_filepath=emitter_log
+        mode=EmitterMode.QUIET,
+        appname="testapp",
+        greeting=greeting,
+        log_filepath=emitter_log,
     )
 
     logger.info("Message 1 from PARENT process")

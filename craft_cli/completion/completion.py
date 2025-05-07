@@ -27,8 +27,7 @@ from pathlib import Path
 from typing import Any, cast
 
 import jinja2
-from overrides import override
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 import craft_cli
 
@@ -97,7 +96,7 @@ class CompGen:
     glob_pattern: str | None = None
     prefix: str | None = None
     suffix: str | None = None
-    words: list[str] = dataclasses.field(default_factory=list)
+    words: list[str] = cast("list[str]", dataclasses.field(default_factory=list))
     filter_pattern: str | None = None
 
     def __str__(self) -> str:
@@ -138,17 +137,22 @@ class Arg(ABC):
         else:
             flags = [argument.long_option]
 
-        completion_command = CompGen(words=argument.choices) if argument.choices else CompGen()
+        completion_command = (
+            CompGen(words=argument.choices) if argument.choices else CompGen()
+        )
 
         return cls(flags=flags, completion_command=completion_command)
 
     @classmethod
     def from_action(cls, action: argparse.Action) -> Self:
         """Convert an argparse Action into an OptionArgument for parsing."""
-        completion_command = CompGen(words=list(action.choices)) if action.choices else CompGen()
+        completion_command = (
+            CompGen(words=list(action.choices)) if action.choices else CompGen()
+        )
 
         return cls(
-            flags=cast("list[str]", action.option_strings), completion_command=completion_command
+            flags=cast("list[str]", action.option_strings),
+            completion_command=completion_command,
         )
 
     @property
@@ -197,7 +201,7 @@ def complete(shell_cmd: str, get_app_info: Callable[[], DispatcherAndConfig]) ->
 
     :param shell_cmd: The name of the command being completed for
     :param get_app_info: A function that returns a populated craft-cli dispatcher and the config
-    needed to create its commands
+        needed to create its commands
     :return: A bash completion script for ``shell_cmd``
     """
     dispatcher, app_config = get_app_info()
@@ -219,7 +223,7 @@ def complete(shell_cmd: str, get_app_info: Callable[[], DispatcherAndConfig]) ->
         cmd.fill_parser(parser)  # type: ignore[arg-type]
         # reason: for this module, we don't need the help/error
         # capabilities of _CustomArgumentParser
-        actions = parser._actions
+        actions = parser._actions  # noqa: SLF001
 
         options: list[OptionArgument] = []
         args: list[Argument] = []
@@ -263,7 +267,8 @@ def _validate_app_info(raw_ref: str) -> Callable[[], DispatcherAndConfig]:
     # function at `func_name` being type-annotated. This is Python though,
     # so just trust that it's a valid function.
     return cast(
-        "Callable[[], tuple[craft_cli.Dispatcher, dict[str, Any]]]", getattr(module, func_name)
+        "Callable[[], tuple[craft_cli.Dispatcher, dict[str, Any]]]",
+        getattr(module, func_name),
     )
 
 
@@ -290,7 +295,9 @@ def main() -> None:
 
     # Necessary to avoid errors from running foreign functions that use the craft-cli emitter
     craft_cli.emit.init(
-        craft_cli.EmitterMode.QUIET, "craft-cli completion", "Generating completion scripts..."
+        craft_cli.EmitterMode.QUIET,
+        "craft-cli completion",
+        "Generating completion scripts...",
     )
 
     print(complete(args.shell_cmd, args.app_info))

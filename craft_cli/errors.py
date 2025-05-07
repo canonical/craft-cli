@@ -56,7 +56,7 @@ class CraftError(Exception):
     retcode: int
     """The code to return when the application finishes."""
 
-    def __init__(  # noqa: PLR0913 (too many arguments)
+    def __init__(
         self,
         message: str,
         *,
@@ -108,7 +108,9 @@ class CraftCommandError(CraftError):
     is helpful enough to the user to be worth the extra text output.
     """
 
-    def __init__(self, message: str, *, stderr: str | bytes | None, **kwargs: Any) -> None:
+    def __init__(
+        self, message: str, *, stderr: str | bytes | None, **kwargs: Any
+    ) -> None:
         super().__init__(message, **kwargs)
         self._stderr = stderr
 

@@ -16,16 +16,24 @@
 """Completion auto-gen unit tests"""
 
 import argparse
-from craft_cli import GlobalArgument
-from craft_cli.completion.completion import Action, Arg, Option, Argument, CompGen, get_set_flags, CommandMapping
-from overrides import override
-from typing import List, Dict, Any
+from typing import Any
 
 import pytest
+from craft_cli import GlobalArgument
+from craft_cli.completion.completion import (
+    Action,
+    Arg,
+    Argument,
+    CommandMapping,
+    CompGen,
+    Option,
+    get_set_flags,
+)
+from overrides import override
 
 
 @pytest.mark.parametrize(
-    "input, expected",
+    ("input", "expected"),
     [
         pytest.param(Action(0), [], id="no-flags"),
         pytest.param(Action.alias, [Action.alias], id="one-flag"),
@@ -36,12 +44,12 @@ import pytest
         ),
     ],
 )
-def test_get_set_flags(input: Action, expected: List[Action]) -> None:
+def test_get_set_flags(input: Action, expected: list[Action]) -> None:  # noqa: A002
     assert get_set_flags(input) == expected
 
 
 @pytest.mark.parametrize(
-    "input, expected",
+    ("input", "expected"),
     [
         pytest.param({}, "compgen", id="no-args"),
         pytest.param(
@@ -79,7 +87,7 @@ def test_get_set_flags(input: Action, expected: List[Action]) -> None:
         ),
     ],
 )
-def test_compgen(input: Dict[str, Any], expected: str) -> None:
+def test_compgen(input: dict[str, Any], expected: str) -> None:  # noqa: A002
     compgen = CompGen(**input)
     assert str(compgen) == expected
 
@@ -110,7 +118,9 @@ def test_arg_from_global() -> None:
 
 
 def test_arg_from_action() -> None:
-    action = argparse.Action(["--verbosity", "-v"], "verbosity", choices=["whispering", "yelling"])
+    action = argparse.Action(
+        ["--verbosity", "-v"], "verbosity", choices=["whispering", "yelling"]
+    )
     arg = FakeArg.from_action(action)
 
     assert arg.flag_list == "--verbosity,-v"
@@ -118,7 +128,7 @@ def test_arg_from_action() -> None:
 
 
 @pytest.mark.parametrize(
-    "args, expected_args",
+    ("args", "expected_args"),
     [
         pytest.param(
             [Argument(["--foo"], completion_command="")],
@@ -132,7 +142,7 @@ def test_arg_from_action() -> None:
         ),
     ],
 )
-def test_commandmapping_all_args(args: List[Argument], expected_args) -> None:
+def test_commandmapping_all_args(args: list[Argument], expected_args) -> None:
     mapping = CommandMapping(options=[], args=args, params="")
 
     assert mapping.all_args == expected_args

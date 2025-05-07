@@ -3,7 +3,10 @@
 End the application with different return codes
 ===============================================
 
-To enable the application to return different return codes in different situations, you need wrap the Dispatcher in a specific way (having different return codes in the different situations), to take in consideration the returned value from the command's run, and of course make the application to actually return the specific value.
+To enable the application to return different return codes in different situations, you
+need wrap the Dispatcher in a specific way (having different return codes in the
+different situations), to take in consideration the returned value from the command's
+run, and of course make the application to actually return the specific value.
 
 In the following code structure we see all these effects at once::
 
@@ -39,8 +42,12 @@ In the following code structure we see all these effects at once::
 
 In detail:
 
-- the return code from the command's execution is bound when calling ``dispatcher.run``, supporting the case of it not returning anything (defaults to ``0``)
+- the return code from the command's execution is bound when calling ``dispatcher.run``,
+  supporting the case of it not returning anything (defaults to ``0``)
 
-- have different return codes assigned for the different ``except`` situations, with two particular cases: for ``ProvideHelpException`` it's ``0`` as it's a normal exit situation when the user requested for help, and for ``CraftError`` where the return code is taken from the exception itself
+- have different return codes assigned for the different ``except`` situations, with two
+  particular cases: for ``ProvideHelpException`` it's ``0`` as it's a normal exit
+  situation when the user requested for help, and for ``CraftError`` where the return
+  code is taken from the exception itself
 
 - a ``sys.exit`` at the very end for the process to return the value

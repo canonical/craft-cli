@@ -1,3 +1,0 @@
-# This file is used by the automatic-doc-checks CI workflow
-# This is sourced the "craft-cli/docs" dir, so this installs "craft-cli[docs]"
-..[docs]
