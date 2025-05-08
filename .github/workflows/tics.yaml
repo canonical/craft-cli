@@ -3,11 +3,12 @@ on:
   push:
     branches:
       - "main"
+      # For debugging
+      - "work/tiobe*"
 
 jobs:
   TICS:
     uses: canonical/starflow/.github/workflows/tics.yaml@main
-    # Uncomment this and add your project's name on Tiobe TICS
-    # with:
-    #   project: "starcraft"
+    with:
+      project: "craft-cli"
     secrets: inherit
