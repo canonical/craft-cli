@@ -2,9 +2,7 @@
 name = "craft-cli"
 dynamic = ["version", "readme"]
 description = "Command Line Interface"
-authors = [
-    {name = "Canonical Ltd", email = "snapcraft@lists.snapcraft.io"}
-]
+authors = [{ name = "Canonical Ltd", email = "snapcraft@lists.snapcraft.io" }]
 dependencies = [
     "platformdirs",
     "pywin32; sys_platform == 'win32'",
@@ -59,16 +57,14 @@ types = [
 docs = [
     "sphinx-toolbox==3.8.1",
     "sphinx-lint==1.0.0",
-    "pytest>=7.0.0", # pytest is imported by the code, which is parsed for api gen.
+    "sphinxext-rediraffe==0.2.7",
+    "pytest>=7.0.0",                 # pytest is imported by the code, which is parsed for api gen.
     "canonical-sphinx[full]==0.2.0",
 ]
 tics = ["flake8", "pylint"]
 
 [build-system]
-requires = [
-    "setuptools==75.2.0",
-    "setuptools_scm[toml]>=7.1"
-]
+requires = ["setuptools==75.2.0", "setuptools_scm[toml]>=7.1"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.dynamic]
@@ -196,10 +192,7 @@ strict = false
 line-length = 88
 target-version = "py310"
 src = ["craft_cli", "tests"]
-extend-exclude = [
-    "docs",
-    "examples.py",
-]
+extend-exclude = ["docs", "examples.py"]
 
 [tool.ruff.format]
 docstring-code-format = true
@@ -352,5 +345,5 @@ classmethod-decorators = ["pydantic.validator", "pydantic.root_validator"]
 "craft_cli/pytest_plugin.py" = [
     "ANN",    # Ignore type annotations in tests
     "FBT002", # Boolean default value in function definition (preserving for backwards-comp)
-    "S101",  # Use of `assert` detected
+    "S101",   # Use of `assert` detected
 ]

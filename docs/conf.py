@@ -23,6 +23,7 @@ extensions = [
     "sphinx.ext.coverage",
     "sphinx.ext.doctest",
     "sphinx.ext.autodoc",
+    "sphinxext.rediraffe",
     "sphinx_toolbox",
     "canonical_sphinx",
 ]
@@ -42,9 +43,10 @@ autodoc_member_order = "bysource"
 
 # region Setup reference generation
 def run_apidoc(_):
-    from sphinx.ext.apidoc import main
     import os
     import sys
+
+    from sphinx.ext.apidoc import main
 
     sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
     cur_dir = os.path.abspath(os.path.dirname(__file__))
@@ -65,3 +67,6 @@ def setup(app):
 
 
 # endregion
+
+# Client-side page redirects.
+rediraffe_redirects = "redirects.txt"
