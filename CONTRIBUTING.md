@@ -27,7 +27,7 @@ incorporated into the repository.
 
 ### Open source license
 
-Craft CLI is licensed under [GPL-3.0](LICENSE).
+Craft CLI is licensed under [LGPL-3.0](LICENSE).
 
 ## Report an issue or open a request
 
