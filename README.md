@@ -16,10 +16,11 @@ The library provides two main functionalities:
 The [documentation](https://craft-cli.readthedocs.io) is available on
 Read The Docs.
 
-## Contributing
+## Contribute to Craft CLI
 
-See the [HACKING.md](HACKING.md) document for details on how to
-contribute.
+Craft CLI is open source and part of the Canonical family. We would love your help.
+
+If you're interested, start with the [contribution guide](CONTRIBUTING.md).
 
 ## License
 
