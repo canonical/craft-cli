@@ -275,13 +275,3 @@ interface, as it leads to fewer potential conflicts with syncs.
 
 Don't force-push changes to the branch. It destroys the history of the review and makes
 it harder for maintainers to see code changes.
-
-### Evaluating pull requests
-
-Oftentimes all you want to do is see if a given pull request solves the issue you were
-having. To make this easier, snaps are published for AMD64 and ARM64 on a channel named
-`latest/edge/pr-<PR-number>` where `PR number` is the number of the pull request.
-
-For feature branches, snaps are published for AMD64 and ARM64 on a channel named
-`latest/edge/<branch-name>`. For example, a branch named `feature/offline-mode` would be
-available on the channel `latest/edge/offline-mode`.
