@@ -12,6 +12,7 @@ import time
 from pathlib import Path
 from typing import NoReturn
 
+import craft_cli
 from craft_cli import CraftError, EmitterMode, emit
 
 USAGE = """
@@ -547,6 +548,26 @@ def example_32() -> NoReturn:
     """Showcase the cursor being restored even after an uncaught exception."""
     emit.progress("Look ma, no cursor!")
     raise BaseException  # noqa: TRY002
+
+
+def example_33() -> None:
+    """Showcase error reporting."""
+    error = craft_cli.CraftError(
+        message="Something unexpected happened.",
+        details="These are error details.",
+        logpath_report=False,
+    )
+    emit.error(error)
+
+
+def example_34() -> None:
+    """Showcase error reporting (details with multiple lines)."""
+    error = craft_cli.CraftError(
+        message="Something unexpected happened.",
+        details="These are error details.\n- A new line\n- Another line",
+        logpath_report=False,
+    )
+    emit.error(error)
 
 
 # -- end of test cases

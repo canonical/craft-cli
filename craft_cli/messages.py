@@ -758,7 +758,8 @@ class Emitter:
 
         # detailed information and/or original exception
         if error.details:
-            text = f"Detailed information: {error.details}"
+            details = _format_details(error.details)
+            text = f"Detailed information: {details}"
             details_stream = None if self._mode == EmitterMode.QUIET else sys.stderr
             self._printer.show(
                 details_stream, text, use_timestamp=use_timestamp, end_line=True
@@ -875,3 +876,10 @@ class Emitter:
 # module-level instantiated Emitter; this is the instance all code shall use and Emitter
 # shall not be instantiated again for the process' run
 emit = Emitter()
+
+
+def _format_details(details: str) -> str:
+    """Prepend a newline to multi-line details, if necessary."""
+    if "\n" in details:
+        return details if details.startswith("\n") else f"\n{details}"
+    return details
