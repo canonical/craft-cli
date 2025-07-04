@@ -549,6 +549,35 @@ def example_32() -> NoReturn:
     raise BaseException  # noqa: TRY002
 
 
+def example_33() -> None:
+    """Demonstrate progress (ephemeral), progress (permanent), and warning usage."""
+    emit.message("Starting example with different message types...")
+    time.sleep(1)
+
+    # Progress with permanent=False (ephemeral, will be overwritten)
+    emit.progress("Processing step 1...", permanent=False)
+    time.sleep(2)
+    emit.progress("Processing step 2...", permanent=False)
+    time.sleep(2)
+
+    # Progress with permanent=True (will remain visible)
+    emit.progress("Completed processing phase", permanent=True)
+    time.sleep(1)
+
+    # Continue with ephemeral progress
+    emit.progress("Cleaning up...", permanent=False)
+    time.sleep(2)
+
+    # Warning messages (always permanent)
+    emit.warning("This feature is deprecated and will be removed in v2.0")
+    time.sleep(1)
+    emit.warning("Consider using the new API instead", prefix="NOTE: ")
+    time.sleep(1)
+
+    # Final result
+    emit.message("Example completed successfully!")
+
+
 # -- end of test cases
 
 if len(sys.argv) < 2:  # noqa: PLR2004, magic value

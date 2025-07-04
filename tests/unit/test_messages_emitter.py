@@ -830,6 +830,90 @@ def test_trace_in_trace_mode(get_initiated_emitter):
     ]
 
 
+# -- tests for warning
+
+
+def test_warning_in_quiet_mode(get_initiated_emitter):
+    """Only log the warning message in quiet mode."""
+    emitter = get_initiated_emitter(EmitterMode.QUIET)
+    emitter.warning("deprecation notice")
+
+    assert emitter.printer_calls == [
+        call().show(
+            None, "WARNING: deprecation notice", ephemeral=False, use_timestamp=False
+        ),
+    ]
+
+
+@pytest.mark.parametrize(
+    "mode",
+    [
+        EmitterMode.BRIEF,
+        EmitterMode.VERBOSE,
+    ],
+)
+def test_warning_in_brief_verbose_modes(get_initiated_emitter, mode):
+    """Send warning to stderr (permanent) and log it in brief/verbose modes."""
+    emitter = get_initiated_emitter(mode)
+    emitter.warning("deprecation notice")
+
+    assert emitter.printer_calls == [
+        call().show(
+            sys.stderr,
+            "WARNING: deprecation notice",
+            ephemeral=False,
+            use_timestamp=False,
+        ),
+    ]
+
+
+@pytest.mark.parametrize(
+    "mode",
+    [
+        EmitterMode.DEBUG,
+        EmitterMode.TRACE,
+    ],
+)
+def test_warning_in_developer_modes(get_initiated_emitter, mode):
+    """Send warning to stderr (permanent, with timestamp) and log it in developer modes."""
+    emitter = get_initiated_emitter(mode)
+    emitter.warning("deprecation notice")
+
+    assert emitter.printer_calls == [
+        call().show(
+            sys.stderr,
+            "WARNING: deprecation notice",
+            ephemeral=False,
+            use_timestamp=True,
+        ),
+    ]
+
+
+def test_warning_with_custom_prefix(get_initiated_emitter):
+    """Allow custom prefix for warning messages."""
+    emitter = get_initiated_emitter(EmitterMode.VERBOSE)
+    emitter.warning("deprecation notice", prefix="DEPRECATION: ")
+
+    assert emitter.printer_calls == [
+        call().show(
+            sys.stderr,
+            "DEPRECATION: deprecation notice",
+            ephemeral=False,
+            use_timestamp=False,
+        ),
+    ]
+
+
+def test_warning_with_empty_prefix(get_initiated_emitter):
+    """Allow empty prefix for warning messages."""
+    emitter = get_initiated_emitter(EmitterMode.VERBOSE)
+    emitter.warning("just a message", prefix="")
+
+    assert emitter.printer_calls == [
+        call().show(sys.stderr, "just a message", ephemeral=False, use_timestamp=False),
+    ]
+
+
 # -- tests for stopping the machinery ok
 
 

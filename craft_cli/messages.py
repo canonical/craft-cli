@@ -603,6 +603,35 @@ class Emitter:
         if self._mode == EmitterMode.TRACE:
             self._printer.show(sys.stderr, text, use_timestamp=True)
 
+    @_active_guard()
+    def warning(self, text: str, prefix: str = "WARNING: ") -> None:
+        """Warning message that outputs permanently to stderr.
+
+        Used for warnings like deprecation notices that should always be visible
+        and logged. This is an alternative to using progress(permanent=True) for
+        warning messages.
+
+        Args:
+            text: The warning message text
+            prefix: The prefix to prepend to the message (default: "WARNING: ")
+
+        """
+        formatted_text = f"{prefix}{text}"
+        if self._mode == EmitterMode.QUIET:
+            stream = None
+            use_timestamp = False
+        elif self._mode in (EmitterMode.BRIEF, EmitterMode.VERBOSE):
+            stream = sys.stderr
+            use_timestamp = False
+        else:
+            stream = sys.stderr
+            use_timestamp = True
+        if self._streaming_brief:
+            self._printer.set_terminal_prefix("")
+        self._printer.show(
+            stream, formatted_text, ephemeral=False, use_timestamp=use_timestamp
+        )
+
     def _get_progress_params(
         self,
         permanent: bool,  # noqa: FBT001 (boolean positional arg)
