@@ -128,7 +128,7 @@ def test_getlogpath_exceeds_rotation_limit(test_log_dir, monkeypatch):
     new_fpath = _get_log_filepath("testapp")
     new_fpath.touch()
     present_logs = sorted((test_log_dir / "testapp").iterdir())
-    assert present_logs == previous_fpaths[1:] + [new_fpath]
+    assert present_logs == [*previous_fpaths[1:], new_fpath]
 
 
 def test_getlogpath_supports_missing_file_to_unlink(test_log_dir, monkeypatch):
@@ -182,7 +182,7 @@ def test_getlogpath_ignore_other_files(test_log_dir, monkeypatch):
     new_fpath = _get_log_filepath("testapp")
     new_fpath.touch()
     present_logs = sorted((test_log_dir / "testapp").iterdir())
-    assert present_logs == [f_aaa] + previous_fpaths[1:] + [new_fpath, f_zzz]
+    assert present_logs == [f_aaa, *previous_fpaths[1:], new_fpath, f_zzz]
 
 
 def test_getlogpath_deep_dirs(tmp_path, monkeypatch):

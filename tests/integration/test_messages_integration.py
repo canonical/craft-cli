@@ -179,15 +179,15 @@ def assert_outputs(
 @pytest.mark.parametrize("output_is_terminal", [None])
 def test_exposed_api():
     """Verify names are properly exposed."""
-    from craft_cli import emit
+    from craft_cli import emit  # noqa: PLC0415
 
     assert isinstance(emit, messages.Emitter)
 
-    from craft_cli import EmitterMode as test_em  # noqa: N813
+    from craft_cli import EmitterMode as test_em  # noqa: N813, PLC0415
 
     assert test_em is EmitterMode
 
-    from craft_cli import CraftError as test_cs  # noqa: N813
+    from craft_cli import CraftError as test_cs  # noqa: N813, PLC0415
 
     assert test_cs is CraftError
 

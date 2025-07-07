@@ -129,7 +129,7 @@ class RecordingEmitter:
     def assert_progress(
         self,
         expected_text: str,
-        permanent: bool | None = None,
+        permanent: bool | None = None,  # noqa: FBT001
         regex: bool = False,  # noqa: FBT001
     ) -> Any:
         """Check the 'progress' method was properly used.
