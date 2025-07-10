@@ -572,6 +572,22 @@ class Emitter:
         self._printer.show(stream, text, use_timestamp=use_timestamp)
 
     @_active_guard()
+    def warning(self, text: str, *, prefix: str = "WARNING: ") -> None:
+        """Warning information.
+
+        To show warnings to the user, which are not errors but may
+        indicate that something is not right and the user should pay attention to it.
+        """
+        text = f"{prefix}{text}"
+        if self._mode in (EmitterMode.DEBUG, EmitterMode.TRACE):
+            stream = sys.stderr
+            use_timestamp = True
+        else:
+            stream = sys.stderr
+            use_timestamp = False
+        self._printer.show(stream, text, use_timestamp=use_timestamp)
+
+    @_active_guard()
     def debug(self, text: str) -> None:
         """Debug information.
 
