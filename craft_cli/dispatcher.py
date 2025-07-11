@@ -21,7 +21,7 @@ import argparse
 import dataclasses
 import difflib
 from collections.abc import Callable, Sequence
-from typing import Any, Literal, NamedTuple, NoReturn, Optional
+from typing import Any, Literal, NamedTuple, NoReturn
 
 from craft_cli import EmitterMode, emit
 from craft_cli.errors import ArgumentParsingError, ProvideHelpException
@@ -184,7 +184,7 @@ class BaseCommand:
     # be a breaking change for subclasses that override this with just `None` and
     # use the `overrides.override` decorator. See:
     # https://github.com/mkorpela/overrides/issues/115
-    def run(self, parsed_args: argparse.Namespace) -> Optional[int]:  # noqa: UP007
+    def run(self, parsed_args: argparse.Namespace) -> int | None:
         """Execute command's actual functionality.
 
         It must be overridden by the command implementation.

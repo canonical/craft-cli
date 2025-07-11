@@ -201,7 +201,7 @@ class _PipeReaderThread(threading.Thread):
         # to unblock the reading); also note that the pipe pair themselves depend
         # on the platform
         if sys.platform == "win32":
-            import win32pipe
+            import win32pipe  # noqa: PLC0415
 
             # parameters: default security, default buffer size, binary mode
             binary_mode = os.O_BINARY
