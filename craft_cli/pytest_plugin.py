@@ -249,7 +249,7 @@ class _RecordingProgresser:
 def emitter(monkeypatch: pytest.MonkeyPatch) -> RecordingEmitter:
     """Provide a helper to test everything that was shown using the Emitter."""
     recording_emitter = RecordingEmitter()
-    for method_name in ("message", "progress", "verbose", "debug", "trace"):
+    for method_name in ("message", "progress", "verbose", "debug", "trace", "warning"):
 
         def new_method(*a: Any, method_name: str = method_name, **k: Any) -> None:
             recording_emitter.record(method_name, a, k)
