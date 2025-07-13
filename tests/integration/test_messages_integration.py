@@ -693,15 +693,28 @@ def test_warning_in_developer_modes(capsys, mode):
     emit.ended_ok()
 
     expected = [
-        Line("WARNING: The meaning of life is NOT 42.", timestamp=True),
+        Line("Warning: The meaning of life is NOT 42.", timestamp=True),
     ]
     assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)
+
+
+@pytest.mark.parametrize("output_is_terminal", [True, False])
+def test_warning_in_quiet_mode(capsys):
+    """Only log the message."""
+    emit = Emitter()
+    emit.init(EmitterMode.QUIET, "testapp", GREETING)
+    emit.warning("The meaning of life is NOT 42.")
+    emit.ended_ok()
+
+    expected = [
+        Line("Warning: The meaning of life is NOT 42.", timestamp=False),
+    ]
+    assert_outputs(capsys, emit, expected_log=expected)
 
 
 @pytest.mark.parametrize(
     "mode",
     [
-        EmitterMode.QUIET,
         EmitterMode.BRIEF,
         EmitterMode.VERBOSE,
     ],
@@ -715,7 +728,7 @@ def test_warning_in_quietish_modes(capsys, mode):
     emit.ended_ok()
 
     expected = [
-        Line("WARNING: The meaning of life is NOT 42.", timestamp=False),
+        Line("Warning: The meaning of life is NOT 42.", timestamp=False),
     ]
     assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)
 

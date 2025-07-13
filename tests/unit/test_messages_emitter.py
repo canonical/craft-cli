@@ -769,10 +769,19 @@ def test_verbose_in_developer_modes(get_initiated_emitter, mode):
     ]
 
 
+def test_warning_in_quiet_mode(get_initiated_emitter):
+    """Only log the message."""
+    emitter = get_initiated_emitter(EmitterMode.QUIET)
+    emitter.warning("some text")
+
+    assert emitter.printer_calls == [
+        call().show(None, "Warning: some text", use_timestamp=False),
+    ]
+
+
 @pytest.mark.parametrize(
     "mode",
     [
-        EmitterMode.QUIET,
         EmitterMode.BRIEF,
         EmitterMode.VERBOSE,
     ],
@@ -783,7 +792,7 @@ def test_warning_in_quietish_modes(get_initiated_emitter, mode):
     emitter.warning("some text")
 
     assert emitter.printer_calls == [
-        call().show(sys.stderr, "WARNING: some text", use_timestamp=False),
+        call().show(sys.stderr, "Warning: some text", use_timestamp=False),
     ]
 
 
@@ -800,7 +809,7 @@ def test_warning_in_developer_modes(get_initiated_emitter, mode):
     emitter.warning("some text")
 
     assert emitter.printer_calls == [
-        call().show(sys.stderr, "WARNING: some text", use_timestamp=True),
+        call().show(sys.stderr, "Warning: some text", use_timestamp=True),
     ]
 
 

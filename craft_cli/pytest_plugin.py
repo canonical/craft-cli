@@ -158,11 +158,7 @@ class RecordingEmitter:
         """
         return self._check(expected_text, "verbose", regex)
 
-    def assert_warning(
-        self,
-        expected_text: str,
-        regex: bool = False,  # noqa: FBT001
-    ) -> Any:
+    def assert_warning(self, expected_text: str, *, regex: bool = False) -> Any:
         """Check the 'warning' method was properly used.
 
         It verifies that the method was called at least once with the expected text.
