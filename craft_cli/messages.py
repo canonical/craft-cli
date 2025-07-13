@@ -573,7 +573,7 @@ class Emitter:
 
     @_active_guard()
     def warning(self, text: str, *, prefix: str = "WARNING: ") -> None:
-        """Warning information.
+        """Show an important warning to the user.
 
         To show warnings to the user, which are not errors but may
         indicate that something is not right and the user should pay attention to it.
