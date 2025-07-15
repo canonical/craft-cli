@@ -240,7 +240,8 @@ class Dispatcher:
     :param summary: the summary of the application (for help texts)
     :param extra_global_args: other automatic global arguments than the ones
         provided automatically
-    :param default_command: the command to run if none was specified in the command line
+    :param default_command: The command to run if none was specified in the command line.
+        This parameter will be removed in a future release of craft-cli (#361).
     :param docs_base_url: The base address of the documentation, for help messages.
     """
 
@@ -254,6 +255,7 @@ class Dispatcher:
         default_command: type[BaseCommand] | None = None,
         docs_base_url: str | None = None,
     ) -> None:
+        self._app_name = appname
         self._default_command = default_command
         self._docs_base_url = docs_base_url
         self._help_builder = HelpBuilder(
@@ -525,7 +527,11 @@ class Dispatcher:
             if self._default_command is None:
                 help_text = self._get_general_help(detailed=False)
                 raise ArgumentParsingError(help_text)
-            emit.trace(f"Using default command: {self._default_command.name!r}")
+            emit.progress(
+                f"Using {self._app_name} without a command will be removed in a future release. "
+                f"Use '{self._app_name} {self._default_command.name}' instead.",
+                permanent=True,
+            )
             # validated by BaseCommand
             assert self._default_command.name is not None  # noqa: S101 (use of assert)
             filtered_sysargs.insert(0, self._default_command.name)
