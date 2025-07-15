@@ -1061,6 +1061,36 @@ def test_reporterror_detailed_info_final_user_modes(mode, get_initiated_emitter)
     ]
 
 
+@pytest.mark.parametrize("mode", [EmitterMode.BRIEF, EmitterMode.VERBOSE])
+@pytest.mark.parametrize(
+    "details",
+    [
+        pytest.param("Line 1\nLine 2\nLine 3", id="no initial newline"),
+        pytest.param("\nLine 1\nLine 2\nLine 3", id="initial newline"),
+    ],
+)
+def test_reporterror_detailed_info_final_user_modes_newlines(
+    mode, get_initiated_emitter, details
+):
+    """Report an error having long detailed information, in final user modes."""
+    emitter = get_initiated_emitter(mode)
+    error = CraftError("test message", details=details)
+    emitter.error(error)
+
+    full_log_message = f"Full execution log: {repr(emitter._log_filepath)}"
+    assert emitter.printer_calls == [
+        call().show(sys.stderr, "test message", use_timestamp=False, end_line=True),
+        call().show(
+            sys.stderr,
+            "Detailed information: \nLine 1\nLine 2\nLine 3",
+            use_timestamp=False,
+            end_line=True,
+        ),
+        call().show(sys.stderr, full_log_message, use_timestamp=False, end_line=True),
+        call().stop(),
+    ]
+
+
 @pytest.mark.parametrize("mode", [EmitterMode.DEBUG, EmitterMode.TRACE])
 def test_reporterror_detailed_info_developer_modes(mode, get_initiated_emitter):
     """Report an error having detailed information, in developer intended modes."""
