@@ -114,7 +114,7 @@ def test_dispatcher_command_default_simple():
     assert dispatcher._command_class is cmd2
     assert dispatcher._command_args == []
     mock_progress.assert_any_call(
-        "Using appname without a command will be removed in a future release. "
+        "Running appname without a command will not be possible in future releases."
         "Use 'appname somecommand2' instead.",
         permanent=True,
     )

@@ -528,7 +528,7 @@ class Dispatcher:
                 help_text = self._get_general_help(detailed=False)
                 raise ArgumentParsingError(help_text)
             emit.progress(
-                f"Using {self._app_name} without a command will be removed in a future release. "
+                f"Running {self._app_name} without a command will not be possible in future releases."
                 f"Use '{self._app_name} {self._default_command.name}' instead.",
                 permanent=True,
             )
