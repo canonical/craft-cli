@@ -109,11 +109,15 @@ def test_dispatcher_command_default_simple():
     groups = [CommandGroup("title", [cmd1, cmd2])]
     dispatcher = Dispatcher("appname", groups, default_command=cmd2)
 
-    with patch.object(emit, "trace") as mock_trace:
+    with patch.object(emit, "progress") as mock_progress:
         dispatcher.pre_parse_args([])
     assert dispatcher._command_class is cmd2
     assert dispatcher._command_args == []
-    mock_trace.assert_any_call("Using default command: 'somecommand2'")
+    mock_progress.assert_any_call(
+        "Running appname without a command will not be possible in future releases."
+        "Use 'appname somecommand2' instead.",
+        permanent=True,
+    )
 
 
 def test_dispatcher_command_default_with_options():

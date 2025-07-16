@@ -1,11 +1,16 @@
 :tocdepth: 2
 
-***************
 Changelog
-***************
+=========
 
 See the `Releases page`_ on GitHub for a complete list of commits that are
 included in each version.
+
+3.1.0 (2025-MMM-DD)
+-------------------
+
+- Add a deprecation notice when the dispatcher's default command is used.
+  Support for default commands will be removed in a future release.
 
 3.0.0 (2025-Mar-27)
 -------------------
