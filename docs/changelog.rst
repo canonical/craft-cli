@@ -24,7 +24,6 @@ Deprecations:
 - Add a deprecation notice when the dispatcher's default command is used.
   Support for default commands will be removed in a future release.
 
-
 3.0.0 (2025-Mar-27)
 -------------------
 
