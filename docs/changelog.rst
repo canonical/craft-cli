@@ -8,7 +8,7 @@ included in each version.
 
 .. _release-3.1.0:
 
-3.1.0 (2025-Jul-16)
+3.1.0 (2025-Jul-17)
 -------------------
 
 New features:
