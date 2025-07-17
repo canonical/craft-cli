@@ -1,11 +1,28 @@
 :tocdepth: 2
 
-***************
 Changelog
-***************
+=========
 
 See the `Releases page`_ on GitHub for a complete list of commits that are
 included in each version.
+
+.. _release-3.1.0:
+
+3.1.0 (2025-Jul-17)
+-------------------
+
+New features:
+
+- To improve readability, multi-line details in error messages now start on a new line.
+
+Bug fixes:
+
+- `#334`_ The cursor is now always displayed after Craft CLI exits.
+
+Deprecations:
+
+- Add a deprecation notice when the dispatcher's default command is used.
+  Support for default commands will be removed in a future release.
 
 3.0.0 (2025-Mar-27)
 -------------------
@@ -90,3 +107,5 @@ should not be used.
 - Support a doc slug in CraftError in addition to full urls
 
 .. _Releases page: https://github.com/canonical/craft-cli/releases
+
+.. _#334: https://github.com/canonical/craft-cli/issues/334
