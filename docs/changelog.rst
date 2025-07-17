@@ -17,7 +17,7 @@ New features:
 
 Bug fixes:
 
-- `#334`_ The cursor is now always displayed after craft-cli exits.
+- `#334`_ The cursor is now always displayed after Craft CLI exits.
 
 Deprecations:
 
