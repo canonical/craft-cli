@@ -86,6 +86,16 @@ def test_emitter_record_verbose_plain(emitter):
         emitter.assert_verbose("foo")
 
 
+def test_emitter_record_warning_plain(emitter):
+    """Can verify calls to `warning`."""
+    messages.emit.progress("something else we don't care")
+    messages.emit.warning("foobar")
+
+    emitter.assert_warning("foobar")
+    with pytest.raises(AssertionError):
+        emitter.assert_warning("foo")
+
+
 def test_emitter_record_debug_plain(emitter):
     """Can verify calls to `debug`."""
     messages.emit.progress("something else we don't care")
