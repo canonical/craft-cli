@@ -6,6 +6,15 @@ Changelog
 See the `Releases page`_ on GitHub for a complete list of commits that are
 included in each version.
 
+.. _release-3.1.1:
+
+3.1.1 (2025-MMM-DD)
+-------------------
+
+Bug fixes:
+
+- Corrects a typo in the deprecation notice for using the default command.
+
 .. _release-3.1.0:
 
 3.1.0 (2025-Jul-17)
