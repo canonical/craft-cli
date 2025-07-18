@@ -8,7 +8,7 @@ included in each version.
 
 .. _release-3.1.1:
 
-3.1.1 (2025-MMM-DD)
+3.1.1 (2025-Jul-18)
 -------------------
 
 Bug fixes:
