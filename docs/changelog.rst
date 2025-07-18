@@ -13,7 +13,7 @@ included in each version.
 
 Bug fixes:
 
-- Corrects a typo in the deprecation notice for using the default command.
+- Correct a typo in the deprecation notice for using the default command.
 
 .. _release-3.1.0:
 
