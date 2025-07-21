@@ -494,11 +494,15 @@ class Printer:
         - add a new line to the screen (if needed)
         - close the log file
         """
+        if self.stopped:
+            # Safe no-op
+            return
         if not TESTMODE:
-            self.spinner.stop()
+            if self.spinner.is_alive():
+                self.spinner.stop()
             if _supports_ansi_escape_sequences() and _stream_is_terminal(sys.stderr):
                 print(ANSI_SHOW_CURSOR, end="", file=sys.stderr, flush=True)
-        if self.unfinished_stream is not None:
+        if self.unfinished_stream is not None and not self.unfinished_stream.closed:
             # With unfinished_stream set, the prv_msg object is valid.
             if self.prv_msg is not None and self.prv_msg.ephemeral:
                 # If the last printed message is of 'ephemeral' type, the stop
