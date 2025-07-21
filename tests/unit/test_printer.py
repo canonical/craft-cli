@@ -1543,8 +1543,7 @@ def test_testmode_multiple_stop(log_filepath, monkeypatch):
     printer.stop()
 
 
-@pytest.mark.parametrize("bla", [1, 2, 3])
-def test_unfinished_stream_closed(log_filepath, mocker, bla):
+def test_unfinished_stream_closed(log_filepath, mocker):
     """Test stopping the Printer with an unfinished message on a stream that's closed."""
 
     # The issue only happened when the stream is connected to a terminal
