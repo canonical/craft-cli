@@ -23,6 +23,7 @@ import textwrap
 import threading
 import time
 from datetime import datetime
+from io import StringIO
 
 import pytest
 from craft_cli import printer as printermod
@@ -1511,3 +1512,51 @@ def test_secrets_terminal_prefix(capsys, log_filepath, monkeypatch):
     _, stderr = capsys.readouterr()
     obtained = [remove_control_characters(l).rstrip() for l in stderr.splitlines()]  # noqa: E741
     assert obtained == expected
+
+
+def test_testmode_spinner(log_filepath, monkeypatch):
+    """Test that stopping the printer in a mixed TESTMODE environment is OK."""
+
+    # The cause of the original issue is this: the init_emitter() fixture sets TESTMODE
+    # to True and creates the Emitter, which creates its Printer. This causes the printer
+    # to *not* start the spinner.
+    monkeypatch.setattr(printermod, "TESTMODE", True)
+    printer = Printer(log_filepath)
+    # However, the Printer.stop() method is called at process exit, *after* all fixtures
+    # have been torn down, which means that TESTMODE is back to False. This could make
+    # Printer.stop() try to stop the spinner (that was never started).
+    monkeypatch.setattr(printermod, "TESTMODE", False)
+    printer.stop()
+
+
+def test_testmode_multiple_stop(log_filepath, monkeypatch):
+    """Test that repeated Printer.stop() calls are ok, even with variable TESTMODEs.
+
+    This is a similar scenario to test_testmode_spinner(), but testing two stop() calls.
+    """
+
+    monkeypatch.setattr(printermod, "TESTMODE", True)
+    printer = Printer(log_filepath)
+    printer.stop()
+
+    monkeypatch.setattr(printermod, "TESTMODE", False)
+    printer.stop()
+
+
+@pytest.mark.parametrize("bla", [1, 2, 3])
+def test_unfinished_stream_closed(log_filepath, mocker, bla):
+    """Test stopping the Printer with an unfinished message on a stream that's closed."""
+
+    # The issue only happened when the stream is connected to a terminal
+    mocker.patch.object(printermod, "_stream_is_terminal", return_value=True)
+
+    stream = StringIO()
+    printer = Printer(log_filepath)
+
+    printer.show(stream=stream, text="incomplete message", end_line=False)
+    assert printer.unfinished_stream is stream
+
+    # Close the stream, and then stop the printer, which will try to "finish" the
+    # unfinished message on the (now closed) stream.
+    stream.close()
+    printer.stop()
