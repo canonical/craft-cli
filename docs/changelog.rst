@@ -6,6 +6,24 @@ Changelog
 See the `Releases page`_ on GitHub for a complete list of commits that are
 included in each version.
 
+.. _release-3.1.2:
+
+3.1.2 (2025-Jul-22)
+-------------------
+
+Bug fixes:
+
+- Fixed the many spurious errors when stopping the printer during tests.
+
+.. _release-3.1.1:
+
+3.1.1 (2025-Jul-18)
+-------------------
+
+Bug fixes:
+
+- Correct a typo in the deprecation notice for using the default command.
+
 .. _release-3.1.0:
 
 3.1.0 (2025-Jul-17)
