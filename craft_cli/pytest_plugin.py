@@ -158,6 +158,15 @@ class RecordingEmitter:
         """
         return self._check(expected_text, "verbose", regex)
 
+    def assert_warning(self, expected_text: str, *, regex: bool = False) -> Any:
+        """Check the 'warning' method was properly used.
+
+        It verifies that the method was called at least once with the expected text.
+
+        If 'regex' is True, the expected text will be used as a regular expression.
+        """
+        return self._check(expected_text, "warning", regex)
+
     def assert_debug(
         self,
         expected_text: str,
@@ -236,7 +245,7 @@ class _RecordingProgresser:
 def emitter(monkeypatch: pytest.MonkeyPatch) -> RecordingEmitter:
     """Provide a helper to test everything that was shown using the Emitter."""
     recording_emitter = RecordingEmitter()
-    for method_name in ("message", "progress", "verbose", "debug", "trace"):
+    for method_name in ("message", "progress", "verbose", "debug", "trace", "warning"):
 
         def new_method(*a: Any, method_name: str = method_name, **k: Any) -> None:
             recording_emitter.record(method_name, a, k)
