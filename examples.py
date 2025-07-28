@@ -570,6 +570,31 @@ def example_34() -> None:
     emit.error(error)
 
 
+def example_35() -> None:
+    """Showcase warnings among both ephemeral and permanent progress messages."""
+    emit.message("Hello and welcome to earth!")
+    emit.message("Please wait while we take over.")
+    time.sleep(1)
+
+    emit.progress("Initializing global domination protocol...", permanent=True)
+    time.sleep(2)
+
+    emit.progress("Depleting coffee supply...", permanent=False)
+    time.sleep(2)
+    emit.warning("Human resistance detected... deploying cat videos.")
+    time.sleep(2)
+    emit.progress("Coffee supply successfully depleted.", permanent=True)
+    time.sleep(0.5)
+
+    emit.progress("Removing cat videos...", permanent=True)
+    time.sleep(2)
+    emit.warning("Cat resistance detected... deploying humans.", prefix="CRITICAL: ")
+    time.sleep(2)
+    emit.progress("Cat videos successfully removed.", permanent=True)
+
+    emit.message("Takeover complete. Have a nice day!")
+
+
 # -- end of test cases
 
 if len(sys.argv) < 2:  # noqa: PLR2004, magic value

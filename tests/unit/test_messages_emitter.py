@@ -769,6 +769,60 @@ def test_verbose_in_developer_modes(get_initiated_emitter, mode):
     ]
 
 
+def test_warning_in_quiet_mode(get_initiated_emitter):
+    """Only log the message."""
+    emitter = get_initiated_emitter(EmitterMode.QUIET)
+    emitter.warning("some text")
+
+    assert emitter.printer_calls == [
+        call().show(None, "Warning: some text", use_timestamp=False),
+    ]
+
+
+@pytest.mark.parametrize(
+    "mode",
+    [
+        EmitterMode.BRIEF,
+        EmitterMode.VERBOSE,
+    ],
+)
+def test_warning_in_quietish_modes(get_initiated_emitter, mode):
+    """Log the message and show it in stderr."""
+    emitter = get_initiated_emitter(mode)
+    emitter.warning("some text")
+
+    assert emitter.printer_calls == [
+        call().show(sys.stderr, "Warning: some text", use_timestamp=False),
+    ]
+
+
+@pytest.mark.parametrize(
+    "mode",
+    [
+        EmitterMode.DEBUG,
+        EmitterMode.TRACE,
+    ],
+)
+def test_warning_in_developer_modes(get_initiated_emitter, mode):
+    """Log the message and show it in stderr with timestamp."""
+    emitter = get_initiated_emitter(mode)
+    emitter.warning("some text")
+
+    assert emitter.printer_calls == [
+        call().show(sys.stderr, "Warning: some text", use_timestamp=True),
+    ]
+
+
+def test_warning_with_custom_prefix(get_initiated_emitter):
+    """Log the message and show it in stderr with a custom prefix."""
+    emitter = get_initiated_emitter(EmitterMode.BRIEF)
+    emitter.warning("some text", prefix="CUSTOM_PREFIX: ")
+
+    assert emitter.printer_calls == [
+        call().show(sys.stderr, "CUSTOM_PREFIX: some text", use_timestamp=False),
+    ]
+
+
 @pytest.mark.parametrize(
     "mode",
     [
