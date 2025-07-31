@@ -25,7 +25,8 @@ def create_command(
     hidden: bool = False,
     overview: str = "",
     class_name: str = "MyCommand",
-) -> type["BaseCommand"]:
+    base_class: type[BaseCommand] = BaseCommand,
+) -> type[BaseCommand]:
     """Helper to create commands."""
     attribs = {
         "name": name,
@@ -36,4 +37,4 @@ def create_command(
         "needs_config": False,
         "run": lambda parsed_args: None,
     }
-    return type(class_name, (BaseCommand,), attribs)
+    return type(class_name, (base_class,), attribs)
