@@ -74,9 +74,9 @@ If you authenticate your GitHub account with
 run:
 
 ```bash
-git clone git@github.com:<username>/craft-cli.git --recurse-submodules
+git clone git@github.com:<username>/craft-cli --recurse-submodules
 cd craft-cli
-git remote add upstream git@github.com:canonical/craft-cli.git
+git remote add upstream git@github.com:canonical/craft-cli
 git fetch upstream
 ```
 
@@ -87,7 +87,7 @@ instead:
 ```bash
 git clone https://github.com/<username>/craft-cli --recurse-submodules
 cd craft-cli
-git remote add upstream https://github.com/canonical/craft-cli.git
+git remote add upstream https://github.com/canonical/craft-cli
 git fetch upstream
 ```
 
@@ -138,8 +138,8 @@ and effort by checking for prior work.
 Once you've found or created an issue you'd like to take on, propose your solution in
 the issue's thread. In your proposal, describe a plan for the change, its tests, and its
 documentation. If the feature warrants a new page in the documentation, propose a
-[Diátaxis](https://diataxis.fr) category for the page. The Starcraft team will review
-your proposal and, if everything looks complete, assign the issue to you.
+[Diátaxis](https://diataxis.fr) category for the page. A Craft CLI maintainer will
+review your proposal and, if everything looks complete, assign the issue to you.
 
 Certain high-value issues are allocated monetary bounties. If you're interested in
 taking one on, we welcome you to apply.
