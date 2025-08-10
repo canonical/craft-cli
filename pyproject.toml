@@ -49,7 +49,7 @@ lint = [
 ]
 types = [
     "mypy[reports]==1.12.0",
-    "pyright==1.1.388",
+    "pyright==1.1.403",
     "types-Pygments",
     "types-colorama",
     "types-setuptools",
