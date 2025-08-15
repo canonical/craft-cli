@@ -63,7 +63,7 @@ _complete_{{ shell_cmd }}(){
     {% endfor %}
   esac
 
-  COMPREPLY=($(compgen -W "${all_cmds[*]} ${global_args[*]}" -- "$cur"))
+  COMPREPLY=($(compgen -W "${all_cmds[*]}" -- "$cur"))
 }
 
 complete -F _complete_{{ shell_cmd }} {{ shell_cmd }}
