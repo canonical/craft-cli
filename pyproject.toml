@@ -43,7 +43,7 @@ dev = [
     "pytest-subprocess",
 ]
 lint = [
-    "codespell[toml]==2.3.0",
+    "codespell[toml]==2.4.1",
     # Imported in docs/conf.py, needed for pyright to validate
     "sphinx>=7.4.7",
 ]
