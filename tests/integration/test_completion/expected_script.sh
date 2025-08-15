@@ -77,7 +77,7 @@ _complete_testcraft(){
       ;;
   esac
 
-  COMPREPLY=($(compgen -W "${all_cmds[*]} ${global_args[*]}" -- "$cur"))
+  COMPREPLY=($(compgen -W "${all_cmds[*]}" -- "$cur"))
 }
 
 complete -F _complete_testcraft testcraft

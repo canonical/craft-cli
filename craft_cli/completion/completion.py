@@ -250,7 +250,6 @@ def complete(shell_cmd: str, get_app_info: Callable[[], DispatcherAndConfig]) ->
     return template.render(
         shell_cmd=shell_cmd,
         commands=command_map,
-        global_args=dispatcher.global_arguments,
         global_opts=global_opts,
     )
 
