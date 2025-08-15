@@ -29,7 +29,7 @@ from craft_cli.completion.completion import (
     Option,
     get_set_flags,
 )
-from overrides import override
+from typing_extensions import override
 
 
 @pytest.mark.parametrize(
