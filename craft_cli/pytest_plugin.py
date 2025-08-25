@@ -25,6 +25,7 @@ from tempfile import NamedTemporaryFile
 from typing import TYPE_CHECKING, Any, Literal
 from unittest.mock import call
 
+
 import pytest
 from typing_extensions import Self
 
@@ -43,6 +44,8 @@ def init_emitter(monkeypatch: pytest.MonkeyPatch) -> Generator[None]:
 
     This is an "autouse" fixture, so it just works, no need to declare it in your tests.
     """
+    # messages.emit._initiated = False
+    # messages.emit._stopped = False
     # initiate with a custom log filepath so user directories are not involved here; note that
     # we're not using pytest's standard tmp_path as Emitter would write logs there, and in
     # effect we would be polluting that temporary directory (potentially messing with
@@ -59,7 +62,8 @@ def init_emitter(monkeypatch: pytest.MonkeyPatch) -> Generator[None]:
         yield
     # end machinery (just in case it was not ended before; note it's ok to "double end")
     messages.emit.ended_ok()
-
+    # messages.emit._initiated = False
+    # messages.emit._stopped = True
 
 class _RegexComparingText(str):
     """A string that compares for equality using regex.match."""
