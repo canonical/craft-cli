@@ -594,6 +594,20 @@ def example_35() -> None:
 
     emit.message("Takeover complete. Have a nice day!")
 
+def example_36(*args)->None:
+    print(">>> Running example_33 with args:", args)
+    sample_data=[
+        {"name":"App A","version":"1.0.1","status":"active"},
+        {"name":"App B","version":"2.3.0","status":"inactive"},
+    ]
+    fmt=args[0] if args else "table"
+    emit.message(f"{fmt.upper()} output:")
+    #emit.message("JSON output:")
+    emit.data(sample_data,format=fmt)
+    # emit.message("Table output:")
+    # emit.data(sample_data,format="table")
+    
+    # emit.structured(sample_data,fmt=fmt)
 
 # -- end of test cases
 
@@ -625,3 +639,4 @@ except Exception as exc:  # noqa: BLE001, blind exception, fine since these are 
     emit.error(error)
 else:
     emit.ended_ok()
+
