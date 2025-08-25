@@ -179,6 +179,12 @@ class BaseCommand:
 
         :param parser: The object to fill with this command's parameters.
         """
+        parser.add_argument(
+            "--format",
+            choices=["json","table"],
+            default="table",
+            help="Format for structured output",
+        )
 
     # NOTE: run() returns `Optional[int]` instead of `int | None` as the latter would
     # be a breaking change for subclasses that override this with just `None` and
@@ -192,7 +198,10 @@ class BaseCommand:
         :param parsed_args: The parsed arguments that were defined in :meth:`fill_parser`.
         :return: This method should return ``None`` or the desired process' return code.
         """
-        raise NotImplementedError
+        emit=Emitter()
+        sample_data=[{"name":"App A","version":"1.0.1"},{"name":"App B","version":"2.3.0"}]
+        emit.data(sample_data,format=parsed_args.format)
+        return 0
 
 
 class _CustomArgumentParser(argparse.ArgumentParser):
