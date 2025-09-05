@@ -754,7 +754,7 @@ class Emitter:
         """Finish the messaging system gracefully."""
         self._stop()
 
-    def _report_error(self, error: errors.CraftError) -> None:
+    def report_error(self, error: errors.CraftError) -> None:
         """Report the different message lines from a CraftError."""
         use_timestamp = True
         exception_stream = sys.stderr
@@ -823,7 +823,7 @@ class Emitter:
         if self._streaming_brief:
             # Clear the message prefix, as this error stands alone
             self._printer.set_terminal_prefix("")
-        self._report_error(error)
+        self.report_error(error)
         self._stop()
 
     @_active_guard()
