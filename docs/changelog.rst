@@ -6,6 +6,15 @@ Changelog
 See the `Releases page`_ on GitHub for a complete list of commits that are
 included in each version.
 
+.. _release-3.2.0:
+
+3.2.0 (2025-MMM-DD)
+-------------------
+
+New features:
+
+- Makes :pymeth:`craft_cli.Emitter.report_error` public.
+
 .. _release-3.1.2:
 
 3.1.2 (2025-Jul-22)
