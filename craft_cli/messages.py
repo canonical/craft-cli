@@ -754,6 +754,7 @@ class Emitter:
         """Finish the messaging system gracefully."""
         self._stop()
 
+    @_active_guard(ignore_when_stopped=True)
     def report_error(self, error: errors.CraftError) -> None:
         """Report the different message lines from a CraftError."""
         use_timestamp = True
