@@ -13,7 +13,7 @@ included in each version.
 
 New features:
 
-- Makes :py:meth:`.Emitter.report_error()` public.
+- Make :py:meth:`.Emitter.report_error()` public.
 
 .. _release-3.1.2:
 
