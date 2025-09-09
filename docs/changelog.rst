@@ -8,12 +8,13 @@ included in each version.
 
 .. _release-3.2.0:
 
-3.2.0 (2025-MMM-DD)
+3.2.0 (2025-Sep-09)
 -------------------
 
 New features:
 
 - Make :py:meth:`.Emitter.report_error()` public.
+- Add a new :py:meth:`.Emitter.warning()` method.
 
 .. _release-3.1.2:
 
