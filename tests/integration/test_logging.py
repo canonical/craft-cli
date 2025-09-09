@@ -60,7 +60,7 @@ def test_logging_in_multiprocess(tmp_path):
 
     emitter_logged = strip_timestamps(emitter_log.read_text())
 
-    if sys.platform == "linux":
+    if sys.platform == "linux" and sys.version_info < (3, 14):
         # Expect two messages from the parent process, then two from the child process,
         # then a final one from the parent again.
         expected_text = dedent(
