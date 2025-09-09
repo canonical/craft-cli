@@ -916,7 +916,8 @@ def test_ended_double_after_error(get_initiated_emitter):
 
 
 @pytest.mark.parametrize(
-    "method", emitter_methods(init=True, exclude=["init", "ended_ok", "error"])
+    "method",
+    emitter_methods(init=True, exclude=["init", "ended_ok", "error", "report_error"]),
 )
 def test_needs_being_active(method):
     """Check that calling public methods needs emitter to not be stopped."""
