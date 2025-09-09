@@ -14,7 +14,8 @@ included in each version.
 New features:
 
 - Make :py:meth:`.Emitter.report_error()` public.
-- Add a new :py:meth:`.Emitter.warning()` method.
+- Add a :py:meth:`.Emitter.warning()` method for indicating recoverable errors or
+  potentially undesired behavior to the user.
 
 .. _release-3.1.2:
 
