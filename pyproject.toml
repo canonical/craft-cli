@@ -55,7 +55,7 @@ types = [
     "types-setuptools",
 ]
 docs = [
-    "sphinx-toolbox==3.8.1",
+    "sphinx-toolbox==3.10.0",
     "sphinx-lint==1.0.0",
     "sphinxext-rediraffe==0.2.7",
     "pytest>=7.0.0",                 # pytest is imported by the code, which is parsed for api gen.
