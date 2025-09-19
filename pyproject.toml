@@ -35,7 +35,7 @@ emitter = "craft_cli.pytest_plugin"
 
 [dependency-groups]
 dev = [
-    "coverage[toml]==7.6.1",
+    "coverage[toml]==7.10.6",
     "pytest==8.3.3",
     "pytest-cov==5.0.0",
     "pytest-mock==3.14.0",
@@ -58,7 +58,7 @@ docs = [
     "sphinx-lint==1.0.0",
     "sphinxext-rediraffe==0.2.7",
     "pytest>=7.0.0",                 # pytest is imported by the code, which is parsed for api gen.
-    "canonical-sphinx[full]==0.2.0",
+    "canonical-sphinx[full]==0.5.1",
 ]
 tics = ["flake8", "pylint"]
 
