@@ -475,7 +475,7 @@ class HelpBuilder:
         else:
             raise RuntimeError("Internal inconsistency in commands groups")
         other_command_names = [
-            c.name for c in command_group.commands if not isinstance(command, c)
+            c.name for c in command_group.commands if c.name != command.name
         ]
 
         if output_format == OutputFormat.markdown:
