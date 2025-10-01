@@ -75,6 +75,10 @@ _complete_testcraft(){
       COMPREPLY=($(compgen -W 'quiet brief verbose debug trace' -- "$cur"))
       return
       ;;
+    --format)
+      COMPREPLY=($(compgen -W 'json table' -- "$cur"))
+      return
+      ;;
   esac
 
   COMPREPLY=($(compgen -W "${all_cmds[*]}" -- "$cur"))
