@@ -26,6 +26,7 @@ __all__ = [
 import enum
 import functools
 import getpass
+import json
 import logging
 import os
 import pathlib
@@ -33,15 +34,80 @@ import select
 import sys
 import threading
 import traceback
+from abc import ABC, abstractmethod
 from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Literal, TextIO, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Literal, TextIO, TypeAlias, TypeVar, cast
 
 import platformdirs
 
 from craft_cli import errors
 from craft_cli.printer import Printer
+
+TabularData: TypeAlias = list[dict[str, Any]] | dict[str, Any]
+
+
+class BaseFormatter(ABC):
+    @abstractmethod
+    def format(self, data: TabularData, _headers: dict[str, str] | None = None) -> str:
+        pass
+
+
+class JSONFormatter(BaseFormatter):
+    """Format data into JSON.
+
+    Example:
+    -------
+    >>> formatter = JsonFormatter()
+    >>> formatter.format([{"name":"Alice","age":30})
+    '{"name":"Alice","age":30}'
+
+    """
+
+    def format(self, data: TabularData, _headers: dict[str, str] | None = None) -> str:
+        return json.dumps(data, indent=2, default=str)
+
+
+class TableFormatter(BaseFormatter):
+    r"""Format data into a pretty table.
+
+    Example:
+    -------
+    >>> formatter = TableFormatter()
+    >>> formatter.format([["Name", "Age"], ["Alice", 30]])
+    'Name Age\nAlice 30'
+
+    """
+
+    def format(self, data: TabularData, _headers: dict[str, str] | None = None) -> str:
+        """Format a list of rows into a table string."""
+        if not data:
+            return "[no data]"
+        table_headers: list[str]
+        if isinstance(data, list):
+            all_keys: set[str] = {key for row in data for key in row}
+            table_headers = sorted(all_keys)
+            rows = [[str(row.get(h, "")) for h in table_headers] for row in data]
+        else:
+            table_headers = ["Key", "Value"]
+            rows = [[str(k), str(v)] for k, v in data.items()]
+        cols_widths = [
+            max(len(str(item)) for item in col)
+            for col in zip(*([table_headers], *rows))
+        ]
+
+        def format_row(row: list[str]) -> str:
+            return " | ".join(
+                str(cell).ljust(width) for cell, width in zip(row, cols_widths)
+            )
+
+        table = [format_row(table_headers)]
+        separator_len = len(table[0])
+        table.append("-" * separator_len)
+        table.extend(format_row(row) for row in rows)
+        return "\n".join(table)
+
 
 if TYPE_CHECKING:
     from types import TracebackType
@@ -462,6 +528,10 @@ class Emitter:
         self._log_handler: _Handler = None  # type: ignore[assignment]
         self._streaming_brief = False
         self._docs_base_url: str | None = None
+        self._formatters = {
+            "json": JSONFormatter(),
+            "table": TableFormatter(),
+        }
 
     def init(
         self,
@@ -888,6 +958,14 @@ class Emitter:
         if not val:
             raise errors.CraftError("input cannot be empty")
         return val
+
+    @_active_guard()
+    def data(self, records: list[dict[str, Any]], fmt: str = "table") -> None:
+        if fmt not in self._formatters:
+            raise ValueError(f"Unsupported format: {fmt}")
+        formatter = self._formatters[fmt]
+        formatted_output = formatter.format(records)
+        self.message(formatted_output)
 
     @property
     def log_filepath(self) -> pathlib.Path:

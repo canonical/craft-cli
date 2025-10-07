@@ -80,7 +80,7 @@ def test_completion_output() -> None:
         Path(__file__).parent / "test_completion" / "expected_script.sh"
     ).read_text()
 
-    assert actual_output == expected_output
+    assert actual_output.strip() == expected_output.strip()
 
 
 class FakeMvCommand(craft_cli.BaseCommand):

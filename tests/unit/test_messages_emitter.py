@@ -16,6 +16,7 @@
 
 """Tests that check the whole Emitter machinery."""
 
+import json
 import logging
 import sys
 from collections.abc import Callable
@@ -27,7 +28,13 @@ import pytest
 import pytest_mock
 from craft_cli import messages
 from craft_cli.errors import CraftCommandError, CraftError
-from craft_cli.messages import Emitter, EmitterMode, _Handler
+from craft_cli.messages import (
+    Emitter,
+    EmitterMode,
+    JSONFormatter,
+    TableFormatter,
+    _Handler,
+)
 
 FAKE_LOG_NAME = "fakelog.log"
 
@@ -1532,3 +1539,35 @@ def test_prompt_does_not_allow_empty_input(
 
     with pytest.raises(CraftError, match="input cannot be empty"):
         initiated_emitter.prompt("prompt")
+
+
+def test_table_formatter_simple_dict_list():
+    data = [{"a": 1, "b": 2}, {"a": 3, "b": 4}]
+    fmt = TableFormatter()
+    out = fmt.format(data)
+    assert "a" in out
+    assert "b" in out
+    assert "1" in out
+    assert "4" in out
+
+
+def test_table_formatter_empty_list():
+    fmt = TableFormatter()
+    out = fmt.format([])
+    assert out == "[no data]"
+
+
+def test_table_formatter_dict_input():
+    fmt = TableFormatter()
+    out = fmt.format({"foo": "bar"})
+    assert "foo" in out
+    assert "bar" in out
+
+
+def test_json_formatter_dict_list():
+    data = [{"x": 1}, {"x": 2}]
+    fmt = JSONFormatter()
+    out = fmt.format(data)
+    parsed = json.loads(out)
+    assert isinstance(parsed, list)
+    assert parsed[0]["x"] == 1

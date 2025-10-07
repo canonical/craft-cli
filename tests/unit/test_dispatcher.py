@@ -56,6 +56,7 @@ def test_dispatcher_pre_parsing():
         "verbose": False,
         "quiet": True,
         "verbosity": None,
+        "format": None,
     }
 
 
@@ -622,8 +623,9 @@ def test_basecommand_run_mandatory():
         overview = "fake overview"
 
     command = TestCommand(None)
-    with pytest.raises(NotImplementedError):
-        command.run(argparse.Namespace())
+    with patch("craft_cli.messages.Emitter.data"):
+        with pytest.raises(NotImplementedError):
+            command.run(argparse.Namespace())
 
 
 def test_basecommand_mandatory_attribute_name():
