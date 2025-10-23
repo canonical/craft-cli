@@ -478,8 +478,8 @@ docs = [
     { name = "canonical-sphinx", extras = ["full"], specifier = "==0.5.1" },
     { name = "pytest", specifier = ">=7.0.0" },
     { name = "sphinx-lint", specifier = "==1.0.0" },
-    { name = "sphinx-toolbox", specifier = "==3.8.1" },
-    { name = "sphinxext-rediraffe", specifier = "==0.2.7" },
+    { name = "sphinx-toolbox", specifier = "==3.10.0" },
+    { name = "sphinxext-rediraffe", specifier = "==0.3.0" },
 ]
 lint = [
     { name = "codespell", extras = ["toml"], specifier = "==2.4.1" },
@@ -1195,15 +1195,16 @@ wheels = [
 
 [[package]]
 name = "pytest-cov"
-version = "5.0.0"
+version = "7.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "coverage", extra = ["toml"] },
+    { name = "pluggy" },
     { name = "pytest" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/74/67/00efc8d11b630c56f15f4ad9c7f9223f1e5ec275aaae3fa9118c6a223ad2/pytest-cov-5.0.0.tar.gz", hash = "sha256:5837b58e9f6ebd335b0f8060eecce69b662415b16dc503883a02f45dfeb14857", size = 63042, upload-time = "2024-03-24T20:16:34.856Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/5e/f7/c933acc76f5208b3b00089573cf6a2bc26dc80a8aece8f52bb7d6b1855ca/pytest_cov-7.0.0.tar.gz", hash = "sha256:33c97eda2e049a0c5298e91f519302a1334c26ac65c1a483d6206fd458361af1", size = 54328, upload-time = "2025-09-09T10:57:02.113Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/78/3a/af5b4fa5961d9a1e6237b530eb87dd04aea6eb83da09d2a4073d81b54ccf/pytest_cov-5.0.0-py3-none-any.whl", hash = "sha256:4f0764a1219df53214206bf1feea4633c3b558a2925c8b59f144f682861ce652", size = 21990, upload-time = "2024-03-24T20:16:32.444Z" },
+    { url = "https://files.pythonhosted.org/packages/ee/49/1377b49de7d0c1ce41292161ea0f721913fa8722c19fb9c1e3aa0367eecb/pytest_cov-7.0.0-py3-none-any.whl", hash = "sha256:3b8e9558b16cc1479da72058bdecf8073661c7f57f7d3c5f22a1c23507f2d861", size = 22424, upload-time = "2025-09-09T10:57:00.695Z" },
 ]
 
 [[package]]
@@ -1737,7 +1738,7 @@ wheels = [
 
 [[package]]
 name = "sphinx-toolbox"
-version = "3.8.1"
+version = "3.10.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "apeye" },
@@ -1759,9 +1760,9 @@ dependencies = [
     { name = "tabulate" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/30/80/f837e85c8c216cdeef9b60393e4b00c9092a1e3d734106e0021abbf5930c/sphinx_toolbox-3.8.1.tar.gz", hash = "sha256:a4b39a6ea24fc8f10e24f052199bda17837a0bf4c54163a56f521552395f5e1a", size = 111977, upload-time = "2024-10-10T11:18:34.356Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/f4/2d/d916dc5a70bc7b006af8a31bba1a2767e99cdb884f3dfa47aa79a60cc1e9/sphinx_toolbox-3.10.0.tar.gz", hash = "sha256:6afea9ac9afabe76bd5bd4d2b01edfdad81d653a1a34768e776e6a56d5a6f572", size = 113656, upload-time = "2025-05-06T17:36:50.926Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8a/d6/2a28ee4cbc158ae65afb2cfcb6895ef54d972ce1e167f8a63c135b14b080/sphinx_toolbox-3.8.1-py3-none-any.whl", hash = "sha256:53d8e77dd79e807d9ef18590c4b2960a5aa3c147415054b04c31a91afed8b88b", size = 194621, upload-time = "2024-10-10T11:18:32.707Z" },
+    { url = "https://files.pythonhosted.org/packages/12/ec/d09521ae2059fe89d8b59b2b34f5a1713b82a14e70a9a018fca8d3d514be/sphinx_toolbox-3.10.0-py3-none-any.whl", hash = "sha256:675e5978eaee31adf21701054fa75bacf820459d56e93ac30ad01eaee047a6ef", size = 195622, upload-time = "2025-05-06T17:36:48.81Z" },
 ]
 
 [[package]]
@@ -1844,14 +1845,14 @@ wheels = [
 
 [[package]]
 name = "sphinxext-rediraffe"
-version = "0.2.7"
+version = "0.3.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "sphinx" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/1f/b4/e5fbb493f796430230189a1ce5f9beff1ac1b98619fc71ed35deca6059a5/sphinxext-rediraffe-0.2.7.tar.gz", hash = "sha256:651dcbfae5ffda9ffd534dfb8025f36120e5efb6ea1a33f5420023862b9f725d", size = 8735, upload-time = "2021-04-16T11:42:28.206Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e3/a9/ab13d156049eea633f992424f3e92cb40e3f1b606bb6d01d40a27457d38a/sphinxext_rediraffe-0.3.0.tar.gz", hash = "sha256:f319b3ccb7c3c3b6f63ffa6fd3eeb171b6d272df55075a9e84364394f391f507", size = 22114, upload-time = "2025-09-28T15:31:53.641Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/76/4f/c8797e796199e55cf6c8979ecdf5f4b09b81e93f87b3193c759faea63263/sphinxext_rediraffe-0.2.7-py3-none-any.whl", hash = "sha256:9e430a52d4403847f4ffb3a8dd6dfc34a9fe43525305131f52ed899743a5fd8c", size = 8267, upload-time = "2021-04-16T11:42:26.95Z" },
+    { url = "https://files.pythonhosted.org/packages/87/55/ab40a0d1378ee5c859590a633052cf1d0a1f8435af87558a9f7cd576601a/sphinxext_rediraffe-0.3.0-py3-none-any.whl", hash = "sha256:f4220beafa99c99177488276b8e4fcf61fbeeec4253c1e4aae841a18c475330c", size = 7194, upload-time = "2025-09-28T15:31:52.388Z" },
 ]
 
 [[package]]
