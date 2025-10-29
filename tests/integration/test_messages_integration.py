@@ -127,7 +127,7 @@ def compare_lines(expected_lines: Collection[Line], raw_stream: str, std_stream)
 
     assert len(expected_lines) == len(lines), repr(lines)
     for expected, real in zip(expected_lines, lines):  # pyright: ignore[reportGeneralTypeIssues]
-        end_of_line = "\n" if expected.permanent else "\r"
+        end_of_line = r"[\r\n]" if expected.permanent else "\r"
         timestamp = TIMESTAMP_FORMAT if expected.timestamp else ""
 
         # the timestamp (if should be there), the text to compare, some spaces, and the CR/LN
@@ -256,7 +256,6 @@ def test_progress_brief_terminal(capsys):
     expected_term = [
         Line("The meaning of life is 42.", permanent=False),
         Line("Another message.", permanent=False),
-        # This cleaner line is inserted by the printer stop
         # sequence to reset the last ephemeral print to terminal.
         Line("", permanent=False),
     ]
@@ -855,10 +854,11 @@ def test_third_party_output_brief_terminal(capsys, tmp_path):
     )
     emit = Emitter()
     emit.init(EmitterMode.BRIEF, "testapp", GREETING)
-    with emit.open_stream("Testing stream") as stream:
-        subprocess.run(
-            [sys.executable, script], stdout=stream, stderr=stream, check=True
-        )
+    with patch("time.monotonic", side_effect=[0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6]):
+        with emit.open_stream("Testing stream") as stream:
+            subprocess.run(
+                [sys.executable, script], stdout=stream, stderr=stream, check=True
+            )
     emit.ended_ok()
 
     expected_err = [

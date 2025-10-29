@@ -996,6 +996,7 @@ def test_tool_exec_no_arguments_help():
     # check the given information to the help text builder
     args = mock.call_args[0]
     assert sorted(x[0] for x in args[0]) == [
+        "--format",
         "--verbosity",
         "-h, --help",
         "-q, --quiet",
@@ -1028,6 +1029,7 @@ def test_tool_exec_full_help(sysargv):
     # check the given information to the help text builder
     args = mock.call_args[0]
     assert sorted(x[0] for x in args[0]) == [
+        "--format",
         "--verbosity",
         "-h, --help",
         "-q, --quiet",
@@ -1216,9 +1218,11 @@ def test_tool_exec_command_dash_help_simple(help_option):
     args = mock.call_args[0]
     assert args[0].__class__ == cmd
     assert sorted(x[0] for x in args[1]) == [
-        "--verbosity",
+        "--format",
         "-h, --help",
         "-q, --quiet",
+        "--version",
+        "--verbosity",
         "-v, --verbose",
     ]
 
@@ -1242,9 +1246,11 @@ def test_tool_exec_command_dash_help_reverse(help_option):
     args = mock.call_args[0]
     assert args[0].__class__ == cmd
     assert sorted(x[0] for x in args[1]) == [
-        "--verbosity",
+        "--format",
         "-h, --help",
         "-q, --quiet",
+        "--version",
+        "--verbosity",
         "-v, --verbose",
     ]
 
@@ -1273,11 +1279,13 @@ def test_tool_exec_command_dash_help_missing_params(help_option):
     args = mock.call_args[0]
     assert args[0].__class__ == cmd
     assert sorted(x[0] for x in args[1]) == [
-        "--verbosity",
+        "mandatory",
+        "--format",
         "-h, --help",
         "-q, --quiet",
+        "--version",
+        "--verbosity",
         "-v, --verbose",
-        "mandatory",
     ]
 
 
@@ -1351,9 +1359,11 @@ def test_tool_exec_help_command_on_command_ok():
     args = mock.call_args[0]
     assert isinstance(args[0], cmd)
     assert sorted(x[0] for x in args[1]) == [
-        "--verbosity",
+        "--format",
         "-h, --help",
         "-q, --quiet",
+        "--version",
+        "--verbosity",
         "-v, --verbose",
     ]
     assert args[2] == OutputFormat.plain
@@ -1377,9 +1387,11 @@ def test_tool_exec_help_command_on_command_format_markdown():
     args = mock.call_args[0]
     assert isinstance(args[0], cmd)
     assert sorted(x[0] for x in args[1]) == [
-        "--verbosity",
+        "--format",
         "-h, --help",
         "-q, --quiet",
+        "--version",
+        "--verbosity",
         "-v, --verbose",
     ]
     assert args[2] == OutputFormat.markdown
@@ -1415,6 +1427,7 @@ def test_tool_exec_help_command_on_command_complex():
     args = mock.call_args[0]
     assert args[0].__class__ == cmd
     expected_options = [
+        ("--format", "Output format for structured data('json' or 'table')"),
         ("--option1", "help on option1"),
         ("--option3", "help on option3"),
         (
@@ -1456,6 +1469,7 @@ def test_tool_exec_help_command_on_command_no_help():
     args = mock.call_args[0]
     assert args[0].__class__ == cmd
     expected_options = [
+        ("--format", "Output format for structured data('json' or 'table')"),
         ("--option", ""),
         (
             "--verbosity",
@@ -1505,6 +1519,7 @@ def test_tool_exec_help_command_all():
     # check the given information to the help text builder
     args = mock.call_args[0]
     assert sorted(x[0] for x in args[0]) == [
+        "--format",
         "--verbosity",
         "-h, --help",
         "-q, --quiet",
@@ -1532,6 +1547,7 @@ def test_tool_exec_help_when_globalarg_without_short_form(monkeypatch):
     # check the given information to the help text builder
     args = mock.call_args[0]
     assert sorted(x[0] for x in args[0]) == [
+        "--format",
         "--verbosity",
         "--xyz",
         "-h, --help",

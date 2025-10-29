@@ -10,7 +10,7 @@ import tempfile
 import textwrap
 import time
 from pathlib import Path
-from typing import NoReturn
+from typing import Any, NoReturn
 
 import craft_cli
 from craft_cli import CraftError, EmitterMode, emit
@@ -593,6 +593,18 @@ def example_35() -> None:
     emit.progress("Cat videos successfully removed.", permanent=True)
 
     emit.message("Takeover complete. Have a nice day!")
+
+
+def example_36(*args: Any) -> None:
+    """Demonstrates the use of the 'data' emitter method with various formats."""
+    print(">>> Running example_33 with args:", args)
+    sample_data = [
+        {"name": "App A", "version": "1.0.1", "status": "active"},
+        {"name": "App B", "version": "2.3.0", "status": "inactive"},
+    ]
+    fmt = args[0] if args else "table"
+    emit.message(f"{fmt.upper()} output:")
+    emit.data(sample_data, format=fmt)
 
 
 # -- end of test cases
