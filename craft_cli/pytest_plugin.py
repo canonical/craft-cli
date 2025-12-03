@@ -25,8 +25,7 @@ from tempfile import NamedTemporaryFile
 from typing import TYPE_CHECKING, Any, Literal
 from unittest.mock import call
 
-
-import pytest
+import pytest  # type: ignore[import-not-found]
 from typing_extensions import Self
 
 from craft_cli import messages, printer
@@ -35,8 +34,8 @@ if TYPE_CHECKING:
     from unittest.mock import _Call  # type: ignore[reportPrivateUsage]
 
 
-@pytest.fixture(autouse=True)
-def init_emitter(monkeypatch: pytest.MonkeyPatch) -> Generator[None]:
+@pytest.fixture(autouse=True)  # type: ignore[misc]
+def init_emitter(monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
     """Ensure ``emit`` is always clean, and initiated (in test mode).
 
     Note that the ``init`` is done in the current instance that all modules already
@@ -44,8 +43,6 @@ def init_emitter(monkeypatch: pytest.MonkeyPatch) -> Generator[None]:
 
     This is an "autouse" fixture, so it just works, no need to declare it in your tests.
     """
-    # messages.emit._initiated = False
-    # messages.emit._stopped = False
     # initiate with a custom log filepath so user directories are not involved here; note that
     # we're not using pytest's standard tmp_path as Emitter would write logs there, and in
     # effect we would be polluting that temporary directory (potentially messing with
@@ -62,8 +59,7 @@ def init_emitter(monkeypatch: pytest.MonkeyPatch) -> Generator[None]:
         yield
     # end machinery (just in case it was not ended before; note it's ok to "double end")
     messages.emit.ended_ok()
-    # messages.emit._initiated = False
-    # messages.emit._stopped = True
+
 
 class _RegexComparingText(str):
     """A string that compares for equality using regex.match."""
@@ -245,7 +241,7 @@ class _RecordingProgresser:
         self.recording_emitter.record("advance", a, k)
 
 
-@pytest.fixture
+@pytest.fixture  # type: ignore[misc]
 def emitter(monkeypatch: pytest.MonkeyPatch) -> RecordingEmitter:
     """Provide a helper to test everything that was shown using the Emitter."""
     recording_emitter = RecordingEmitter()
