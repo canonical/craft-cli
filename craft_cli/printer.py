@@ -444,13 +444,14 @@ class Printer:
         use_timestamp: bool = False,
         end_line: bool = False,
         avoid_logging: bool = False,
+        raw_output: bool = False,
     ) -> None:
         """Show a text to the given stream if not stopped."""
         if self.stopped:
             return
 
         text = self._apply_secrets(text)
-
+        _ = raw_output
         msg = _MessageInfo(
             stream=stream,
             text=text.rstrip(),

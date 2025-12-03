@@ -26,7 +26,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any, cast
 
-import jinja2
+import jinja2  # type: ignore[import-not-found]
 from typing_extensions import Self, override
 
 import craft_cli
@@ -247,11 +247,12 @@ def complete(shell_cmd: str, get_app_info: Callable[[], DispatcherAndConfig]) ->
         if arg.type == "option"
     ]
 
-    return template.render(
+    result: str = template.render(
         shell_cmd=shell_cmd,
         commands=command_map,
         global_opts=global_opts,
     )
+    return result
 
 
 def _validate_app_info(raw_ref: str) -> Callable[[], DispatcherAndConfig]:
