@@ -181,7 +181,7 @@ class BaseCommand:
         """
         parser.add_argument(
             "--format",
-            choices=["json","table"],
+            choices=["json", "table"],
             default="table",
             help="Format for structured output",
         )
@@ -198,14 +198,13 @@ class BaseCommand:
         :param parsed_args: The parsed arguments that were defined in :meth:`fill_parser`.
         :return: This method should return ``None`` or the desired process' return code.
         """
-        emit=Emitter()
-        sample_data=[{"name":"App A","version":"1.0.1"},{"name":"App B","version":"2.3.0"}]
-        emit.data(sample_data,format=parsed_args.format)
-        return 0
+        raise NotImplementedError
 
 
 class _CustomArgumentParser(argparse.ArgumentParser):
     """ArgumentParser with custom error manager."""
+
+    _help_builder: HelpBuilder
 
     def __init__(
         self,
@@ -395,11 +394,13 @@ class Dispatcher:
         command.fill_parser(parser)
 
         # produce the complete help message for the command
-        command_options = self._get_global_options()
+        command_options: list[tuple[str, str]] = []
         for action in parser._actions:  # noqa: SLF001
             # store the different options if present, otherwise it's just the dest
             help_text = "" if action.help is None else action.help
             if action.option_strings:
+                if "--format" in action.option_strings:
+                    continue
                 command_options.append((", ".join(action.option_strings), help_text))
             else:
                 if action.metavar is None:
