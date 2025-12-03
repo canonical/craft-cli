@@ -29,7 +29,7 @@ except ImportError:  # pragma: no cover
 
 # names included here only to be exposed as external API; the particular order of imports
 # is to break cyclic dependencies
-from .messages import EmitterMode, emit,Emitter # isort:skip
+from .messages import EmitterMode, emit, Emitter  # isort:skip
 from .dispatcher import BaseCommand, CommandGroup, Dispatcher, GlobalArgument
 from .completion import complete
 from .errors import (
@@ -53,5 +53,5 @@ __all__ = [
     "ProvideHelpException",
     "emit",
     "complete",
-    "Emitter"
+    "Emitter",
 ]
