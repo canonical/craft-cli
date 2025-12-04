@@ -595,6 +595,19 @@ def example_35() -> None:
     emit.message("Takeover complete. Have a nice day!")
 
 
+def example_36(*args: str) -> None:
+    """Demonstrate structured output formats."""
+    print(">>> Running example_36 with args:", args)
+    sample_data = [
+        {"name": "App A", "version": "1.0.1", "status": "active"},
+        {"name": "App B", "version": "2.3.0", "status": "inactive"},
+    ]
+    fmt = args[0] if args else "table"
+    emit.message(f"{fmt.upper()} output:")
+
+    emit.data(sample_data, output_format=fmt)
+
+
 # -- end of test cases
 
 if len(sys.argv) < 2:  # noqa: PLR2004, magic value

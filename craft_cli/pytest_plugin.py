@@ -25,7 +25,7 @@ from tempfile import NamedTemporaryFile
 from typing import TYPE_CHECKING, Any, Literal
 from unittest.mock import call
 
-import pytest
+import pytest  # type: ignore[import-not-found]
 from typing_extensions import Self
 
 from craft_cli import messages, printer
@@ -34,8 +34,8 @@ if TYPE_CHECKING:
     from unittest.mock import _Call  # type: ignore[reportPrivateUsage]
 
 
-@pytest.fixture(autouse=True)
-def init_emitter(monkeypatch: pytest.MonkeyPatch) -> Generator[None]:
+@pytest.fixture(autouse=True)  # type: ignore[misc]
+def init_emitter(monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
     """Ensure ``emit`` is always clean, and initiated (in test mode).
 
     Note that the ``init`` is done in the current instance that all modules already
@@ -241,7 +241,7 @@ class _RecordingProgresser:
         self.recording_emitter.record("advance", a, k)
 
 
-@pytest.fixture
+@pytest.fixture  # type: ignore[misc]
 def emitter(monkeypatch: pytest.MonkeyPatch) -> RecordingEmitter:
     """Provide a helper to test everything that was shown using the Emitter."""
     recording_emitter = RecordingEmitter()

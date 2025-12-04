@@ -46,7 +46,7 @@ def run_apidoc(_):
     import os
     import sys
 
-    from sphinx.ext.apidoc import main
+    from sphinx.ext.apidoc import main # type: ignore[reportMissingImports]
 
     sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
     cur_dir = os.path.abspath(os.path.dirname(__file__))
