@@ -464,7 +464,6 @@ tics = [
 ]
 types = [
     { name = "mypy", extra = ["reports"] },
-    { name = "pyright" },
     { name = "types-colorama" },
     { name = "types-pygments" },
     { name = "types-setuptools" },
@@ -503,7 +502,6 @@ tics = [
 ]
 types = [
     { name = "mypy", extras = ["reports"], specifier = "==1.19.0" },
-    { name = "pyright", specifier = "==1.1.388" },
     { name = "types-colorama" },
     { name = "types-pygments" },
     { name = "types-setuptools" },
@@ -1219,19 +1217,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/9d/58/1f614a84d3295c542e9f6e2c764533eea3f318f4592dc1ea06c797114767/pylint-3.3.8.tar.gz", hash = "sha256:26698de19941363037e2937d3db9ed94fb3303fdadf7d98847875345a8bb6b05", size = 1523947, upload-time = "2025-08-09T09:12:57.234Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/2d/1a/711e93a7ab6c392e349428ea56e794a3902bb4e0284c1997cff2d7efdbc1/pylint-3.3.8-py3-none-any.whl", hash = "sha256:7ef94aa692a600e82fabdd17102b73fc226758218c97473c7ad67bd4cb905d83", size = 523153, upload-time = "2025-08-09T09:12:54.836Z" },
-]
-
-[[package]]
-name = "pyright"
-version = "1.1.388"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "nodeenv" },
-    { name = "typing-extensions" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/9c/83/e9867538a794638d2d20ac3ab3106a31aca1d9cfea530c9b2921809dae03/pyright-1.1.388.tar.gz", hash = "sha256:0166d19b716b77fd2d9055de29f71d844874dbc6b9d3472ccd22df91db3dfa34", size = 21939, upload-time = "2024-11-06T09:15:17.793Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/03/57/7fb00363b7f267a398c5bdf4f55f3e64f7c2076b2e7d2901b3373d52b6ff/pyright-1.1.388-py3-none-any.whl", hash = "sha256:c7068e9f2c23539c6ac35fc9efac6c6c1b9aa5a0ce97a9a8a6cf0090d7cbf84c", size = 18579, upload-time = "2024-11-06T09:15:16.411Z" },
 ]
 
 [[package]]
