@@ -208,7 +208,9 @@ class RecordingEmitter:
         """
         if expected_call_list is None:
             if self.interactions:
-                show_interactions = "\n".join(map(str, self.interactions))
+                show_interactions = "\n".join(
+                    str(interaction) for interaction in self.interactions
+                )
                 raise AssertionError(
                     "Expected no call but really got:\n" + show_interactions
                 )
