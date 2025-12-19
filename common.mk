@@ -164,7 +164,7 @@ ifneq ($(CI),)
 endif
 
 .PHONY: lint-ty
-lint-ty: install-ty  ##- Check types with Astral ty (disabled by default)
+lint-ty: install-ty  ##- Check types with Astral ty
 ifneq ($(CI),)
 	@echo ::group::$@
 endif
@@ -333,7 +333,7 @@ endif
 install-ty:
 ifneq ($(shell which ty),)
 else ifneq ($(shell which snap),)
-	sudo snap install --classic --edge astral-ty
+	sudo snap install --beta astral-ty
 	sudo snap alias astral-ty.ty ty
 else
 	make install-uv
