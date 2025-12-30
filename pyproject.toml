@@ -35,7 +35,7 @@ emitter = "craft_cli.pytest_plugin"
 
 [dependency-groups]
 dev = [
-    "coverage[toml]==7.13.0",
+    "coverage[toml]==7.13.1",
     "pytest==8.4.2",
     "pytest-cov==7.0.0",
     "pytest-mock==3.15.1",
@@ -47,7 +47,7 @@ lint = [
     "sphinx>=7.4.7",
 ]
 types = [
-    "mypy[reports]==1.18.2",
+    "mypy[reports]==1.19.1",
     "types-Pygments",
     "types-colorama",
     "types-setuptools",
