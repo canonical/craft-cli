@@ -67,11 +67,6 @@ html_context = {
 
 #html_extra_path = []
 
-# Allow opt-in build of the OpenAPI "Hello" example so docs stay clean by default.
-if os.getenv("OPENAPI", ""):
-    tags.add("openapi")
-    html_extra_path.append("how-to/assets/openapi.yaml")
-
 # Enable the edit button on pages
 html_theme_options = {
   'source_edit_link': "https://github.com/canonical/starbase",
@@ -146,10 +141,6 @@ linkcheck_retries = 20
 # Configuration extras #
 ########################
 
-# Custom MyST syntax extensions; see
-# https://myst-parser.readthedocs.io/en/latest/syntax/optional.html
-# myst_enable_extensions = set()
-
 # Custom Sphinx extensions; see
 # https://www.sphinx-doc.org/en/master/usage/extensions/index.html
 # NOTE: The canonical_sphinx extension is required for the starter pack.
@@ -182,7 +173,9 @@ extensions = [
 ]
 
 # Excludes files or directories from processing
-exclude_patterns = []
+exclude_patterns = [
+    "README.md",
+]
 
 # Adds custom CSS files, located under 'html_static_path'
 html_css_files = [
