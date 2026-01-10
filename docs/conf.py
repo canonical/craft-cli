@@ -176,9 +176,7 @@ extensions = [
     # Custom Craft extensions
     "sphinx-pydantic",
     "sphinxext.rediraffe",
-    "sphinx_toolbox.collapse",
-    "sphinx_toolbox.more_autodoc",
-    "sphinx.ext.autodoc",  # Must be loaded after more_autodoc
+    "sphinx.ext.autodoc",
     "sphinx.ext.doctest",
     "sphinx.ext.viewcode",
 ]
