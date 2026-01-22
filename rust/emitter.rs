@@ -16,21 +16,26 @@ use crate::printer::{Message, MessageType, Printer, Target};
 #[pyclass]
 pub enum Verbosity {
     /// Quiet output. Most messages should not be output at all.
+    #[pyo3(name = "QUIET")]
     Quiet,
 
     /// Brief output. Most messages should be ephemeral and all debugging-style message
     /// models should be skipped.
+    #[pyo3(name = "BRIEF")]
     Brief,
 
     /// Verbose mode. All messages should be persistent and all debugging-style messages
     /// kept.
+    #[pyo3(name = "VERBOSE")]
     Verbose,
 
     /// Debug mode. Similar to trace mode, but slightly less information from external
     /// loggers is kept.
+    #[pyo3(name = "DEBUG")]
     Debug,
 
     /// Trace mode. The absolute maximum amount of information should be printed.
+    #[pyo3(name = "TRACE")]
     Trace,
 }
 
