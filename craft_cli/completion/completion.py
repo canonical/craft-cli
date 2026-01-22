@@ -26,7 +26,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any, cast
 
-import jinja2  # type: ignore[import-not-found]
+import jinja2
 from typing_extensions import Self, override
 
 import craft_cli
