@@ -59,7 +59,7 @@ class JSONFormatter(BaseFormatter):
 
     Example:
     -------
-    >>> formatter = JsonFormatter()
+    >>> formatter = JSONFormatter()
     >>> formatter.format([{"name":"Alice","age":30})
     '{"name":"Alice","age":30}'
 
@@ -82,8 +82,8 @@ class TableFormatter(BaseFormatter):
     """
 
     def format(self, data: TabularData, headers: dict[str, str] | None = None) -> str:
-        _ = headers
         """Format a list of rows into a table string."""
+        _ = headers
         if not data:
             return "[no data]"
         if isinstance(data, list):
@@ -816,7 +816,7 @@ class Emitter:
         """
         formatter = self._formatters.get(output_format)
         if not formatter:
-            raise ValueError(f"Unsupported format: {format}")
+            raise ValueError(f"Unsupported format: {output_format}")
 
         formatted_data = formatter.format(data, headers)
         stream = None if self._mode == EmitterMode.QUIET else sys.stdout
