@@ -13,7 +13,7 @@ include common.mk
 format: format-ruff format-codespell format-prettier  ## Run all automatic formatters
 
 .PHONY: lint
-lint: lint-ruff lint-ty lint-codespell lint-mypy lint-prettier lint-pyright lint-shellcheck lint-docs lint-twine  ## Run all linters
+lint: lint-ruff lint-ty lint-clippy lint-codespell lint-mypy lint-prettier lint-pyright lint-shellcheck lint-docs lint-twine  ## Run all linters
 
 .PHONY: pack
 pack: pack-pip  ## Build all packages
@@ -44,6 +44,19 @@ endif
 # If additional build dependencies need installing in order to build the linting env.
 .PHONY: install-lint-build-deps
 install-lint-build-deps: install-ty
+
+.PHONY: lint-clippy
+lint-clippy: install-rust
+	cargo clippy --locked
+
+.PHONY: install-rust
+install-rust:
+ifneq ($(shell which cargo),)
+else ifneq ($(shell which snap),)
+	sudo snap install rustup --classic
+	rustup default stable
+endif
+
 
 .PHONY: lint-ty
 lint-ty: install-ty
