@@ -5,27 +5,27 @@ use pyo3::pymodule;
 /// Utility functions for Craft CLI
 #[pymodule(submodule)]
 pub mod utils {
-    use pyo3::{Bound, PyResult, pyfunction, types::PyModule};
+    use pyo3::{Bound, PyResult, exceptions::PyValueError, pyfunction, types::PyModule};
 
     use crate::utils::fix_imports;
 
     /// Convert a collection of values into a string that lists the values.
     #[pyfunction]
     #[pyo3(signature = (values, conjunction = "and"))]
-    fn humanize_list(mut values: Vec<String>, conjunction: Option<&str>) -> String {
-        let start = values
-            .drain(..values.len() - 1)
-            .collect::<Vec<String>>()
-            .join(", ");
-
+    fn humanize_list(values: Vec<String>, conjunction: Option<&str>) -> PyResult<String> {
         let conjunction = conjunction.unwrap_or("and");
-
-        format!(
-            "{}, {} {}",
-            start,
-            conjunction,
-            values.first().expect("Guaranteed by drain call above")
-        )
+        match values.as_slice() {
+            [] => Err(PyValueError::new_err("Cannot humanize empty list")),
+            [_] => Ok(values
+                .into_iter()
+                .next()
+                .expect("Size checked by match arm")),
+            [start, end] => Ok(format!("{start} {conjunction} {end}")),
+            [start @ .., end] => {
+                let start = start.join(", ");
+                Ok(format!("{start}, {conjunction} {end}",))
+            }
+        }
     }
 
     /// Fix syspath for easier importing in Python.

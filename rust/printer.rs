@@ -2,7 +2,7 @@
 
 use std::{
     sync::{
-        LazyLock, OnceLock,
+        OnceLock,
         mpsc::{self, RecvTimeoutError},
     },
     thread::{self, JoinHandle},
@@ -12,6 +12,9 @@ use std::{
 use pyo3::{PyErr, PyResult};
 
 use crate::emitter::Verbosity;
+
+/// Duration to wait before beginning to spin.
+const SPIN_TIMEOUT: Duration = Duration::from_secs(3);
 
 /// Representation of which stream should be targeted by a message.
 #[derive(Debug, Clone, Copy)]
@@ -147,16 +150,14 @@ impl InnerPrinter {
     /// `self.channel` is closed. As such, it is strongly recommended to only invoke
     /// this from a dedicated thread.
     pub fn listen(&mut self) -> PyResult<()> {
-        static MAIN_STYLE: LazyLock<indicatif::ProgressStyle> = LazyLock::new(|| {
-            indicatif::ProgressStyle::with_template("{spinner} {msg} ({elapsed})").unwrap()
-        });
+        let main_style =
+            indicatif::ProgressStyle::with_template("{spinner} {msg} ({elapsed})").unwrap();
         let mut spinner: Option<indicatif::ProgressBar> = None;
-
         let mut maybe_prv_msg: Option<Message> = None;
 
         loop {
             // Wait the standard 3 seconds for a message
-            match self.await_message(Duration::from_secs(3)) {
+            match self.await_message(SPIN_TIMEOUT) {
                 Ok(msg) => {
                     // If we were spinning, stop
                     if let Some(s) = spinner.take()
@@ -181,24 +182,21 @@ impl InnerPrinter {
                     if spinner.is_some() {
                         continue;
                     }
-                    // If there's a previous message to spin on, then,
-                    spinner = maybe_prv_msg.as_ref().and_then(|prv_msg| {
-                        // If there is a stream to print to,
-                        prv_msg.determine_stream(self.mode).map(|target| {
-                            // Construct a spinner
-                            let s = indicatif::ProgressBar::with_draw_target(None, target.into())
-                                .with_message(prv_msg.text.clone())
-                                .with_style(MAIN_STYLE.clone())
-                                .with_elapsed(Duration::from_secs(3));
 
-                            // It doesn't matter which stream we clear, the line we're about to
-                            // spin is wiped either way
-                            self.stdout.clear_last_lines(1).unwrap();
-                            // Start spinning
-                            s.enable_steady_tick(Duration::from_millis(100));
-                            s
-                        })
-                    });
+                    let Some(msg) = maybe_prv_msg.as_ref() else {
+                        continue;
+                    };
+                    let Some(target) = msg.determine_stream(self.mode) else {
+                        continue;
+                    };
+
+                    let new_spinner = indicatif::ProgressBar::with_draw_target(None, target.into())
+                        .with_style(main_style.clone())
+                        .with_message(msg.text.clone())
+                        .with_elapsed(SPIN_TIMEOUT);
+                    self.stdout.clear_last_lines(1).unwrap();
+                    new_spinner.enable_steady_tick(Duration::from_millis(100));
+                    spinner = Some(new_spinner);
                 }
             }
         }
