@@ -13,7 +13,7 @@ use std::{
 
 use pyo3::{PyErr, PyResult, exceptions::PyRuntimeError};
 
-use crate::utils::{self};
+use crate::utils;
 
 /// Duration to wait before beginning to spin.
 const SPIN_TIMEOUT: Duration = Duration::from_secs(3);

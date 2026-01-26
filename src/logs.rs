@@ -20,6 +20,8 @@ pub struct LogListener {
     debug_level: Py<PyInt>,
 
     verbosity: Verbosity,
+
+    streaming_brief: bool,
 }
 
 #[pymethods]
@@ -54,10 +56,11 @@ impl LogListener {
 }
 
 impl LogListener {
-    pub fn new(py: Python<'_>, verbosity: Verbosity) -> PyResult<Self> {
+    pub fn new(py: Python<'_>, verbosity: Verbosity, streaming_brief: bool) -> PyResult<Self> {
         Ok(Self {
             debug_level: py.import("logging")?.getattr("DEBUG")?.extract()?,
             verbosity,
+            streaming_brief,
         })
     }
 
@@ -73,8 +76,8 @@ impl LogListener {
 
         let comp_op = match self.verbosity {
             Verbosity::Quiet => return Ok(None),
-            Verbosity::Brief => return Ok(None),
-            Verbosity::Verbose => CompareOp::Gt,
+            Verbosity::Brief if !self.streaming_brief => return Ok(None),
+            Verbosity::Verbose | Verbosity::Brief => CompareOp::Gt,
             Verbosity::Debug => CompareOp::Ge,
             Verbosity::Trace => unreachable!("Checked above"),
         };

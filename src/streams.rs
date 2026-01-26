@@ -4,15 +4,15 @@ use std::{
     io::{self, Read},
     os::fd::{AsRawFd as _, RawFd},
     sync::{
-        Arc, OnceLock,
         atomic::{AtomicBool, Ordering},
+        Arc, OnceLock,
     },
     thread::{self, JoinHandle},
     time::Duration,
 };
 
 use pyo3::{
-    Bound, PyRefMut, PyResult, exceptions::PyRuntimeError, pyclass, pymethods, types::PyTuple,
+    exceptions::PyRuntimeError, pyclass, pymethods, types::PyTuple, Bound, PyRefMut, PyResult,
 };
 
 use crate::{
