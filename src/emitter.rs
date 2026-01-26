@@ -62,6 +62,15 @@ struct Emitter {
 
     /// A handle on log handling.
     _log_handle: Option<Py<PyAny>>,
+
+    /// A prefix to prepend to each message.
+    prefix: Option<String>,
+
+    /// Whether or not to streamline messages in with "brief" level verbosity.
+    ///
+    /// With this setting, sending an ephemeral progress message causes
+    /// each subsequent ephemeral message to become prefixed with the initial message.
+    streaming_brief: bool,
 }
 
 #[pymethods]
@@ -70,22 +79,26 @@ impl Emitter {
     ///
     /// This also enables the logging features
     #[new]
+    #[pyo3(signature = (log_filepath, verbosity, docs_base_url, greeting, streaming_brief = false))]
     fn new(
         py: Python<'_>,
         log_filepath: String,
         verbosity: Verbosity,
         docs_base_url: &str,
         greeting: String,
+        streaming_brief: bool,
     ) -> PyResult<Self> {
         crate::printer::printer().init_logger(&log_filepath, &greeting)?;
 
-        let _log_handle = Self::setup_external_log_capture(py, verbosity)?;
+        let _log_handle = Self::setup_external_log_capture(py, verbosity, streaming_brief)?;
         Ok(Self {
             log_filepath,
             docs_base_url: docs_base_url.trim_end_matches('/').to_string(),
             verbosity,
             greeting,
             _log_handle,
+            prefix: None,
+            streaming_brief,
         })
     }
 
@@ -152,12 +165,13 @@ impl Emitter {
         let text = maybe_timestamped.to_string();
         let model = MessageType::Debug;
 
-        let message = Message {
+        let mut message = Message {
             text,
             model,
             target,
         };
 
+        self.apply_prefix(&mut message);
         crate::printer::printer().send(message)?;
         Ok(())
     }
@@ -177,12 +191,13 @@ impl Emitter {
         let text = timestamped.to_string();
         let model = MessageType::Debug;
 
-        let message = Message {
+        let mut message = Message {
             text,
             model,
             target,
         };
 
+        self.apply_prefix(&mut message);
         crate::printer::printer().send(message)?;
         Ok(())
     }
@@ -202,12 +217,13 @@ impl Emitter {
         let text = timestamped.to_string();
         let model = MessageType::Trace;
 
-        let message = Message {
+        let mut message = Message {
             text,
             model,
             target,
         };
 
+        self.apply_prefix(&mut message);
         crate::printer::printer().send(message)?;
         Ok(())
     }
@@ -224,6 +240,11 @@ impl Emitter {
     fn progress(&mut self, text: &str, mut permanent: bool) -> PyResult<()> {
         let timestamped = utils::apply_timestamp(text);
 
+        // Clear the existing prefix, as we're beginning progress on a new thing now.
+        if self.streaming_brief {
+            self.clear_prefix();
+        }
+
         let (maybe_timestamped, target) = match self.verbosity {
             Verbosity::Quiet => {
                 permanent = false;
@@ -239,19 +260,27 @@ impl Emitter {
                 (timestamped.as_ref(), Some(Target::Stderr))
             }
         };
+
         let model = if permanent {
             MessageType::ProgPersistent
         } else {
             MessageType::ProgEphemeral
         };
-        let text = maybe_timestamped.to_owned();
+        let final_text = maybe_timestamped.to_owned();
+
         let message = Message {
-            text,
+            text: final_text,
             model,
             target,
         };
 
         crate::printer::printer().send(message)?;
+
+        // If we're in streaming brief mode and the last message was ephemeral, set this message as the new prefix
+        if matches!(self.verbosity, Verbosity::Brief) && !permanent && self.streaming_brief {
+            self.set_prefix(text.to_string());
+        }
+
         Ok(())
     }
 
@@ -290,12 +319,13 @@ impl Emitter {
         let text = maybe_timestamped.to_string();
         let model = MessageType::Warning;
 
-        let message = Message {
+        let mut message = Message {
             text,
             model,
             target,
         };
 
+        self.apply_prefix(&mut message);
         crate::printer::printer().send(message)?;
         Ok(())
     }
@@ -331,6 +361,16 @@ impl Emitter {
             "Stream context manager not yet supported on Windows.",
         ))
     }
+
+    /// Set a prefix for each message.
+    fn set_prefix(&mut self, prefix: String) {
+        self.prefix = Some(prefix);
+    }
+
+    /// Clear the current prefix.
+    fn clear_prefix(&mut self) {
+        self.prefix = None;
+    }
 }
 
 impl Emitter {
@@ -345,8 +385,9 @@ impl Emitter {
     fn setup_external_log_capture(
         py: Python<'_>,
         verbosity: Verbosity,
+        streaming_brief: bool,
     ) -> PyResult<Option<Py<PyAny>>> {
-        let log_handler = LogListener::new(py, verbosity)?;
+        let log_handler = LogListener::new(py, verbosity, streaming_brief)?;
 
         // Instantiate the Python wrapper for log handling
         let py_log_handler = py
@@ -355,6 +396,14 @@ impl Emitter {
             .call1((log_handler,))?;
 
         Ok(Some(py_log_handler.unbind()))
+    }
+
+    /// Apply the current prefix to a message, if any.
+    fn apply_prefix(&self, message: &mut Message) {
+        if let Some(prefix) = &self.prefix {
+            let text = format!("{prefix} :: {}", message.text);
+            message.text = text;
+        }
     }
 }
 
