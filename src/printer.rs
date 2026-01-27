@@ -24,9 +24,6 @@ pub enum Target {
 
     /// Target the stderr stream.
     Stderr,
-
-    /// Target no stream at all.
-    Null,
 }
 
 impl From<Target> for indicatif::ProgressDrawTarget {
@@ -34,7 +31,6 @@ impl From<Target> for indicatif::ProgressDrawTarget {
         match val {
             Target::Stdout => indicatif::ProgressDrawTarget::stdout(),
             Target::Stderr => indicatif::ProgressDrawTarget::stderr(),
-            Target::Null => indicatif::ProgressDrawTarget::hidden(),
         }
     }
 }
@@ -45,34 +41,40 @@ pub enum MessageType {
     /// A persistent progress message that will remain on the console.
     ///
     /// For a non-permanent message, see `ProgEphemeral`.
-    ProgPersistent(Target),
+    ProgPersistent(Option<Target>),
 
     /// An ephemeral progress message that will be overwritten by the next message.
     ///
     /// For a permanent message, see `ProgPersistent`.
-    ProgEphemeral(Target),
+    ProgEphemeral(Option<Target>),
 
     /// A warning message.
-    Warning(),
+    Warning,
 
     // Pending implementation of CraftError parsing in Rust
     #[expect(unused)]
     /// An error message.
-    Error(),
+    Error,
 
     /// A debugging info message.
-    Debug(),
+    Debug,
 
     /// A trace info message.
-    Trace(),
+    Trace,
 
     /// An informational message.
-    Info(),
+    Info,
 
     // Pending implementation of incremental progress bars using indicatif
     #[expect(unused)]
     /// Signals to create a progress bar.
-    ProgBar(Target, u64),
+    ProgBar {
+        /// The target stream.
+        target: Option<Target>,
+
+        /// The number of elements to render a progress bar for.
+        size: u64,
+    },
 }
 
 /// A single message to be sent, and what type of message it is.
@@ -85,20 +87,20 @@ pub struct Message {
     pub(crate) model: MessageType,
 
     /// Where the message should be sent.
-    pub(crate) target: Target,
+    pub(crate) target: Option<Target>,
 }
 
 impl Message {
     /// Calculate which stream a message should go to based on its model.
     pub fn determine_stream(&self, mode: Verbosity) -> Option<Target> {
-        use self::Target::*;
+        use Target as Tar;
         match self.model {
             MessageType::ProgPersistent(target)
             | MessageType::ProgEphemeral(target)
-            | MessageType::ProgBar(target, ..) => target.into(),
-            MessageType::Warning() | MessageType::Error() => Stderr.into(),
-            MessageType::Debug() | MessageType::Trace() | MessageType::Info() => match mode {
-                Verbosity::Verbose => Stdout.into(),
+            | MessageType::ProgBar { target, .. } => target,
+            MessageType::Warning | MessageType::Error => Some(Tar::Stderr),
+            MessageType::Debug | MessageType::Trace | MessageType::Info => match mode {
+                Verbosity::Verbose => Some(Tar::Stdout),
                 _ => None,
             },
         }
@@ -183,11 +185,13 @@ impl InnerPrinter {
                         continue;
                     }
 
-                    let Some(msg) = maybe_prv_msg.as_ref() else {
-                        continue;
+                    let msg = match &maybe_prv_msg {
+                        Some(msg) => msg,
+                        None => continue,
                     };
-                    let Some(target) = msg.determine_stream(self.mode) else {
-                        continue;
+                    let target = match msg.determine_stream(self.mode) {
+                        Some(target) => target,
+                        None => continue,
                     };
 
                     let new_spinner = indicatif::ProgressBar::with_draw_target(None, target.into())
@@ -212,15 +216,15 @@ impl InnerPrinter {
     /// Routing method for sending a message to the proper printing logic for a given
     /// message type.
     fn handle_message(&mut self, msg: &Message) -> PyResult<()> {
-        use self::MessageType::*;
-        if let Target::Null = msg.target {
+        use MessageType as Mt;
+        if msg.target.is_none() {
             return Ok(());
         }
         match msg.model {
-            Info() => self.print(msg),
-            Error() => self.error(msg),
-            ProgEphemeral(..) => self.progress(msg, false),
-            ProgPersistent(..) => self.progress(msg, true),
+            Mt::Info => self.print(msg),
+            Mt::Error => self.error(msg),
+            Mt::ProgEphemeral(..) => self.progress(msg, false),
+            Mt::ProgPersistent(..) => self.progress(msg, true),
             _ => unimplemented!(),
         }
     }
@@ -340,6 +344,12 @@ impl Printer {
 
 impl Drop for Printer {
     fn drop(&mut self) {
+        if thread::panicking() {
+            eprintln!("Unwinding due to panic! Printer was not stopped properly.");
+            if let Err(e) = console::Term::stdout().show_cursor() {
+                eprintln!("Unable to restore text cursor: {e}")
+            }
+        }
         self.stop().expect("An error was encountered while logging. Tear down the printer properly to view the error.");
     }
 }

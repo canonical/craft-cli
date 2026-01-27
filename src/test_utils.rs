@@ -1,8 +1,6 @@
 //! Utilities for testing
 #![cfg(test)]
 
-use std::fmt::Debug;
-
 use pyo3::{PyErr, PyTypeInfo, Python};
 use regex::Regex;
 
@@ -10,14 +8,8 @@ pub fn assert_error_type<T: PyTypeInfo>(err: &PyErr) {
     Python::attach(|py| assert!(err.is_instance_of::<T>(py)));
 }
 
-pub fn assert_error_contents<R>(err: &PyErr, r#match: R)
-where
-    // Accept anything that can be converted into Regex
-    R: TryInto<Regex>,
-    // Should always be true, this is just to please the type checker
-    <R as TryInto<Regex>>::Error: Debug,
-{
-    let re: Regex = r#match.try_into().expect("Could not be parsed as regex!");
+pub fn assert_error_contents(err: &PyErr, re: &str) {
+    let re: Regex = re.try_into().expect("Could not be parsed as regex!");
 
     Python::attach(|py| {
         let value = err.value(py).to_string();

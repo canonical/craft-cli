@@ -11,9 +11,8 @@ pub mod utils {
 
     /// Convert a collection of values into a string that lists the values.
     #[pyfunction]
-    #[pyo3(signature = (values, conjunction = "and"))]
-    fn humanize_list(values: Vec<String>, conjunction: Option<&str>) -> PyResult<String> {
-        let conjunction = conjunction.unwrap_or("and");
+    #[pyo3(signature = (values, *, conjunction = "and"))]
+    fn humanize_list(values: Vec<String>, conjunction: &str) -> PyResult<String> {
         match values.as_slice() {
             [] => Err(PyValueError::new_err("Cannot humanize empty list")),
             [_] => Ok(values

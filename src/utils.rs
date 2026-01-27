@@ -14,6 +14,9 @@ pub fn fix_imports(m: &Bound<'_, PyModule>, name: &str) -> PyResult<()> {
 // in live code.
 #[allow(unused, clippy::allow_attributes)]
 /// Log a message for debugging purposes only.
+///
+/// All messages will go to `./craft-cli-debug.log`. This file will be created the first time
+/// a message attempts to be logged, and will be cleared between runs.
 pub fn log(message: impl Into<String>) {
     #[cfg(debug_assertions)]
     {
@@ -31,15 +34,16 @@ pub fn log(message: impl Into<String>) {
                 .open("craft-cli-debug.log")
                 .expect("Couldn't open debugging log!");
 
-            handle
-                .write_all("I hope you find what you are looking for, traveller.\n".as_ref())
-                .expect("Couldn't write to debugging log!");
+            writeln!(
+                FILE.lock().unwrap(),
+                "I hope you find what you are looking for, traveller."
+            )
+            .expect("Cannot write to debugging log");
 
             Mutex::new(handle)
         });
-        FILE.lock()
-            .unwrap()
-            .write_all(format!("{}\n", message.into()).as_ref())
-            .expect("Couldn't write to debugging log!");
+
+        writeln!(FILE.lock().unwrap(), "{}", message.into())
+            .expect("Cannot write to debugging log");
     }
 }

@@ -3,7 +3,7 @@ name = "craft-cli"
 edition = "2024"
 
 [lib]
-name = "_rs"
+name = "craft_cli_extensions"
 crate-type = ["cdylib"]
 
 [workspace]

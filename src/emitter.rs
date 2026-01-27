@@ -12,7 +12,6 @@ use pyo3::{Bound, PyResult, Python, pyclass, pymethods, pymodule, types::PyType}
 use crate::printer::{Message, MessageType, Printer, Target};
 
 /// Verbosity modes.
-#[non_exhaustive]
 #[derive(Clone, Copy)]
 #[pyclass]
 pub enum Verbosity {
@@ -141,8 +140,8 @@ impl Emitter {
             for message in messages {
                 self.printer.send(Message {
                     text: message,
-                    model: MessageType::Info(),
-                    target: Target::Stderr,
+                    model: MessageType::Info,
+                    target: Some(Target::Stderr),
                 });
             }
         }
@@ -157,15 +156,17 @@ impl Emitter {
         self.log(&timestamped)?;
 
         let (maybe_timestamped, target) = match self.verbosity {
-            Verbosity::Brief | Verbosity::Quiet => (text, Target::Null),
-            Verbosity::Verbose => (text, Target::Stderr),
-            _ => (timestamped.as_ref(), Target::Stderr),
+            Verbosity::Brief | Verbosity::Quiet => (text, None),
+            Verbosity::Verbose => (text, Some(Target::Stderr)),
+            Verbosity::Debug | Verbosity::Trace => (timestamped.as_ref(), Some(Target::Stderr)),
         };
+        let text = maybe_timestamped.to_string();
+        let model = MessageType::Debug;
 
         let message = Message {
-            text: maybe_timestamped.to_string(),
+            text,
+            model,
             target,
-            model: MessageType::Debug(),
         };
 
         self.printer.send(message);
@@ -182,14 +183,16 @@ impl Emitter {
         self.log(&timestamped)?;
 
         let target = match self.verbosity {
-            Verbosity::Brief | Verbosity::Quiet | Verbosity::Verbose => Target::Null,
-            _ => Target::Stderr,
+            Verbosity::Brief | Verbosity::Quiet | Verbosity::Verbose => None,
+            _ => Some(Target::Stderr),
         };
+        let text = timestamped.to_string();
+        let model = MessageType::Debug;
 
         let message = Message {
-            text: timestamped.to_string(),
+            text,
+            model,
             target,
-            model: MessageType::Debug(),
         };
 
         self.printer.send(message);
@@ -206,14 +209,16 @@ impl Emitter {
         self.log(&timestamped)?;
 
         let target = match self.verbosity {
-            Verbosity::Trace => Target::Stderr,
-            _ => Target::Null,
+            Verbosity::Trace => Some(Target::Stderr),
+            _ => None,
         };
+        let text = timestamped.to_string();
+        let model = MessageType::Trace;
 
         let message = Message {
-            text: timestamped.to_string(),
+            text,
+            model,
             target,
-            model: MessageType::Trace(),
         };
 
         self.printer.send(message);
@@ -228,33 +233,35 @@ impl Emitter {
     ///
     /// These messages will be truncated to the terminal's width and overwritten
     /// by the next line (unless in verbose or trace mode, or set to permanent).
-    fn progress(&mut self, text: &str, mut permanent: Option<bool>) -> PyResult<()> {
+    #[pyo3(signature = (text, *, permanent = false))]
+    fn progress(&mut self, text: &str, mut permanent: bool) -> PyResult<()> {
         let timestamped = Self::apply_timestamp(text);
         self.log(&timestamped)?;
 
         let (maybe_timestamped, target) = match self.verbosity {
             Verbosity::Quiet => {
-                permanent = Some(false);
-                (text, Target::Null)
+                permanent = false;
+                (text, None)
             }
-            Verbosity::Brief => (text, Target::Stderr),
+            Verbosity::Brief => (text, Some(Target::Stderr)),
             Verbosity::Verbose => {
-                permanent = Some(true);
-                (text, Target::Stderr)
+                permanent = true;
+                (text, Some(Target::Stderr))
             }
             _ => {
-                permanent = Some(true);
-                (timestamped.as_ref(), Target::Stderr)
+                permanent = true;
+                (timestamped.as_ref(), Some(Target::Stderr))
             }
         };
-
+        let model = if permanent {
+            MessageType::ProgPersistent(target)
+        } else {
+            MessageType::ProgEphemeral(target)
+        };
+        let text = maybe_timestamped.to_owned();
         let message = Message {
-            text: maybe_timestamped.to_string(),
-            model: if permanent.unwrap_or(false) {
-                MessageType::ProgPersistent(target)
-            } else {
-                MessageType::ProgEphemeral(target)
-            },
+            text,
+            model,
             target,
         };
 
@@ -271,13 +278,14 @@ impl Emitter {
         self.log(&timestamped)?;
 
         let target = match self.verbosity {
-            Verbosity::Quiet => Target::Null,
-            _ => Target::Stdout,
+            Verbosity::Quiet => None,
+            _ => Some(Target::Stdout),
         };
+        let model = MessageType::Info;
 
         let message = Message {
             text,
-            model: MessageType::Info(),
+            model,
             target,
         };
 
@@ -293,14 +301,16 @@ impl Emitter {
         self.log(&timestamped)?;
 
         let (maybe_timestamped, target) = match self.verbosity {
-            Verbosity::Quiet => (prefixed.as_str(), Target::Null),
-            Verbosity::Debug | Verbosity::Trace => (timestamped.as_ref(), Target::Stderr),
-            _ => (prefixed.as_str(), Target::Stderr),
+            Verbosity::Quiet => (prefixed.as_str(), None),
+            Verbosity::Debug | Verbosity::Trace => (timestamped.as_ref(), Some(Target::Stderr)),
+            _ => (prefixed.as_str(), Some(Target::Stderr)),
         };
+        let text = maybe_timestamped.to_string();
+        let model = MessageType::Warning;
 
         let message = Message {
-            text: maybe_timestamped.to_string(),
-            model: MessageType::Warning(),
+            text,
+            model,
             target,
         };
 
@@ -341,8 +351,8 @@ impl Emitter {
     fn finish(&mut self) -> PyResult<()> {
         let message = Message {
             text: format!("Full execution log at '{}'", self.log_filepath),
-            model: MessageType::Info(),
-            target: Target::Stderr,
+            model: MessageType::Info,
+            target: Some(Target::Stderr),
         };
         self.printer.send(message);
         self.printer.stop()?;
