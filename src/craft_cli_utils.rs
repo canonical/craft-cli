@@ -19,6 +19,8 @@ pub mod utils {
     #[pyo3(signature = (values, *, conjunction = "and"))]
     fn humanize_list(values: Bound<'_, PyAny>, conjunction: &str) -> PyResult<String> {
         // Check if it's actually iterable at runtime and collect values
+        // This could be dramatically simplified if [PyO3#5757](https://github.com/PyO3/pyo3/issues/5757)
+        // is resolved.
         let items: Vec<_> = match values.try_iter() {
             Ok(py_iter) => py_iter
                 .into_iter()
