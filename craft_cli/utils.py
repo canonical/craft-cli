@@ -15,8 +15,6 @@
 
 """Utility functions for craft_cli."""
 
+from craft_cli._rs.utils import humanize_list
 
-def humanize_list(values: list[str], conjunction: str = "and") -> str:
-    """Convert a collection of values into a string that lists the values."""
-    start = ", ".join(values[:-1])
-    return f"{start}, {conjunction} {values[-1]}"
+__all__ = ["humanize_list"]
