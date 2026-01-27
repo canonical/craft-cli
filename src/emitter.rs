@@ -4,6 +4,7 @@ use std::{
     borrow::Cow,
     fs::{self, File},
     io::Write as _,
+    path::PathBuf,
 };
 
 use pyo3::{Bound, PyResult, Python, pyclass, pymethods, pymodule, types::PyType};
@@ -103,16 +104,24 @@ impl Emitter {
 
     /// Create a log filepath from the app name as an easy default.
     #[classmethod]
-    fn log_filepath_from_name(_cls: &Bound<'_, PyType>, app_name: String) -> String {
-        let dirs = xdg::BaseDirectories::with_prefix(app_name);
-        let mut p = dirs
-            .get_data_home()
-            .unwrap_or(std::env::current_dir().expect("Could not find suitable log location. As a fallback, make sure the current directory exists."));
+    fn log_filepath_from_name(_cls: &Bound<'_, PyType>, app_name: &str) -> String {
+        let base_dir = dirs::state_dir()
+            .unwrap_or(
+                std::env::current_dir()
+                    .expect("Could not find a suitable log location. As a fallback, make sure the current directory exists.")
+            );
 
         let now = jiff::Timestamp::now();
-        let filename = format!("{}.log", now.strftime("%Y%m%d-%H%M%S.%f"));
-        p.extend(["log", &filename]);
-        p.to_string_lossy().into()
+        let mut log_filepath = PathBuf::new();
+
+        log_filepath.extend([
+            "log",
+            app_name,
+            &now.strftime("%Y%m%d-%H%M%S.%f").to_string(),
+        ]);
+        log_filepath.add_extension("log");
+
+        base_dir.join(log_filepath).display().to_string()
     }
 
     /// Get the current verbosity mode of the emitter.
