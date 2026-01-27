@@ -55,6 +55,9 @@ ifneq ($(shell which cargo),)
 else ifneq ($(shell which snap),)
 	sudo snap install rustup --classic
 	rustup default stable
+else ifneq ($(shell which apt-get),)
+	sudo apt install rustup
+	rustup default stable
 endif
 
 

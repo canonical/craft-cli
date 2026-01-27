@@ -5,6 +5,7 @@ use std::{
     fs::{self, File},
     io::Write as _,
     path::PathBuf,
+    thread,
 };
 
 use pyo3::{Bound, PyResult, Python, pyclass, pymethods, pymodule, types::PyType};
@@ -114,13 +115,13 @@ impl Emitter {
         let mut log_filepath = PathBuf::new();
 
         log_filepath.extend([
-            "log",
             app_name,
+            "log",
             &now.strftime("%Y%m%d-%H%M%S.%f").to_string(),
         ]);
-        log_filepath.add_extension("log");
 
-        base_dir.join(log_filepath).display().to_string()
+        let final_path = base_dir.join(log_filepath).with_added_extension("log");
+        final_path.display().to_string()
     }
 
     /// Get the current verbosity mode of the emitter.
@@ -295,8 +296,8 @@ impl Emitter {
 
     /// Show an important warning to the user.
     #[pyo3(signature = (text, prefix = "Warning: "))]
-    fn warning(&mut self, text: &str, prefix: Option<&str>) -> PyResult<()> {
-        let prefixed = format!("{}{}", prefix.unwrap_or("Warning: "), text);
+    fn warning(&mut self, text: &str, prefix: &str) -> PyResult<()> {
+        let prefixed = format!("{}{}", prefix, text);
         let timestamped = Self::apply_timestamp(&prefixed);
         self.log(&timestamped)?;
 
@@ -335,7 +336,7 @@ impl Emitter {
     fn apply_timestamp(text: &str) -> Cow<'_, str> {
         format!(
             "{} {}",
-            jiff::Timestamp::now().strftime("%Y-%m-%D %H:%M:%s%.3f"),
+            jiff::Timestamp::now().strftime("%Y-%m-%d %H:%M:%s%.3f"),
             text
         )
         .into()
@@ -343,7 +344,7 @@ impl Emitter {
 
     /// Print a string to the log.
     fn log(&mut self, text: &str) -> PyResult<()> {
-        self.log_handle.write_all(text.as_ref())?;
+        writeln!(self.log_handle, "{text}")?;
         Ok(())
     }
 
@@ -362,10 +363,13 @@ impl Emitter {
 
 impl Drop for Emitter {
     fn drop(&mut self) {
-        self.printer.stop().expect(
-            "An unknown error has occurred! The Emitter was not stopped correctly,\
-            so context about the error has been lost. Please report this error.",
-        );
+        if let Err(e) = self.printer.stop()
+            && thread::panicking()
+        {
+            eprintln!(
+                "Unwinding due to panic! The Printer was not stopped correctly. Please report this as a bug: {e}"
+            );
+        }
     }
 }
 

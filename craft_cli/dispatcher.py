@@ -28,7 +28,7 @@ from craft_cli.errors import ArgumentParsingError, ProvideHelpException
 from craft_cli.helptexts import HelpBuilder, OutputFormat
 from craft_cli.utils import humanize_list
 
-logger = logging.Logger(__file__)
+logger = logging.getLogger(__file__)
 
 
 class CommandGroup(NamedTuple):
@@ -94,6 +94,13 @@ class GlobalArgument:
 
 _VERBOSITIES = ("quiet", "brief", "verbose", "debug", "trace")
 
+
+def _validate_verbosity(verbosity: str) -> str:
+    if verbosity in _VERBOSITIES:
+        return verbosity
+    raise ValueError(f"Invalid verbosity level {verbosity}")
+
+
 _DEFAULT_GLOBAL_ARGS = [
     GlobalArgument(
         "help",
@@ -123,7 +130,8 @@ _DEFAULT_GLOBAL_ARGS = [
         "--verbosity",
         "Set the verbosity level to 'quiet', 'brief', 'verbose', 'debug' or 'trace'",
         choices=list(_VERBOSITIES),
-        validator=lambda mode: mode in _VERBOSITIES,
+        # The "else None" is dead, but required code.
+        validator=_validate_verbosity,
         case_sensitive=False,
     ),
 ]

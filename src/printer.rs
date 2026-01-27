@@ -344,12 +344,20 @@ impl Printer {
 
 impl Drop for Printer {
     fn drop(&mut self) {
-        if thread::panicking() {
-            eprintln!("Unwinding due to panic! Printer was not stopped properly.");
+        if let Err(e) = self.stop() {
+            if thread::panicking() {
+                eprintln!(
+                    "Unwinding due to panic! Printer was not stopped properly. Please report this as a bug: {e}"
+                );
+            } else {
+                eprintln!(
+                    "Failed to tear down printer. Destruct the printer correctly to view this error. Please report this as a bug: {e}"
+                );
+            }
+            // Make a last-ditch attempt to restore the text cursor before bailing.
             if let Err(e) = console::Term::stdout().show_cursor() {
                 eprintln!("Unable to restore text cursor: {e}")
             }
         }
-        self.stop().expect("An error was encountered while logging. Tear down the printer properly to view the error.");
     }
 }

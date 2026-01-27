@@ -22,7 +22,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.14",
     "Programming Language :: Rust",
-    "Programming Language :: Python :: Implementation: CPython",
+    "Programming Language :: Python :: Implementation :: CPython",
     "Programming Language :: Python :: Implementation :: PyPy",
 ]
 requires-python = ">=3.10"
@@ -102,7 +102,7 @@ constraint-dependencies = [
 cache-keys = [
     { file = "src/**/*.rs" },
     { file = "Cargo.toml" },
-    { file = "python/craft_cli/**/*.pyi?" },
+    { file = "craft_cli/**/*.pyi?" },
     { file = "pyproject.toml" },
 ]
 
