@@ -92,7 +92,7 @@ class GlobalArgument:
             self.choices = [choice.lower() for choice in self.choices]
 
 
-_VERBOSITIES = frozenset({"quiet", "brief", "verbose", "debug", "trace"})
+_VERBOSITIES = ("quiet", "brief", "verbose", "debug", "trace")
 
 _DEFAULT_GLOBAL_ARGS = [
     GlobalArgument(
