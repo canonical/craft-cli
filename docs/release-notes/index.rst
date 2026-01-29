@@ -224,33 +224,6 @@ development keeps pace with the OS's new releases and support lifecycle.>
   `Security notice on encryption X <>`_ on the Ubuntu blog.">
 
 
-  Scheduled feature deprecations
-  ------------------------------
-
-  <Iterate on the following paragraph+items if you're covering multiple
-  versions in this section.>
-
-  The following features will be deprecated in Starcraft <planned version>:
-
-
-  <Feature D>
-  ~~~~~~~~~~~
-
-  <Future deprecation: Use the same format as backwards-incompatible changes,
-  but use future tense to describe what we *intend* and *plan* to do in
-  subsequent releases. Think of this as a promise or commitment to the reader,
-  and be mindful of the trust we want them to place in us. Don't write
-  conjecture or make promises about details that haven't been decided. Include
-  only the decisions that we have set in stone and information we're allowed to
-  disclose at of the release day. Use phrases like "we plan to", "we are
-  working on", or "we have scheduled development of". End by linking to
-  relevant documentation, standards, or public discussion. For example, "In
-  October 2024, the NIST published SP ABC-123, urging software publishers to
-  cease the use of encryption algorithm X. We plan to deprecate it in Starcraft
-  1.2. For more details about this decision and our policy, see `Security
-  notice on encryption X <>`_ on the Ubuntu blog.">
-
-
   Known issues
   ------------
 
