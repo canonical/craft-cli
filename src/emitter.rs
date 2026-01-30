@@ -352,12 +352,6 @@ impl Emitter {
 
     /// Stop the printing infrastructure and print a final message to see the logs.
     fn finish(&mut self) -> PyResult<()> {
-        let message = Message {
-            text: format!("Full execution log at '{}'", self.log_filepath),
-            model: MessageType::Info,
-            target: Some(Target::Stderr),
-        };
-        self.printer.send(message);
         self.printer.stop()?;
         Ok(())
     }
