@@ -3,7 +3,7 @@
 use std::{
     borrow::Cow,
     fs::{self, File},
-    io::Write as _,
+    io::{BufWriter, Write as _},
     path::PathBuf,
     thread,
 };
@@ -49,7 +49,7 @@ struct Emitter {
     printer: Printer,
 
     /// A handle to the desired log file.
-    log_handle: File,
+    log_handle: BufWriter<File>,
 
     /// The original filepath of the log file.
     log_filepath: String,
@@ -86,11 +86,13 @@ impl Emitter {
         // https://pyo3.rs/v0.25.1/faq.html#im-experiencing-deadlocks-using-pyo3-with-stdsynconcelock-stdsynclazylock-lazy_static-and-once_cell
         py.detach(|| printer.start(verbosity));
 
-        let log_handle = fs::OpenOptions::new()
-            .write(true)
-            .truncate(true)
-            .create(true)
-            .open(&log_filepath)?;
+        let log_handle = BufWriter::new(
+            fs::OpenOptions::new()
+                .write(true)
+                .truncate(true)
+                .create(true)
+                .open(&log_filepath)?,
+        );
 
         Ok(Self {
             printer,
@@ -336,7 +338,7 @@ impl Emitter {
     fn apply_timestamp(text: &str) -> Cow<'_, str> {
         format!(
             "{} {}",
-            jiff::Timestamp::now().strftime("%Y-%m-%d %H:%M:%s%.3f"),
+            jiff::Timestamp::now().strftime("%Y-%m-%d %H:%M:%S%.3f"),
             text
         )
         .into()
