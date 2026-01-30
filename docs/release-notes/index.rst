@@ -262,7 +262,18 @@ development keeps pace with the OS's new releases and support lifecycle.>
   We would like to express a big thank you to all the people who contributed to
   this release.
 
+  <List all contributors for this release. Compile the list from GitHub's compare page
+  (https://github.com/canonical/starbase/compare) or through digests in your local
+  repository.
+
+  List contributors from the craft libraries, too. Don't automatically include all of
+  the library contributions that were inherited; only consider those that were actually
+  integrated or consumed by the project.
+
+  Example:
+
   :literalref:`@alex<https://example.com/alex>`,
   :literalref:`@blair<https://example.com/blair>`,
   :literalref:`@cam<https://example.com/cam>`,
   and :literalref:`@devin<https://example.com/devin>`
+  >
