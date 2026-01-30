@@ -36,7 +36,10 @@ pub mod utils {
 
         match items.as_slice() {
             [] => Err(PyValueError::new_err("Cannot humanize empty list")),
-            [_] => Ok(items.into_iter().next().expect("Size checked by match arm")),
+            [_] => Ok(items
+                .into_iter()
+                .next()
+                .expect("Internal error: Cannot get sole item from iterator")),
             [start, end] => Ok(format!("{start} {conjunction} {end}")),
             [start @ .., end] => {
                 let start = start.join(", ");

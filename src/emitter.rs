@@ -364,11 +364,9 @@ impl Emitter {
 impl Drop for Emitter {
     fn drop(&mut self) {
         if let Err(e) = self.printer.stop()
-            && thread::panicking()
+            && !thread::panicking()
         {
-            eprintln!(
-                "Unwinding due to panic! The Printer was not stopped correctly. Please report this as a bug: {e}"
-            );
+            eprintln!("Cannot stop printer: {e:?}");
         }
     }
 }

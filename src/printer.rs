@@ -268,8 +268,15 @@ impl InnerPrinter {
 impl Drop for InnerPrinter {
     /// Restore the cursor when releasing control of the terminal.
     fn drop(&mut self) {
-        self.handle_overwrite().unwrap();
-        self.stdout.show_cursor().unwrap();
+        // Attempt to restore sanity, but don't break more if already panicking
+        let res = self
+            .handle_overwrite()
+            .map_or_else(|_| self.stdout.show_cursor(), Ok);
+        if let Err(e) = res
+            && !thread::panicking()
+        {
+            eprintln!("Unable to destruct inner printer: {e}");
+        }
     }
 }
 
@@ -344,17 +351,18 @@ impl Printer {
 
 impl Drop for Printer {
     fn drop(&mut self) {
-        if let Err(e) = self.stop() {
-            if thread::panicking() {
-                eprintln!(
-                    "Unwinding due to panic! Printer was not stopped properly. Please report this as a bug: {e}"
-                );
-            } else {
-                eprintln!(
-                    "Failed to tear down printer. Destruct the printer correctly to view this error. Please report this as a bug: {e}"
-                );
+        if let Err(e) = self.stop()
+            && !thread::panicking()
+        {
+            if !thread::panicking() {
+                eprintln!("Error encountered in printing thread: {e:?}");
             }
+
             // Make a last-ditch attempt to restore the text cursor before bailing.
+            //
+            // This should be a no-op if it already succeeded during
+            // the tear down of another object, so this really is just insurance
+            // to try to leave the shell in a usable state.
             if let Err(e) = console::Term::stdout().show_cursor() {
                 eprintln!("Unable to restore text cursor: {e}")
             }
