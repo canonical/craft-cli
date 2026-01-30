@@ -222,10 +222,10 @@ impl InnerPrinter {
         }
         match msg.model {
             Mt::Info => self.print(msg),
-            Mt::Error => self.error(msg),
+            Mt::Error | Mt::Warning | Mt::Debug => self.error(msg),
             Mt::ProgEphemeral(..) => self.progress(msg, false),
             Mt::ProgPersistent(..) => self.progress(msg, true),
-            _ => unimplemented!(),
+            Mt::Trace | Mt::ProgBar { .. } => unimplemented!(),
         }
     }
 
@@ -239,6 +239,7 @@ impl InnerPrinter {
 
     /// Print a simple message to stdout.
     fn print(&mut self, message: &Message) -> PyResult<()> {
+        self.handle_overwrite()?;
         self.stdout.write_line(&message.text)?;
         Ok(())
     }
@@ -252,9 +253,14 @@ impl InnerPrinter {
 
     /// Print progress on a task.
     fn progress(&mut self, message: &Message, permanent: bool) -> PyResult<()> {
-        self.handle_overwrite()?;
         self.needs_overwrite = !permanent;
-        self.print(message)?;
+        match message
+            .target
+            .expect("Internal error: null message made it to printer")
+        {
+            Target::Stdout => self.print(message)?,
+            Target::Stderr => self.error(message)?,
+        };
         Ok(())
     }
 
