@@ -1549,10 +1549,13 @@ def test_table_formatter_simple_dict_list():
     data = [{"a": 1, "b": 2}, {"a": 3, "b": 4}]
     fmt = TableFormatter()
     out = fmt.format(data)
-    assert "a" in out
-    assert "b" in out
-    assert "1" in out
-    assert "4" in out
+    expected = """\
+a | b
+--+--
+1 | 2
+3 | 4"""
+
+    assert out.strip() == expected.strip()
 
 
 def test_table_formatter_empty_list():
@@ -1564,8 +1567,15 @@ def test_table_formatter_empty_list():
 def test_table_formatter_dict_input():
     fmt = TableFormatter()
     out = fmt.format({"foo": "bar"})
-    assert "foo" in out
-    assert "bar" in out
+
+    # Define exact expected structure
+    # This depends on TableFormatter's specific style
+
+    expected = """\
+Key | Value
+----+------
+foo | bar"""
+    assert out.strip() == expected.strip()
 
 
 def test_json_formatter_dict_list():

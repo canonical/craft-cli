@@ -1218,7 +1218,12 @@ def test_tool_exec_command_dash_help_simple(help_option):
     # check the given information to the help text builder
     args = mock.call_args[0]
     assert args[0].__class__ == cmd
-    assert sorted(x[0] for x in args[1]) == []
+    assert sorted(x[0] for x in args[1]) == [
+        "--verbosity",
+        "-h, --help",
+        "-q, --quiet",
+        "-v, --verbose",
+    ]
 
 
 @pytest.mark.parametrize("help_option", ["-h", "--help"])
@@ -1239,7 +1244,12 @@ def test_tool_exec_command_dash_help_reverse(help_option):
     # check the given information to the help text builder
     args = mock.call_args[0]
     assert args[0].__class__ == cmd
-    assert sorted(x[0] for x in args[1]) == []
+    assert sorted(x[0] for x in args[1]) == [
+        "--verbosity",
+        "-h, --help",
+        "-q, --quiet",
+        "-v, --verbose",
+    ]
 
 
 @pytest.mark.parametrize("help_option", ["-h", "--help"])
@@ -1266,6 +1276,10 @@ def test_tool_exec_command_dash_help_missing_params(help_option):
     args = mock.call_args[0]
     assert args[0].__class__ == cmd
     assert sorted(x[0] for x in args[1]) == [
+        "--verbosity",
+        "-h, --help",
+        "-q, --quiet",
+        "-v, --verbose",
         "mandatory",
     ]
 
@@ -1339,7 +1353,12 @@ def test_tool_exec_help_command_on_command_ok():
     # check the given information to the help text builder
     args = mock.call_args[0]
     assert isinstance(args[0], cmd)
-    assert sorted(x[0] for x in args[1]) == []
+    assert sorted(x[0] for x in args[1]) == [
+        "--verbosity",
+        "-h, --help",
+        "-q, --quiet",
+        "-v, --verbose",
+    ]
     assert args[2] == OutputFormat.plain
 
 
@@ -1360,7 +1379,12 @@ def test_tool_exec_help_command_on_command_format_markdown():
     # check the given information to the help text builder
     args = mock.call_args[0]
     assert isinstance(args[0], cmd)
-    assert sorted(x[0] for x in args[1]) == []
+    assert sorted(x[0] for x in args[1]) == [
+        "--verbosity",
+        "-h, --help",
+        "-q, --quiet",
+        "-v, --verbose",
+    ]
     assert args[2] == OutputFormat.markdown
 
 
@@ -1396,7 +1420,14 @@ def test_tool_exec_help_command_on_command_complex():
     expected_options = [
         ("--option1", "help on option1"),
         ("--option3", "help on option3"),
+        (
+            "--verbosity",
+            "Set the verbosity level to 'quiet', 'brief', 'verbose', 'debug' or 'trace'",
+        ),
+        ("-h, --help", "Show this help message and exit"),
         ("-o2, --option2", "help on option2"),
+        ("-q, --quiet", "Only show warnings and errors, not progress"),
+        ("-v, --verbose", "Show debug information and be more verbose"),
         ("param1", "help on param1"),
         ("param2", "help on param2"),
         ("transformed3", "help on param2"),
@@ -1429,6 +1460,13 @@ def test_tool_exec_help_command_on_command_no_help():
     assert args[0].__class__ == cmd
     expected_options = [
         ("--option", ""),
+        (
+            "--verbosity",
+            "Set the verbosity level to 'quiet', 'brief', 'verbose', 'debug' or 'trace'",
+        ),
+        ("-h, --help", "Show this help message and exit"),
+        ("-q, --quiet", "Only show warnings and errors, not progress"),
+        ("-v, --verbose", "Show debug information and be more verbose"),
         ("param", ""),
     ]
     assert sorted(args[1]) == expected_options
