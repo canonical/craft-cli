@@ -179,12 +179,6 @@ class BaseCommand:
 
         :param parser: The object to fill with this command's parameters.
         """
-        parser.add_argument(
-            "--format",
-            choices=["json", "table"],
-            default="table",
-            help="Format for structured output",
-        )
 
     # NOTE: run() returns `Optional[int]` instead of `int | None` as the latter would
     # be a breaking change for subclasses that override this with just `None` and
@@ -203,8 +197,6 @@ class BaseCommand:
 
 class _CustomArgumentParser(argparse.ArgumentParser):
     """ArgumentParser with custom error manager."""
-
-    _help_builder: HelpBuilder
 
     def __init__(
         self,
@@ -394,7 +386,7 @@ class Dispatcher:
         command.fill_parser(parser)
 
         # produce the complete help message for the command
-        command_options: list[tuple[str, str]] = []
+        command_options = self._get_global_options()
         for action in parser._actions:  # noqa: SLF001
             # store the different options if present, otherwise it's just the dest
             help_text = "" if action.help is None else action.help
