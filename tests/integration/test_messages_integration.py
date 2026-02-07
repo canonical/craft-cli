@@ -1696,7 +1696,7 @@ def test_streaming_brief_spinner(capsys, logger, monkeypatch, init_emitter):
     # The spinner-added messages should contain both the prefix and the "submessage".
     expected_err = [
         Line("Begin stage", permanent=False),
-        Line(r"Begin stage - \(-?\d+\.\d+s\)", permanent=False, regex=True),
+        Line(r"Begin stage - \(0.[7-9]s\)", permanent=False, regex=True),
         Line("Begin stage", permanent=False),
         Line("Begin stage :: Opening stream", permanent=False),
         Line("Begin stage :: Info message", permanent=False),
