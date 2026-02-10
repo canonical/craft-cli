@@ -20,13 +20,15 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import difflib
+import logging
 from collections.abc import Callable, Sequence
 from typing import Any, Literal, NamedTuple, NoReturn
 
-from craft_cli import EmitterMode, emit
 from craft_cli.errors import ArgumentParsingError, ProvideHelpException
 from craft_cli.helptexts import HelpBuilder, OutputFormat
 from craft_cli.utils import humanize_list
+
+logger = logging.getLogger(__file__)
 
 
 class CommandGroup(NamedTuple):
@@ -90,6 +92,15 @@ class GlobalArgument:
             self.choices = [choice.lower() for choice in self.choices]
 
 
+_VERBOSITIES = ("quiet", "brief", "verbose", "debug", "trace")
+
+
+def _validate_verbosity(verbosity: str) -> str:
+    if verbosity in _VERBOSITIES:
+        return verbosity
+    raise ValueError(f"Invalid verbosity level {verbosity}")
+
+
 _DEFAULT_GLOBAL_ARGS = [
     GlobalArgument(
         "help",
@@ -118,8 +129,9 @@ _DEFAULT_GLOBAL_ARGS = [
         None,
         "--verbosity",
         "Set the verbosity level to 'quiet', 'brief', 'verbose', 'debug' or 'trace'",
-        choices=[mode.name.lower() for mode in EmitterMode],
-        validator=lambda mode: EmitterMode[mode.upper()],
+        choices=list(_VERBOSITIES),
+        # The "else None" is dead, but required code.
+        validator=_validate_verbosity,
         case_sensitive=False,
     ),
 ]
@@ -286,7 +298,7 @@ class Dispatcher:
         )
         self._loaded_command.fill_parser(parser)
         self._parsed_command_args = parser.parse_args(self._command_args)
-        emit.trace(f"Command parsed sysargs: {self._parsed_command_args}")
+        logger.debug(f"Command parsed sysargs: {self._parsed_command_args}")
         return self._loaded_command
 
     def parsed_args(self) -> argparse.Namespace:
@@ -507,13 +519,7 @@ class Dispatcher:
             raise self._build_usage_exc(
                 "The 'verbose', 'quiet' and 'verbosity' options are mutually exclusive."
             )
-        if global_args["quiet"]:
-            emit.set_mode(EmitterMode.QUIET)
-        elif global_args["verbose"]:
-            emit.set_mode(EmitterMode.VERBOSE)
-        elif verbosity := global_args["verbosity"]:
-            emit.set_mode(verbosity)
-        emit.trace(
+        logger.debug(
             f"Raw pre-parsed sysargs: args={global_args} filtered={filtered_sysargs}"
         )
 
@@ -527,10 +533,9 @@ class Dispatcher:
             if self._default_command is None:
                 help_text = self._get_general_help(detailed=False)
                 raise ArgumentParsingError(help_text)
-            emit.progress(
+            logger.warning(
                 f"Running {self._app_name} without a command will not be possible in future releases. "
                 f"Use '{self._app_name} {self._default_command.name}' instead.",
-                permanent=True,
             )
             # validated by BaseCommand
             assert self._default_command.name is not None  # noqa: S101 (use of assert)
@@ -551,7 +556,7 @@ class Dispatcher:
             help_text = self._build_no_command_error(command)
             raise ArgumentParsingError(help_text) from None
 
-        emit.trace(f"General parsed sysargs: command={command!r} args={cmd_args}")
+        logger.debug(f"General parsed sysargs: command={command!r} args={cmd_args}")
         return global_args
 
     def run(self) -> int | None:

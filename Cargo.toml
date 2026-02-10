@@ -1,0 +1,27 @@
+[package]
+name = "craft-cli"
+edition = "2024"
+
+[lib]
+name = "craft_cli_extensions"
+crate-type = ["cdylib"]
+
+[workspace]
+members = ["."]
+
+[workspace.dependencies]
+# pyo3 is always needed, but tests additionally need the "auto-initialize" feature. To avoid
+# having two disparate version specifications, it's instead specified here exactly once and then
+# retrieved via "workspace = true".
+pyo3 = "0.27.2"
+
+[dependencies]
+console = "0.16.2"
+dirs = "6.0.0"
+indicatif = { version = "0.18.0", features = ["improved_unicode"] }
+jiff = "0.2.15"
+pyo3 = { features = ["extension-module"], workspace = true }
+
+[dev-dependencies]
+pyo3 = { features = ["auto-initialize"], workspace = true }
+regex = "1.11.1"
