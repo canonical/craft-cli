@@ -222,6 +222,15 @@ impl PipeListener {
             .split_last()
             .expect("Internal error: Attempted to send empty content through stream handle");
 
+        let model = match self.verbosity {
+            Verbosity::Quiet | Verbosity::Brief => MessageType::ProgEphemeral,
+            Verbosity::Verbose | Verbosity::Debug | Verbosity::Trace => MessageType::ProgPersistent,
+        };
+        let target = match self.verbosity {
+            Verbosity::Quiet => None,
+            _ => Some(Target::Stderr),
+        };
+
         for part in parts {
             let parsed = String::from_utf8_lossy(part);
 
@@ -230,16 +239,6 @@ impl PipeListener {
                 _ => parsed,
             }
             .to_string();
-            let model = match self.verbosity {
-                Verbosity::Quiet | Verbosity::Brief => MessageType::ProgEphemeral,
-                Verbosity::Verbose | Verbosity::Debug | Verbosity::Trace => {
-                    MessageType::ProgPersistent
-                }
-            };
-            let target = match self.verbosity {
-                Verbosity::Quiet => None,
-                _ => Some(Target::Stderr),
-            };
 
             let message = Message {
                 text,

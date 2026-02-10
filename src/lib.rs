@@ -7,6 +7,7 @@ use pyo3::pymodule;
 mod craft_cli_utils;
 mod emitter;
 mod printer;
+mod streams;
 mod test_utils;
 mod utils;
 

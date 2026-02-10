@@ -6,6 +6,7 @@ use pyo3::{Bound, PyResult, pyclass, pymethods, pymodule, types::PyType};
 
 use crate::{
     printer::{Message, MessageType, Target},
+    streams::StreamHandle,
     utils,
 };
 
@@ -301,6 +302,27 @@ impl Emitter {
     /// All messages sent by the emitter will also be sent to this log file moving forward.
     fn init_logger(&self) -> PyResult<()> {
         crate::printer::printer().init_logger(&self.log_filepath, &self.greeting)
+    }
+
+    /// Open a stream context manager to redirect output to a different stream.
+    #[cfg(unix)]
+    fn open_stream(&self) -> StreamHandle {
+        StreamHandle::new(self.verbosity)
+    }
+
+    /// Open a stream context manager to redirect output to a different stream.
+    #[cfg(windows)]
+    fn open_stream(&self) -> PyResult<()> {
+        use pyo3::exceptions::PyNotImplementedError;
+
+        // The Python implementation of this hinged upon the fact that Python accepts
+        // C-style integer file descriptors on Windows using `msvcrt` to convert
+        // named pipes into file descriptors for `os.open()`. Rust does not have the
+        // same abstraction, instead forcing us into unsafe code with the `libc` crate
+        // for similar behavior.
+        Err(PyNotImplementedError::new_err(
+            "Stream context manager not yet supported on Windows.",
+        ))
     }
 }
 
