@@ -11,7 +11,7 @@ use std::{
     time::Duration,
 };
 
-use pyo3::{PyErr, PyResult};
+use pyo3::{PyErr, PyResult, exceptions::PyRuntimeError};
 
 use crate::utils::{self};
 
@@ -367,6 +367,12 @@ impl Printer {
     ///
     /// All messages received by the printer will be sent to this log file.
     pub fn init_logger(&mut self, filepath: &str, greeting: &str) -> PyResult<()> {
+        if self.log_handle.is_some() {
+            return Err(PyRuntimeError::new_err(
+                "Logging was already initialized internally.",
+            ));
+        }
+
         let log_handle = fs::OpenOptions::new()
             .write(true)
             .truncate(true)

@@ -60,19 +60,23 @@ struct Emitter {
 #[pymethods]
 impl Emitter {
     /// Construct a new `Emitter` from Python.
+    ///
+    /// This also enables the logging features
     #[new]
     fn new(
         log_filepath: String,
         verbosity: Verbosity,
         docs_base_url: &str,
         greeting: String,
-    ) -> Self {
-        Self {
+    ) -> PyResult<Self> {
+        crate::printer::printer().init_logger(&log_filepath, &greeting)?;
+
+        Ok(Self {
             log_filepath,
             docs_base_url: docs_base_url.trim_end_matches('/').to_string(),
             verbosity,
             greeting,
-        }
+        })
     }
 
     /// Create a log filepath from the app name as an easy default.
@@ -295,13 +299,6 @@ impl Emitter {
     /// Stop gracefully.
     fn ended_ok(&mut self) -> PyResult<()> {
         self.finish()
-    }
-
-    /// Initialize the logger, if wanted.
-    ///
-    /// All messages sent by the emitter will also be sent to this log file moving forward.
-    fn init_logger(&self) -> PyResult<()> {
-        crate::printer::printer().init_logger(&self.log_filepath, &self.greeting)
     }
 
     /// Open a stream context manager to redirect output to a different stream.
