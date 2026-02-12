@@ -1,6 +1,6 @@
 //! The Emitter class and its associated helpers.
 
-use std::{borrow::Cow, path::PathBuf, thread};
+use std::{path::PathBuf, thread};
 
 use pyo3::{Bound, PyResult, pyclass, pymethods, pymodule, types::PyType};
 
@@ -212,7 +212,7 @@ impl Emitter {
     /// by the next line (unless in verbose or trace mode, or set to permanent).
     #[pyo3(signature = (text, *, permanent = false))]
     fn progress(&mut self, text: &str, mut permanent: bool) -> PyResult<()> {
-        let timestamped = Self::apply_timestamp(text);
+        let timestamped = utils::apply_timestamp(text);
 
         let (maybe_timestamped, target) = match self.verbosity {
             Verbosity::Quiet => {
@@ -270,7 +270,7 @@ impl Emitter {
     #[pyo3(signature = (text, prefix = "Warning: "))]
     fn warning(&mut self, text: &str, prefix: &str) -> PyResult<()> {
         let prefixed = format!("{}{}", prefix, text);
-        let timestamped = Self::apply_timestamp(&prefixed);
+        let timestamped = utils::apply_timestamp(&prefixed);
 
         let (maybe_timestamped, target) = match self.verbosity {
             Verbosity::Quiet => (prefixed.as_str(), None),
@@ -324,16 +324,6 @@ impl Emitter {
 }
 
 impl Emitter {
-    /// Apply the timestamp to a message if necessary.
-    fn apply_timestamp(text: &str) -> Cow<'_, str> {
-        format!(
-            "{} {}",
-            jiff::Timestamp::now().strftime("%Y-%m-%d %H:%M:%S%.3f"),
-            text
-        )
-        .into()
-    }
-
     /// Stop the printing infrastructure and print a final message to see the logs.
     fn finish(&mut self) -> PyResult<()> {
         crate::printer::printer().stop()?;
