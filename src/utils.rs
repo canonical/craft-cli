@@ -16,7 +16,7 @@ pub fn fix_imports(m: &Bound<'_, PyModule>, name: &str) -> PyResult<()> {
 pub fn apply_timestamp(text: &str) -> Cow<'_, str> {
     format!(
         "{} {}",
-        jiff::Timestamp::now().strftime("%Y-%m-%d %H:%M:%S%.3f"),
+        jiff::Zoned::now().strftime("%Y-%m-%d %H:%M:%S%.3f"),
         text
     )
     .into()
