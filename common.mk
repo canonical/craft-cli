@@ -273,7 +273,7 @@ docs-setup: setup-docs
 # we pass a null dir instead.
 .PHONY: docs-clean
 docs-clean:  ##- Clean the temporary files used in documentation
-	VENVDIR=null
+	VENVDIR=$(mktemp)
 	$(MAKE) -C docs clean --no-print-directory
 
 # Override for `help` target in docs project
