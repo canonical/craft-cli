@@ -1,5 +1,7 @@
 //! Internal utils for Craft CLI.
 
+use std::borrow::Cow;
+
 use pyo3::{
     Bound, PyResult, Python,
     types::{PyAnyMethods, PyModule},
@@ -8,6 +10,16 @@ use pyo3::{
 /// Hack: workaround for [an upstream issue in PyO3](https://github.com/PyO3/pyo3/issues/759)
 pub fn fix_imports(m: &Bound<'_, PyModule>, name: &str) -> PyResult<()> {
     Python::attach(|py| py.import("sys")?.getattr("modules")?.set_item(name, m))
+}
+
+/// Apply the timestamp to a message if necessary.
+pub fn apply_timestamp(text: &str) -> Cow<'_, str> {
+    format!(
+        "{} {}",
+        jiff::Zoned::now().strftime("%Y-%m-%d %H:%M:%S%.3f"),
+        text
+    )
+    .into()
 }
 
 // This log function is very convenient for development, but may not necessarily always exist
@@ -35,11 +47,10 @@ pub fn log(message: impl Into<String>) {
                 .expect("Couldn't open debugging log!");
 
             writeln!(
-                FILE.lock().unwrap(),
+                handle,
                 "I hope you find what you are looking for, traveller."
             )
             .expect("Cannot write to debugging log");
-
             Mutex::new(handle)
         });
 

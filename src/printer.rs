@@ -1,20 +1,41 @@
 //! Handling for sending messages to a terminal.
 
 use std::{
+    fs,
+    io::Write as _,
     sync::{
-        OnceLock,
+        LazyLock, Mutex, MutexGuard, OnceLock,
         mpsc::{self, RecvTimeoutError},
     },
     thread::{self, JoinHandle},
     time::Duration,
 };
 
-use pyo3::{PyErr, PyResult};
+use pyo3::{PyErr, PyResult, exceptions::PyRuntimeError};
 
-use crate::emitter::Verbosity;
+use crate::utils::{self};
 
 /// Duration to wait before beginning to spin.
 const SPIN_TIMEOUT: Duration = Duration::from_secs(3);
+
+/// The only printer to ever exist!
+///
+/// The printer is declared this way in order to allow it being
+/// accessed by potentially multiple threads.
+///
+/// Since PyO3 plays poorly with lifetimes, it isn't possible to
+/// pass around a reference to a singular `Printer`. Furthermore,
+/// having a `JoinHandle<_>` attached to the `Printer` makes it
+/// infeasible to clone or copy the printer between structs, even
+/// in an `Arc`.
+static PRINTER: LazyLock<Mutex<Printer>> = LazyLock::new(|| Mutex::new(Printer::new()));
+
+/// Get the printer singleton.
+///
+/// If this is the first get, it will initialize a printer.
+pub fn printer<'a>() -> MutexGuard<'a, Printer> {
+    PRINTER.lock().unwrap()
+}
 
 /// Representation of which stream should be targeted by a message.
 #[derive(Debug, Clone, Copy)]
@@ -41,12 +62,12 @@ pub enum MessageType {
     /// A persistent progress message that will remain on the console.
     ///
     /// For a non-permanent message, see `ProgEphemeral`.
-    ProgPersistent(Option<Target>),
+    ProgPersistent,
 
     /// An ephemeral progress message that will be overwritten by the next message.
     ///
     /// For a permanent message, see `ProgPersistent`.
-    ProgEphemeral(Option<Target>),
+    ProgEphemeral,
 
     /// A warning message.
     Warning,
@@ -68,13 +89,7 @@ pub enum MessageType {
     // Pending implementation of incremental progress bars using indicatif
     #[expect(unused)]
     /// Signals to create a progress bar.
-    ProgBar {
-        /// The target stream.
-        target: Option<Target>,
-
-        /// The number of elements to render a progress bar for.
-        size: u64,
-    },
+    ProgBar(u64),
 }
 
 /// A single message to be sent, and what type of message it is.
@@ -88,23 +103,6 @@ pub struct Message {
 
     /// Where the message should be sent.
     pub(crate) target: Option<Target>,
-}
-
-impl Message {
-    /// Calculate which stream a message should go to based on its model.
-    pub fn determine_stream(&self, mode: Verbosity) -> Option<Target> {
-        use Target as Tar;
-        match self.model {
-            MessageType::ProgPersistent(target)
-            | MessageType::ProgEphemeral(target)
-            | MessageType::ProgBar { target, .. } => target,
-            MessageType::Warning | MessageType::Error => Some(Tar::Stderr),
-            MessageType::Debug | MessageType::Trace | MessageType::Info => match mode {
-                Verbosity::Verbose => Some(Tar::Stdout),
-                _ => None,
-            },
-        }
-    }
 }
 
 /// An internal printer object meant to print from a separate thread.
@@ -121,9 +119,6 @@ struct InnerPrinter {
     /// A handle on stderr.
     stderr: console::Term,
 
-    /// Printing verbosity mode.
-    mode: Verbosity,
-
     /// A flag indicating if the previous line should be overwritten when printing
     /// the next.
     needs_overwrite: bool,
@@ -131,12 +126,11 @@ struct InnerPrinter {
 
 impl InnerPrinter {
     /// Instantiate a new `InnerPrinter`.
-    pub fn new(mode: Verbosity, channel: mpsc::Receiver<Message>) -> Self {
+    pub fn new(channel: mpsc::Receiver<Message>) -> Self {
         let result = Self {
             stdout: console::Term::stdout(),
             stderr: console::Term::stderr(),
             channel,
-            mode,
             needs_overwrite: false,
         };
 
@@ -189,12 +183,13 @@ impl InnerPrinter {
                         Some(msg) => msg,
                         None => continue,
                     };
-                    let target = match msg.determine_stream(self.mode) {
-                        Some(target) => target,
+
+                    let target = match msg.target {
+                        Some(target) => target.into(),
                         None => continue,
                     };
 
-                    let new_spinner = indicatif::ProgressBar::with_draw_target(None, target.into())
+                    let new_spinner = indicatif::ProgressBar::with_draw_target(None, target)
                         .with_style(main_style.clone())
                         .with_message(msg.text.clone())
                         .with_elapsed(SPIN_TIMEOUT);
@@ -223,8 +218,8 @@ impl InnerPrinter {
         match msg.model {
             Mt::Info => self.print(msg),
             Mt::Error | Mt::Warning | Mt::Debug => self.error(msg),
-            Mt::ProgEphemeral(..) => self.progress(msg, false),
-            Mt::ProgPersistent(..) => self.progress(msg, true),
+            Mt::ProgEphemeral => self.progress(msg, false),
+            Mt::ProgPersistent => self.progress(msg, true),
             Mt::Trace | Mt::ProgBar { .. } => unimplemented!(),
         }
     }
@@ -299,11 +294,21 @@ pub struct Printer {
 
     /// A channel to send messages to the `InnerPrinter` instance.
     channel: OnceLock<mpsc::Sender<Message>>,
+
+    /// A file handle to write to for logging operations.
+    log_handle: Option<fs::File>,
 }
 
 impl Printer {
+    /// Create a new Printer.
+    fn new() -> Self {
+        let mut printer = Self::default();
+        printer.start();
+        printer
+    }
+
     /// Spawn a thread to begin listening for messages to print.
-    pub fn start(&mut self, mode: Verbosity) {
+    fn start(&mut self) {
         let (send, recv) = mpsc::channel();
 
         if self.channel.set(send).is_err() {
@@ -312,7 +317,7 @@ impl Printer {
         }
 
         let handle = thread::spawn(move || -> PyResult<()> {
-            let mut printer = InnerPrinter::new(mode, recv);
+            let mut printer = InnerPrinter::new(recv);
             printer.listen()?;
             Ok(())
         });
@@ -347,11 +352,46 @@ impl Printer {
     }
 
     /// Send a message to the `InnerPrinter` for displaying
-    pub fn send(&self, msg: Message) {
+    pub fn send(&mut self, msg: Message) -> PyResult<()> {
+        self.log(&msg.text)?;
         match self.channel.get() {
             Some(chan) => chan.send(msg).unwrap(),
             None => panic!("Receiver closed early?"),
         }
+        Ok(())
+    }
+}
+
+impl Printer {
+    /// Initialize the logger, if wanted.
+    ///
+    /// All messages received by the printer will be sent to this log file.
+    pub fn init_logger(&mut self, filepath: &str, greeting: &str) -> PyResult<()> {
+        if self.log_handle.is_some() {
+            return Err(PyRuntimeError::new_err(
+                "Logging was already initialized internally.",
+            ));
+        }
+
+        let log_handle = fs::OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .create(true)
+            .open(filepath)?;
+
+        self.log_handle = Some(log_handle);
+        self.log(greeting)?;
+
+        Ok(())
+    }
+
+    /// Print a string to the log with a timestamp.
+    fn log(&mut self, text: &str) -> PyResult<()> {
+        if let Some(log) = self.log_handle.as_mut() {
+            let timestamped = utils::apply_timestamp(text);
+            writeln!(log, "{timestamped}")?;
+        }
+        Ok(())
     }
 }
 
