@@ -346,3 +346,14 @@ classmethod-decorators = ["pydantic.validator", "pydantic.root_validator"]
     "FBT002", # Boolean default value in function definition (preserving for backwards-comp)
     "S101",   # Use of `assert` detected
 ]
+
+[tool.ty]
+[too.ty.analysis]
+exclude = ["build", "results"]
+
+[tool.ty.rules]
+"unused-type-ignore-comment" = "ignore"
+
+"invalid-argument-type" = "ignore"
+
+"too-many-positional-arguments" = "ignore"
