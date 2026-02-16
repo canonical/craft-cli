@@ -462,8 +462,9 @@ def test_command_help_text_no_parameters(docs_url, output_format):
     help_builder = HelpBuilder("testapp", "general summary", command_groups, docs_url)
     text = help_builder.get_command_help(cmd1(None), options, output_format)
 
-    expected_plain = textwrap.dedent(
-        """\
+    expected_plain = (
+        textwrap.dedent(
+            """\
         Usage:
             testapp somecommand [options]
 
@@ -484,6 +485,8 @@ def test_command_help_text_no_parameters(docs_url, output_format):
 
         For a summary of all commands, run 'testapp help --all'.
     """
+        ).rstrip()
+        + "\n"
     )
     if docs_url:
         expected_plain += (

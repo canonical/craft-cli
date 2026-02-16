@@ -391,6 +391,8 @@ class Dispatcher:
             # store the different options if present, otherwise it's just the dest
             help_text = "" if action.help is None else action.help
             if action.option_strings:
+                if "--format" in action.option_strings:
+                    continue
                 command_options.append((", ".join(action.option_strings), help_text))
             else:
                 if action.metavar is None:
