@@ -1686,6 +1686,18 @@ wheels = [
 ]
 
 [[package]]
+name = "sphinxcontrib-jquery"
+version = "4.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "sphinx" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/de/f3/aa67467e051df70a6330fe7770894b3e4f09436dea6881ae0b4f3d87cad8/sphinxcontrib-jquery-4.1.tar.gz", hash = "sha256:1620739f04e36a2c779f1a131a2dfd49b2fd07351bf1968ced074365933abc7a", size = 122331, upload-time = "2023-03-14T15:01:01.944Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/76/85/749bd22d1a68db7291c89e2ebca53f4306c3f205853cf31e9de279034c3c/sphinxcontrib_jquery-4.1-py2.py3-none-any.whl", hash = "sha256:f936030d7d0147dd026a4f2b5a57343d233f1fc7b363f68b3d4f1cb0993878ae", size = 121104, upload-time = "2023-03-14T15:01:00.356Z" },
+]
+
+[[package]]
 name = "sphinxcontrib-jsmath"
 version = "1.0.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1767,6 +1779,7 @@ docs = [
     { name = "sphinx-roles" },
     { name = "sphinx-sitemap" },
     { name = "sphinx-terminal" },
+    { name = "sphinxcontrib-jquery" },
     { name = "sphinxext-opengraph" },
     { name = "sphinxext-rediraffe" },
     { name = "vale" },
@@ -1784,6 +1797,7 @@ docs-starter-pack = [
     { name = "sphinx-roles" },
     { name = "sphinx-sitemap" },
     { name = "sphinx-terminal" },
+    { name = "sphinxcontrib-jquery" },
     { name = "sphinxext-opengraph" },
     { name = "vale" },
 ]
@@ -1825,6 +1839,7 @@ docs = [
     { name = "sphinx-roles", specifier = ">=0.1.0" },
     { name = "sphinx-sitemap", specifier = ">=2.6.0" },
     { name = "sphinx-terminal", specifier = ">=1.0.2" },
+    { name = "sphinxcontrib-jquery", specifier = ">=4.1" },
     { name = "sphinxext-opengraph", specifier = ">=0.13.0" },
     { name = "sphinxext-rediraffe", specifier = "==0.3.0" },
     { name = "vale", specifier = ">=3.13.0.0" },
@@ -1840,6 +1855,7 @@ docs-starter-pack = [
     { name = "sphinx-roles", specifier = ">=0.1.0" },
     { name = "sphinx-sitemap", specifier = ">=2.6.0" },
     { name = "sphinx-terminal", specifier = ">=1.0.2" },
+    { name = "sphinxcontrib-jquery", specifier = ">=4.1" },
     { name = "sphinxext-opengraph", specifier = ">=0.13.0" },
     { name = "vale", specifier = ">=3.13.0.0" },
 ]
