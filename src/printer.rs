@@ -266,6 +266,9 @@ pub struct Printer {
 
     /// A file handle to write to for logging operations.
     log_handle: Option<fs::File>,
+
+    /// A prefix to prepend to every message.
+    prefix: Option<String>,
 }
 
 impl Printer {
@@ -321,14 +324,17 @@ impl Printer {
     }
 
     /// Send a message to the `InnerPrinter` for displaying
-    pub fn send(&mut self, msg: Message) -> PyResult<()> {
+    pub fn send(&mut self, mut msg: Message) -> PyResult<()> {
         self.log(&msg.text)?;
         // Skip after logging if there's nowhere to even send it
         if msg.target.is_none() {
             return Ok(());
         }
         match self.channel.get() {
-            Some(chan) => chan.send(msg).unwrap(),
+            Some(chan) => {
+                self.apply_prefix(&mut msg);
+                chan.send(msg).unwrap()
+            }
             None => panic!("Receiver closed early?"),
         }
         Ok(())
@@ -363,6 +369,24 @@ impl Printer {
             writeln!(log, "{timestamped}")?;
         }
         Ok(())
+    }
+
+    /// Set a prefix for each message.
+    pub fn set_prefix(&mut self, prefix: String) {
+        self.prefix = Some(prefix);
+    }
+
+    /// Clear the current prefix.
+    pub fn clear_prefix(&mut self) {
+        self.prefix = None;
+    }
+
+    /// Apply the current prefix to a message, if any.
+    fn apply_prefix(&self, message: &mut Message) {
+        if let Some(prefix) = &self.prefix {
+            let text = format!("{prefix} :: {}", message.text);
+            message.text = text;
+        }
     }
 }
 
