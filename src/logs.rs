@@ -39,7 +39,8 @@ impl LogListener {
 
         // Call `record.getMessage()` from Python and parse it into a Rust string
         let mut text: String = record.call_method0(intern!(py, "getMessage"))?.extract()?;
-        if matches!(self.verbosity, Verbosity::Debug | Verbosity::Trace) {
+        let permanent = self.verbosity >= Verbosity::Verbose;
+        if permanent {
             text = utils::apply_timestamp(&text).into();
         }
         let target = self.decide_target(&levelno)?;
@@ -47,7 +48,8 @@ impl LogListener {
         let message = Message {
             text,
             target,
-            model: crate::printer::MessageType::Debug,
+            model: crate::printer::MessageType::Text,
+            permanent,
         };
 
         crate::printer::printer().send(message)?;
