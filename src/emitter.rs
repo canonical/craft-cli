@@ -63,9 +63,6 @@ struct Emitter {
     /// A handle on log handling.
     _log_handle: Option<Py<PyAny>>,
 
-    /// A prefix to prepend to each message.
-    prefix: Option<String>,
-
     /// Whether or not to streamline messages in with "brief" level verbosity.
     ///
     /// With this setting, sending an ephemeral progress message causes
@@ -97,7 +94,6 @@ impl Emitter {
             verbosity,
             greeting,
             _log_handle,
-            prefix: None,
             streaming_brief,
         })
     }
@@ -165,14 +161,13 @@ impl Emitter {
         };
         let text = maybe_timestamped.to_string();
 
-        let mut message = Message {
+        let message = Message {
             text,
             model: MessageType::Text,
             target,
             permanent: true,
         };
 
-        self.apply_prefix(&mut message);
         crate::printer::printer().send(message)?;
         Ok(())
     }
@@ -191,14 +186,13 @@ impl Emitter {
         };
         let text = timestamped.to_string();
 
-        let mut message = Message {
+        let message = Message {
             text,
             model: MessageType::Text,
             target,
             permanent: true,
         };
 
-        self.apply_prefix(&mut message);
         crate::printer::printer().send(message)?;
         Ok(())
     }
@@ -217,14 +211,13 @@ impl Emitter {
         };
         let text = timestamped.to_string();
 
-        let mut message = Message {
+        let message = Message {
             text,
             model: MessageType::Text,
             target,
             permanent: true,
         };
 
-        self.apply_prefix(&mut message);
         crate::printer::printer().send(message)?;
         Ok(())
     }
@@ -286,6 +279,9 @@ impl Emitter {
     /// Ideally used as the final message in a sequence to show a result, as it
     /// goes to stdout unlike other message types.
     fn message(&mut self, text: String) -> PyResult<()> {
+        // A message-type emission finalizes the current task and shouldn't have a prefix
+        self.clear_prefix();
+
         let target = match self.verbosity {
             Verbosity::Quiet => None,
             _ => Some(Target::Stdout),
@@ -315,14 +311,13 @@ impl Emitter {
         };
         let text = maybe_timestamped.to_string();
 
-        let mut message = Message {
+        let message = Message {
             text,
             model: MessageType::Text,
             target,
             permanent: true,
         };
 
-        self.apply_prefix(&mut message);
         crate::printer::printer().send(message)?;
         Ok(())
     }
@@ -361,12 +356,12 @@ impl Emitter {
 
     /// Set a prefix for each message.
     fn set_prefix(&mut self, prefix: String) {
-        self.prefix = Some(prefix);
+        crate::printer::printer().set_prefix(prefix);
     }
 
     /// Clear the current prefix.
     fn clear_prefix(&mut self) {
-        self.prefix = None;
+        crate::printer::printer().clear_prefix();
     }
 }
 
@@ -393,14 +388,6 @@ impl Emitter {
             .call1((log_handler,))?;
 
         Ok(Some(py_log_handler.unbind()))
-    }
-
-    /// Apply the current prefix to a message, if any.
-    fn apply_prefix(&self, message: &mut Message) {
-        if let Some(prefix) = &self.prefix {
-            let text = format!("{prefix} :: {}", message.text);
-            message.text = text;
-        }
     }
 }
 
