@@ -335,7 +335,11 @@ impl Emitter {
 
     /// Open a stream context manager to redirect output to a different stream.
     #[cfg(unix)]
-    fn open_stream(&self) -> StreamHandle {
+    #[pyo3(signature = (prefix = None))]
+    fn open_stream(&self, prefix: Option<String>) -> StreamHandle {
+        if let Some(pref) = prefix {
+            self.set_prefix(pref);
+        }
         StreamHandle::new(self.verbosity)
     }
 
@@ -355,12 +359,12 @@ impl Emitter {
     }
 
     /// Set a prefix for each message.
-    fn set_prefix(&mut self, prefix: String) {
+    fn set_prefix(&self, prefix: String) {
         crate::printer::printer().set_prefix(prefix);
     }
 
     /// Clear the current prefix.
-    fn clear_prefix(&mut self) {
+    fn clear_prefix(&self) {
         crate::printer::printer().clear_prefix();
     }
 }
