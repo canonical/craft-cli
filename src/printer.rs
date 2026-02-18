@@ -333,9 +333,7 @@ impl Printer {
         }
         Ok(())
     }
-}
 
-impl Printer {
     /// Initialize the logger, if wanted.
     ///
     /// All messages received by the printer will be sent to this log file.
