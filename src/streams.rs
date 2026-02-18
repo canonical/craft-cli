@@ -89,6 +89,9 @@ impl StreamHandle {
 
         _ = self.write.take();
 
+        // Clear the prefix set when this context manager was entered
+        crate::printer::printer().clear_prefix();
+
         Ok(())
     }
 
