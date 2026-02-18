@@ -4,15 +4,15 @@ use std::{
     io::{self, Read},
     os::fd::{AsRawFd as _, RawFd},
     sync::{
-        atomic::{AtomicBool, Ordering},
         Arc, OnceLock,
+        atomic::{AtomicBool, Ordering},
     },
     thread::{self, JoinHandle},
     time::Duration,
 };
 
 use pyo3::{
-    exceptions::PyRuntimeError, pyclass, pymethods, types::PyTuple, Bound, PyRefMut, PyResult,
+    Bound, PyRefMut, PyResult, exceptions::PyRuntimeError, pyclass, pymethods, types::PyTuple,
 };
 
 use crate::{
@@ -222,10 +222,7 @@ impl PipeListener {
             .split_last()
             .expect("Internal error: Attempted to send empty content through stream handle");
 
-        let model = match self.verbosity {
-            Verbosity::Quiet | Verbosity::Brief => MessageType::ProgEphemeral,
-            Verbosity::Verbose | Verbosity::Debug | Verbosity::Trace => MessageType::ProgPersistent,
-        };
+        let permanent = self.verbosity >= Verbosity::Verbose;
         let target = match self.verbosity {
             Verbosity::Quiet => None,
             _ => Some(Target::Stderr),
@@ -242,8 +239,9 @@ impl PipeListener {
 
             let message = Message {
                 text,
-                model,
+                model: MessageType::Text,
                 target,
+                permanent,
             };
 
             crate::printer::printer().send(message)?;

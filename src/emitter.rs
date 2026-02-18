@@ -15,7 +15,7 @@ use crate::{
 };
 
 /// Verbosity modes.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, PartialOrd)]
 #[pyclass]
 pub enum Verbosity {
     /// Quiet output. Most messages should not be output at all.
@@ -133,7 +133,7 @@ impl Emitter {
     fn set_verbosity(&mut self, new: Verbosity) -> PyResult<()> {
         self.verbosity = new;
 
-        if let Verbosity::Verbose | Verbosity::Debug | Verbosity::Trace = new {
+        if new >= Verbosity::Verbose {
             let messages = [
                 self.greeting.clone(),
                 format!("Logging execution to {}", self.log_filepath),
@@ -141,8 +141,9 @@ impl Emitter {
             for message in messages {
                 crate::printer::printer().send(Message {
                     text: message,
-                    model: MessageType::Info,
+                    model: MessageType::Text,
                     target: Some(Target::Stderr),
+                    permanent: true,
                 })?;
             }
         }
@@ -163,12 +164,12 @@ impl Emitter {
             Verbosity::Debug | Verbosity::Trace => (timestamped.as_ref(), Some(Target::Stderr)),
         };
         let text = maybe_timestamped.to_string();
-        let model = MessageType::Debug;
 
         let mut message = Message {
             text,
-            model,
+            model: MessageType::Text,
             target,
+            permanent: true,
         };
 
         self.apply_prefix(&mut message);
@@ -189,12 +190,12 @@ impl Emitter {
             _ => Some(Target::Stderr),
         };
         let text = timestamped.to_string();
-        let model = MessageType::Debug;
 
         let mut message = Message {
             text,
-            model,
+            model: MessageType::Text,
             target,
+            permanent: true,
         };
 
         self.apply_prefix(&mut message);
@@ -215,12 +216,12 @@ impl Emitter {
             _ => None,
         };
         let text = timestamped.to_string();
-        let model = MessageType::Trace;
 
         let mut message = Message {
             text,
-            model,
+            model: MessageType::Text,
             target,
+            permanent: true,
         };
 
         self.apply_prefix(&mut message);
@@ -261,17 +262,13 @@ impl Emitter {
             }
         };
 
-        let model = if permanent {
-            MessageType::ProgPersistent
-        } else {
-            MessageType::ProgEphemeral
-        };
         let final_text = maybe_timestamped.to_owned();
 
         let message = Message {
             text: final_text,
-            model,
+            model: MessageType::Text,
             target,
+            permanent,
         };
 
         crate::printer::printer().send(message)?;
@@ -293,12 +290,12 @@ impl Emitter {
             Verbosity::Quiet => None,
             _ => Some(Target::Stdout),
         };
-        let model = MessageType::Info;
 
         let message = Message {
             text,
-            model,
+            model: MessageType::Text,
             target,
+            permanent: true,
         };
 
         crate::printer::printer().send(message)?;
@@ -317,12 +314,12 @@ impl Emitter {
             _ => (prefixed.as_str(), Some(Target::Stderr)),
         };
         let text = maybe_timestamped.to_string();
-        let model = MessageType::Warning;
 
         let mut message = Message {
             text,
-            model,
+            model: MessageType::Text,
             target,
+            permanent: true,
         };
 
         self.apply_prefix(&mut message);

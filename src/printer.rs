@@ -59,32 +59,8 @@ impl From<Target> for indicatif::ProgressDrawTarget {
 /// Types of message for printing.
 #[derive(Clone, Copy, Debug)]
 pub enum MessageType {
-    /// A persistent progress message that will remain on the console.
-    ///
-    /// For a non-permanent message, see `ProgEphemeral`.
-    ProgPersistent,
-
-    /// An ephemeral progress message that will be overwritten by the next message.
-    ///
-    /// For a permanent message, see `ProgPersistent`.
-    ProgEphemeral,
-
-    /// A warning message.
-    Warning,
-
-    // Pending implementation of CraftError parsing in Rust
-    #[expect(unused)]
-    /// An error message.
-    Error,
-
-    /// A debugging info message.
-    Debug,
-
-    /// A trace info message.
-    Trace,
-
-    /// An informational message.
-    Info,
+    /// Just plain text to display.
+    Text,
 
     // Pending implementation of incremental progress bars using indicatif
     #[expect(unused)]
@@ -98,11 +74,19 @@ pub struct Message {
     /// The message to be printed.
     pub(crate) text: String,
 
+    // Pending implementation of incremental progress bars using indicatif
+    #[expect(unused)]
     /// The type of message to send.
     pub(crate) model: MessageType,
 
     /// Where the message should be sent.
     pub(crate) target: Option<Target>,
+
+    /// Whether or not this message should persist after the next message.
+    ///
+    /// Depending on the exact type of message that follows, a non-permanent
+    /// message may still remain. Namely, after an error.
+    pub(crate) permanent: bool,
 }
 
 /// An internal printer object meant to print from a separate thread.
@@ -160,9 +144,9 @@ impl InnerPrinter {
                         && let Some(mut prv_msg) = maybe_prv_msg.take()
                     {
                         s.finish_and_clear();
-                        self.needs_overwrite = false;
                         let dur = indicatif::HumanDuration(s.elapsed());
                         prv_msg.text = format!("{} (took {:#})", prv_msg.text, dur);
+                        self.needs_overwrite = false;
                         self.handle_message(&prv_msg)?;
                     }
                     // Store the most recently received message in case we need to
@@ -211,17 +195,15 @@ impl InnerPrinter {
     /// Routing method for sending a message to the proper printing logic for a given
     /// message type.
     fn handle_message(&mut self, msg: &Message) -> PyResult<()> {
-        use MessageType as Mt;
-        if msg.target.is_none() {
-            return Ok(());
-        }
-        match msg.model {
-            Mt::Info => self.print(msg),
-            Mt::Error | Mt::Warning | Mt::Debug => self.error(msg),
-            Mt::ProgEphemeral => self.progress(msg, false),
-            Mt::ProgPersistent => self.progress(msg, true),
-            Mt::Trace | Mt::ProgBar { .. } => unimplemented!(),
-        }
+        let res = match msg.target {
+            None => return Ok(()),
+            Some(target) => match target {
+                Target::Stdout => self.print(msg),
+                Target::Stderr => self.error(msg),
+            },
+        };
+        self.needs_overwrite = !msg.permanent;
+        res
     }
 
     /// Handle the need (or lackthereof) to overwrite the previous line.
@@ -243,19 +225,6 @@ impl InnerPrinter {
     fn error(&mut self, message: &Message) -> PyResult<()> {
         self.handle_overwrite()?;
         self.stderr.write_line(&message.text)?;
-        Ok(())
-    }
-
-    /// Print progress on a task.
-    fn progress(&mut self, message: &Message, permanent: bool) -> PyResult<()> {
-        self.needs_overwrite = !permanent;
-        match message
-            .target
-            .expect("Internal error: null message made it to printer")
-        {
-            Target::Stdout => self.print(message)?,
-            Target::Stderr => self.error(message)?,
-        };
         Ok(())
     }
 
