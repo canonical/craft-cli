@@ -44,6 +44,5 @@ class LogHandler(logging.Handler):
 def setup_logging_capture(log_listener: LogListener) -> LogHandler:
     log_handler = LogHandler(log_listener)
     root_logger = logging.getLogger()
-    root_logger.setLevel(0)
     root_logger.addHandler(log_handler)
     return log_handler

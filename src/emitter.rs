@@ -346,10 +346,7 @@ impl Emitter {
         py: Python<'_>,
         verbosity: Verbosity,
     ) -> PyResult<Option<Py<PyAny>>> {
-        let log_handler = match LogListener::new(py, verbosity)? {
-            Some(log_handler) => log_handler,
-            None => return Ok(None),
-        };
+        let log_handler = LogListener::new(py, verbosity)?;
 
         // Instantiate the Python wrapper for log handling
         let py_log_handler = py

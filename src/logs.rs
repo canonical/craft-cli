@@ -54,17 +54,11 @@ impl LogListener {
 }
 
 impl LogListener {
-    pub fn new(py: Python<'_>, verbosity: Verbosity) -> PyResult<Option<Self>> {
-        let res = match verbosity {
-            Verbosity::Quiet => None,
-            Verbosity::Brief => None,
-            _ => Some(Self {
-                debug_level: py.import("logging")?.getattr("DEBUG")?.extract()?,
-                verbosity,
-            }),
-        };
-
-        Ok(res)
+    pub fn new(py: Python<'_>, verbosity: Verbosity) -> PyResult<Self> {
+        Ok(Self {
+            debug_level: py.import("logging")?.getattr("DEBUG")?.extract()?,
+            verbosity,
+        })
     }
 
     /// Determine where a log record should be sent.
@@ -78,9 +72,10 @@ impl LogListener {
         }
 
         let comp_op = match self.verbosity {
-            Verbosity::Verbose | Verbosity::Brief => CompareOp::Gt,
+            Verbosity::Quiet => return Ok(None),
+            Verbosity::Brief => return Ok(None),
+            Verbosity::Verbose => CompareOp::Gt,
             Verbosity::Debug => CompareOp::Ge,
-            Verbosity::Quiet => unreachable!("The logging handler should never run in quiet mode"),
             Verbosity::Trace => unreachable!("Checked above"),
         };
 
