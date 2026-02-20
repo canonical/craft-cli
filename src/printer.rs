@@ -354,6 +354,10 @@ impl Printer {
     /// Send a message to the `InnerPrinter` for displaying
     pub fn send(&mut self, msg: Message) -> PyResult<()> {
         self.log(&msg.text)?;
+        // Skip after logging if there's nowhere to even send it
+        if msg.target.is_none() {
+            return Ok(());
+        }
         match self.channel.get() {
             Some(chan) => chan.send(msg).unwrap(),
             None => panic!("Receiver closed early?"),

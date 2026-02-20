@@ -2,9 +2,13 @@
 
 use std::{path::PathBuf, thread};
 
-use pyo3::{Bound, PyResult, pyclass, pymethods, pymodule, types::PyType};
+use pyo3::{
+    Bound, Py, PyAny, PyResult, Python, pyclass, pymethods, pymodule,
+    types::{PyAnyMethods as _, PyType},
+};
 
 use crate::{
+    logs::LogListener,
     printer::{Message, MessageType, Target},
     streams::StreamHandle,
     utils,
@@ -55,6 +59,9 @@ struct Emitter {
 
     /// The greeting the emitter was started with.
     greeting: String,
+
+    /// A handle on log handling.
+    _log_handle: Option<Py<PyAny>>,
 }
 
 #[pymethods]
@@ -64,6 +71,7 @@ impl Emitter {
     /// This also enables the logging features
     #[new]
     fn new(
+        py: Python<'_>,
         log_filepath: String,
         verbosity: Verbosity,
         docs_base_url: &str,
@@ -71,11 +79,13 @@ impl Emitter {
     ) -> PyResult<Self> {
         crate::printer::printer().init_logger(&log_filepath, &greeting)?;
 
+        let _log_handle = Self::setup_external_log_capture(py, verbosity)?;
         Ok(Self {
             log_filepath,
             docs_base_url: docs_base_url.trim_end_matches('/').to_string(),
             verbosity,
             greeting,
+            _log_handle,
         })
     }
 
@@ -328,6 +338,23 @@ impl Emitter {
     fn finish(&mut self) -> PyResult<()> {
         crate::printer::printer().stop()?;
         Ok(())
+    }
+
+    /// Set up the infrastructure to capture Python logging events
+    /// and redirect them into the emitter.
+    fn setup_external_log_capture(
+        py: Python<'_>,
+        verbosity: Verbosity,
+    ) -> PyResult<Option<Py<PyAny>>> {
+        let log_handler = LogListener::new(py, verbosity)?;
+
+        // Instantiate the Python wrapper for log handling
+        let py_log_handler = py
+            .import("craft_cli._logs")?
+            .getattr("setup_logging_capture")?
+            .call1((log_handler,))?;
+
+        Ok(Some(py_log_handler.unbind()))
     }
 }
 
