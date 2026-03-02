@@ -6,6 +6,16 @@ Changelog
 See the `Releases page`_ on GitHub for a complete list of commits that are
 included in each version.
 
+.. _release-3.3.0:
+
+3.3.0 (2026-03-03)
+------------------
+
+New features:
+
+- Add an ``allow_default_command`` parameter to :py:class:`.dispatcher.Dispatcher` to
+  allow using a default command.
+
 .. _release-3.2.0:
 
 3.2.0 (2025-09-09)
