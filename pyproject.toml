@@ -36,7 +36,7 @@ emitter = "craft_cli.pytest_plugin"
 [dependency-groups]
 dev = [
     "coverage[toml]==7.13.0",
-    "pytest==8.4.2",
+    "pytest>=9.0",
     "pytest-cov==7.0.0",
     "pytest-mock==3.15.1",
     "pytest-subprocess",
@@ -346,3 +346,8 @@ classmethod-decorators = ["pydantic.validator", "pydantic.root_validator"]
     "FBT002", # Boolean default value in function definition (preserving for backwards-comp)
     "S101",   # Use of `assert` detected
 ]
+
+[tool.ty.rules]
+# Temporarily disabled while mypy and pyright are still in use.
+# See https://github.com/canonical/craft-cli/issues/420
+unused-type-ignore-comment = "ignore"
