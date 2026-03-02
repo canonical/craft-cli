@@ -346,3 +346,8 @@ classmethod-decorators = ["pydantic.validator", "pydantic.root_validator"]
     "FBT002", # Boolean default value in function definition (preserving for backwards-comp)
     "S101",   # Use of `assert` detected
 ]
+
+[tool.ty.rules]
+# Temporarily disabled while mypy and pyright are still in use.
+# See https://github.com/canonical/craft-cli/issues/420
+unused-type-ignore-comment = "ignore"
