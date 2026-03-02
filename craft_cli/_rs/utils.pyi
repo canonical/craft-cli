@@ -1,0 +1,3 @@
+from collections.abc import Iterable
+
+def humanize_list(values: Iterable[object], *, conjunction: str = "and") -> str: ...

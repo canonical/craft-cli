@@ -29,7 +29,7 @@ except ImportError:  # pragma: no cover
 
 # names included here only to be exposed as external API; the particular order of imports
 # is to break cyclic dependencies
-from ._rs.emitter import Verbosity as EmitterMode
+from ._rs.emitter import Verbosity, Emitter
 from .dispatcher import BaseCommand, CommandGroup, Dispatcher, GlobalArgument
 from .errors import (
     ArgumentParsingError,
@@ -46,7 +46,8 @@ __all__ = [
     "CraftCommandError",
     "CraftError",
     "Dispatcher",
-    "EmitterMode",
+    "Emitter",
+    "Verbosity",
     "GlobalArgument",
     "HIDDEN",
     "ProvideHelpException",

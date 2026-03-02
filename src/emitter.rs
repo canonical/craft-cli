@@ -52,7 +52,7 @@ struct Emitter {
     // the retrieved errors all still being in Python.
     #[expect(unused)]
     /// The base URL for error messages.
-    docs_base_url: String,
+    docs_base_url: Option<String>,
 
     /// The verbosity mode.
     verbosity: Verbosity,
@@ -76,21 +76,22 @@ impl Emitter {
     ///
     /// This also enables the logging features
     #[new]
-    #[pyo3(signature = (log_filepath, verbosity, docs_base_url, greeting, streaming_brief = false))]
+    #[pyo3(signature = (verbosity, log_filepath, greeting, *, docs_base_url = None, streaming_brief = false))]
     fn new(
         py: Python<'_>,
-        log_filepath: String,
         verbosity: Verbosity,
-        docs_base_url: &str,
+        log_filepath: String,
         greeting: String,
+        docs_base_url: Option<&str>,
         streaming_brief: bool,
     ) -> PyResult<Self> {
         crate::printer::printer().init_logger(&log_filepath, &greeting)?;
 
+        let docs_base_url = docs_base_url.map(|url| url.trim_end_matches('/').to_string());
         let _log_handle = Self::setup_external_log_capture(py, verbosity, streaming_brief)?;
         Ok(Self {
             log_filepath,
-            docs_base_url: docs_base_url.trim_end_matches('/').to_string(),
+            docs_base_url,
             verbosity,
             greeting,
             _log_handle,
@@ -299,7 +300,7 @@ impl Emitter {
     }
 
     /// Show an important warning to the user.
-    #[pyo3(signature = (text, prefix = "Warning: "))]
+    #[pyo3(signature = (text, prefix = "WARNING: "))]
     fn warning(&mut self, text: &str, prefix: &str) -> PyResult<()> {
         let prefixed = format!("{}{}", prefix, text);
         let timestamped = utils::apply_timestamp(&prefixed);
