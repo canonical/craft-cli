@@ -22,27 +22,35 @@ pub enum Verbosity {
     #[pyo3(name = "QUIET")]
     Quiet,
 
-    /// Brief output. Most messages should be ephemeral and all debugging-style message
-    /// models should be skipped.
+    /// Brief output. Most messages should be ephemeral and all debugging
+    /// message types should be skipped.
     #[pyo3(name = "BRIEF")]
     Brief,
 
-    /// Verbose mode. All messages should be persistent and all debugging-style messages
-    /// kept.
+    /// Verbose mode. All messages should be persistent and some debugging
+    /// message types are output.
     #[pyo3(name = "VERBOSE")]
     Verbose,
 
-    /// Debug mode. Similar to trace mode, but slightly less information from external
-    /// loggers is kept.
+    /// Debug mode. Almost all messages are printed and persistent, except
+    /// for highly verbose messages from external libraries.
     #[pyo3(name = "DEBUG")]
     Debug,
 
-    /// Trace mode. The absolute maximum amount of information should be printed.
+    /// Trace mode. Absolutely all messages are printed and persistent.
     #[pyo3(name = "TRACE")]
     Trace,
 }
 
-/// Emitter
+// The Emitter is the primary entry point of Craft CLI for message printing and
+// logging.
+
+// The act of "emitting", in context of the Emitter, is the handling of a given
+// message event. For a given message, depending on the verbosity level and the
+// sort of message sent, this could mean as little as simply sending it to the log
+// file. It could also mean as much as finishing up a spinning "in-progress"
+// action, rendering its time elapsed over that line, prepending a timestamp to the
+// new message, and sending it to both the terminal and the log file.
 #[pyclass]
 struct Emitter {
     /// The original filepath of the log file.
@@ -72,9 +80,19 @@ struct Emitter {
 
 #[pymethods]
 impl Emitter {
-    /// Construct a new `Emitter` from Python.
-    ///
-    /// This also enables the logging features
+    // Construct a new `Emitter` from Python.
+
+    // The supplied `greeting` is emitted upon instantiation. `docs_base_url` is used
+    // as a prefix for documentation slugs supplied by certain error types.
+
+    // ## Streaming Brief
+
+    // If [Verbosity::Brief] is set, "streaming brief" mode is used to provide extra
+    // information without flooding the terminal session. Otherwise excessively verbose
+    // messages will be emitted ephemerally, being overwritten by the next message.
+
+    // This is often a good default for applications, as it gives feedback about progress
+    // without inundating a user with excessive information.
     #[new]
     #[pyo3(signature = (verbosity, log_filepath, greeting, *, docs_base_url = None, streaming_brief = false))]
     fn new(
@@ -99,7 +117,7 @@ impl Emitter {
         })
     }
 
-    /// Create a log filepath from the app name as an easy default.
+    /// Create a log filepath from an app name as an easy default.
     #[classmethod]
     fn log_filepath_from_name(_cls: &Bound<'_, PyType>, app_name: &str) -> String {
         let base_dir = dirs::state_dir()
@@ -121,12 +139,12 @@ impl Emitter {
         final_path.display().to_string()
     }
 
-    /// Get the current verbosity mode of the emitter.
+    /// Get the current verbosity level.
     fn get_verbosity(&self) -> Verbosity {
         self.verbosity
     }
 
-    /// Set the verbosity of the emitter.
+    /// Set the verbosity level.
     fn set_verbosity(&mut self, new: Verbosity) -> PyResult<()> {
         self.verbosity = new;
 
@@ -148,10 +166,10 @@ impl Emitter {
         Ok(())
     }
 
-    /// Verbose information.
+    /// Send a verbose message.
     ///
     /// Useful for providing more information to the user that isn't particularly
-    /// helpful for "regular use"
+    /// helpful for "regular use".
     fn verbose(&mut self, text: &str) -> PyResult<()> {
         let timestamped = utils::apply_timestamp(text);
 
@@ -173,7 +191,7 @@ impl Emitter {
         Ok(())
     }
 
-    /// Debug information.
+    /// Send a debug message.
     ///
     /// Use to record anything that the user may not want to normally see, but
     /// would be useful for the app developers to understand why things may be
@@ -198,7 +216,7 @@ impl Emitter {
         Ok(())
     }
 
-    /// Trace information.
+    /// Send a trace message.
     ///
     /// Use to expose system-generated information which in general would be
     /// overwhelming for debugging purposes but sometimes needed for more
@@ -223,14 +241,14 @@ impl Emitter {
         Ok(())
     }
 
-    /// Progress information.
+    /// Send a progress message.
     ///
     /// This is normally used to present several related messages relaying how
-    /// a task is going. If a progress message is important enough that it
-    /// shouldn't be overwritten by the next ones, use "permanent=True".
+    /// a task is going.
     ///
-    /// These messages will be truncated to the terminal's width and overwritten
-    /// by the next line (unless in verbose or trace mode, or set to permanent).
+    /// These messages will be overwritten by the next line. If a progress message
+    /// is important enough that it shouldn't be overwritten by the next ones, set
+    /// `permanent` to `true`.
     #[pyo3(signature = (text, *, permanent = false))]
     fn progress(&mut self, text: &str, mut permanent: bool) -> PyResult<()> {
         let timestamped = utils::apply_timestamp(text);
@@ -275,7 +293,7 @@ impl Emitter {
         Ok(())
     }
 
-    /// Show a simple message to the user.
+    /// Send a message.
     ///
     /// Ideally used as the final message in a sequence to show a result, as it
     /// goes to stdout unlike other message types.
@@ -299,8 +317,11 @@ impl Emitter {
         Ok(())
     }
 
-    /// Show an important warning to the user.
-    #[pyo3(signature = (text, prefix = "WARNING: "))]
+    /// Show a warning message.
+    ///
+    /// By default, messages will be prefixed with "WARNING: ". An alternative prefix
+    /// can be provided via the `prefix` parameter.
+    #[pyo3(signature = (text, *, prefix = "WARNING: "))]
     fn warning(&mut self, text: &str, prefix: &str) -> PyResult<()> {
         let prefixed = format!("{}{}", prefix, text);
         let timestamped = utils::apply_timestamp(&prefixed);
