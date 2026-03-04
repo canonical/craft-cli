@@ -42,15 +42,15 @@ pub enum Verbosity {
     Trace,
 }
 
-// The Emitter is the primary entry point of Craft CLI for message printing and
-// logging.
-
-// The act of "emitting", in context of the Emitter, is the handling of a given
-// message event. For a given message, depending on the verbosity level and the
-// sort of message sent, this could mean as little as simply sending it to the log
-// file. It could also mean as much as finishing up a spinning "in-progress"
-// action, rendering its time elapsed over that line, prepending a timestamp to the
-// new message, and sending it to both the terminal and the log file.
+/// The Emitter is the primary entry point of Craft CLI for message printing and
+/// logging.
+///
+/// The act of "emitting", in context of the Emitter, is the handling of a given
+/// message event. For a given message, depending on the verbosity level and the
+/// sort of message sent, this could mean as little as simply sending it to the log
+/// file. It could also mean as much as finishing up a spinning "in-progress"
+/// action, rendering its time elapsed over that line, prepending a timestamp to the
+/// new message, and sending it to both the terminal and the log file.
 #[pyclass]
 struct Emitter {
     /// The original filepath of the log file.
@@ -80,19 +80,19 @@ struct Emitter {
 
 #[pymethods]
 impl Emitter {
-    // Construct a new `Emitter` from Python.
-
-    // The supplied `greeting` is emitted upon instantiation. `docs_base_url` is used
-    // as a prefix for documentation slugs supplied by certain error types.
-
-    // ## Streaming Brief
-
-    // If [Verbosity::Brief] is set, "streaming brief" mode is used to provide extra
-    // information without flooding the terminal session. Otherwise excessively verbose
-    // messages will be emitted ephemerally, being overwritten by the next message.
-
-    // This is often a good default for applications, as it gives feedback about progress
-    // without inundating a user with excessive information.
+    /// Construct a new `Emitter` from Python.
+    ///
+    /// The supplied `greeting` is emitted upon instantiation. `docs_base_url` is used
+    /// as a prefix for documentation slugs supplied by certain error types.
+    ///
+    /// ## Streaming Brief
+    ///
+    /// If [Verbosity::Brief] is set, "streaming brief" mode is used to provide extra
+    /// information without flooding the terminal session. Otherwise excessively verbose
+    /// messages will be emitted ephemerally, being overwritten by the next message.
+    ///
+    /// This is often a good default for applications, as it gives feedback about progress
+    /// without inundating a user with excessive information.
     #[new]
     #[pyo3(signature = (verbosity, log_filepath, greeting, *, docs_base_url = None, streaming_brief = false))]
     fn new(
