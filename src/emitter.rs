@@ -119,7 +119,7 @@ impl Emitter {
 
     /// Create a log filepath from an app name as an easy default.
     #[classmethod]
-    fn log_filepath_from_name(_cls: &Bound<'_, PyType>, app_name: &str) -> String {
+    fn log_filepath_from_name(_cls: &Bound<'_, PyType>, app_name: &str) -> PathBuf {
         let base_dir = dirs::state_dir()
             .unwrap_or(
                 std::env::current_dir()
@@ -135,8 +135,7 @@ impl Emitter {
             &now.strftime("%Y%m%d-%H%M%S.%f").to_string(),
         ]);
 
-        let final_path = base_dir.join(log_filepath).with_added_extension("log");
-        final_path.display().to_string()
+        base_dir.join(log_filepath).with_added_extension("log")
     }
 
     /// Get the current verbosity level.

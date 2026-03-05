@@ -1,4 +1,5 @@
 from enum import Enum
+from pathlib import Path
 
 from .streams import StreamHandle
 
@@ -59,7 +60,7 @@ class Emitter:
         """
 
     @classmethod
-    def log_filepath_from_name(cls, app_name: str) -> str:
+    def log_filepath_from_name(cls, app_name: str) -> Path:
         """Create a log filepath from an app name as an easy default."""
 
     def get_verbosity(self) -> Verbosity:
