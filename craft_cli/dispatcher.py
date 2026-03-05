@@ -242,6 +242,9 @@ class Dispatcher:
         provided automatically
     :param default_command: The command to run if none was specified in the command line.
         This parameter will be removed in a future release of craft-cli (#361).
+    :param allow_default_command: If true, using the default command is allowed but will emit
+        a deprecation warning. If false, using the default command will raise an error.
+        This parameter will be removed in a future release of craft-cli (#361).
     :param docs_base_url: The base address of the documentation, for help messages.
     """
 
@@ -253,10 +256,12 @@ class Dispatcher:
         summary: str = "",
         extra_global_args: list[GlobalArgument] | None = None,
         default_command: type[BaseCommand] | None = None,
+        allow_default_command: bool = True,
         docs_base_url: str | None = None,
     ) -> None:
         self._app_name = appname
         self._default_command = default_command
+        self._allow_default_command = allow_default_command
         self._docs_base_url = docs_base_url
         self._help_builder = HelpBuilder(
             appname, summary, commands_groups, docs_base_url
@@ -527,14 +532,21 @@ class Dispatcher:
             if self._default_command is None:
                 help_text = self._get_general_help(detailed=False)
                 raise ArgumentParsingError(help_text)
-            emit.progress(
-                f"Running {self._app_name} without a command will not be possible in future releases. "
-                f"Use '{self._app_name} {self._default_command.name}' instead.",
-                permanent=True,
-            )
-            # validated by BaseCommand
-            assert self._default_command.name is not None  # noqa: S101 (use of assert)
-            filtered_sysargs.insert(0, self._default_command.name)
+
+            if self._allow_default_command:
+                emit.progress(
+                    f"Running {self._app_name} without a command will not be possible in future releases. "
+                    f"Use '{self._app_name} {self._default_command.name}' instead.",
+                    permanent=True,
+                )
+                # validated by BaseCommand
+                assert self._default_command.name is not None  # noqa: S101 (use of assert)
+                filtered_sysargs.insert(0, self._default_command.name)
+            else:
+                raise ArgumentParsingError(
+                    f"Missing a command. Try '{self._app_name} {self._default_command.name}' "
+                    f"or '{self._app_name} help'."
+                )
 
         command = filtered_sysargs[0]
         cmd_args = filtered_sysargs[1:]

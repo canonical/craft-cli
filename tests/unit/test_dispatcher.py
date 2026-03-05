@@ -14,6 +14,7 @@
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import argparse
+import re
 import textwrap
 from unittest.mock import patch
 
@@ -118,6 +119,38 @@ def test_dispatcher_command_default_simple():
         "Use 'appname somecommand2' instead.",
         permanent=True,
     )
+
+
+def test_dispatcher_command_default_error():
+    """Error if a default command isn't supported."""
+    cmd = create_command("somecommand")
+    groups = [CommandGroup("title", [cmd])]
+    dispatcher = Dispatcher(
+        "appname", groups, default_command=cmd, allow_default_command=False
+    )
+    expected = re.escape(
+        "Missing a command. Try 'appname somecommand' or 'appname help'."
+    )
+
+    with pytest.raises(ArgumentParsingError, match=expected):
+        dispatcher.pre_parse_args([])
+
+
+@pytest.mark.parametrize("allow_default_command", [True, False])
+def test_dispatcher_command_ignore_allow_default_command(allow_default_command):
+    """If an app doesn't have a default command, `allow_default_command` has no effect."""
+    cmd = create_command("somecommand")
+    groups = [CommandGroup("title", [cmd])]
+    dispatcher = Dispatcher(
+        "appname",
+        groups,
+        default_command=None,
+        allow_default_command=allow_default_command,
+    )
+    expected = re.escape("Usage:\n    appname [help] <command>")
+
+    with pytest.raises(ArgumentParsingError, match=expected):
+        dispatcher.pre_parse_args([])
 
 
 def test_dispatcher_command_default_with_options():
