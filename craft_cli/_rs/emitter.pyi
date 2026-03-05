@@ -26,7 +26,7 @@ class Verbosity(Enum):
 class Emitter:
     """The Emitter is the primary entry point of Craft CLI for message printing and logging.
 
-    The act of "emitting", in context of the Emitter, is the handling of a given
+    The act of "emitting", in the context of the Emitter, is the handling of a given
     message event. For a given message, depending on the verbosity level and the
     sort of message sent, this could mean as little as simply sending it to the log
     file. It could also mean as much as finishing up a spinning "in-progress"
