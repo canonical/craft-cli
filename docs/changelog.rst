@@ -8,7 +8,7 @@ included in each version.
 
 .. _release-3.3.0:
 
-3.3.0 (2026-03-03)
+3.3.0 (2026-03-05)
 ------------------
 
 New features:

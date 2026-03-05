@@ -129,7 +129,7 @@ def test_dispatcher_command_default_error():
         "appname", groups, default_command=cmd, allow_default_command=False
     )
     expected = re.escape(
-        "Running appname without a command isn't supported. Use 'appname somecommand' instead."
+        "Missing command. Try 'appname somecommand' or 'appname help'."
     )
 
     with pytest.raises(ArgumentParsingError, match=expected):
