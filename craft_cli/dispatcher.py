@@ -544,7 +544,7 @@ class Dispatcher:
                 filtered_sysargs.insert(0, self._default_command.name)
             else:
                 raise ArgumentParsingError(
-                    f"Missing command. Try '{self._app_name} {self._default_command.name}' "
+                    f"Missing a command. Try '{self._app_name} {self._default_command.name}' "
                     f"or '{self._app_name} help'."
                 )
 

@@ -129,7 +129,7 @@ def test_dispatcher_command_default_error():
         "appname", groups, default_command=cmd, allow_default_command=False
     )
     expected = re.escape(
-        "Missing command. Try 'appname somecommand' or 'appname help'."
+        "Missing a command. Try 'appname somecommand' or 'appname help'."
     )
 
     with pytest.raises(ArgumentParsingError, match=expected):
