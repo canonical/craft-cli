@@ -70,7 +70,7 @@ setup-lint: _setup-lint  ##- Set up a linting-only environment
 	uv sync $(UV_LINT_GROUPS)
 
 .PHONY: _setup-lint
-_setup-lint: install-uv install-shellcheck install-pyright install-lint-build-deps
+_setup-lint: install-uv install-shellcheck install-pyright install-lint-build-deps install-actionlint
 
 .PHONY: setup-tests
 setup-tests: _setup-tests ##- Set up a testing environment without linters
@@ -200,6 +200,16 @@ ifneq ($(CI),)
 	@echo ::group::$@
 endif
 	$(PRETTIER) --check $(PRETTIER_FILES)
+ifneq ($(CI),)
+	@echo ::endgroup::
+endif
+
+.PHONY: lint-actions
+lint-actions: install-actionlint  ##- Lint GitHub actions with actionlint
+ifneq ($(CI),)
+	@echo ::group::$@
+endif
+	actionlint
 ifneq ($(CI),)
 	@echo ::endgroup::
 endif
@@ -341,6 +351,17 @@ else ifeq ($(OS),Windows_NT)
 	pwsh -c "irm https://astral.sh/uv/install.ps1 | iex"
 else
 	curl -LsSf https://astral.sh/uv/install.sh | sh
+endif
+
+.PHONY: install-actionlint
+install-actionlint:
+ifneq ($(shell which actionlint),)
+else ifneq ($(shell which snap),)
+	sudo snap install actionlint
+else ifneq ($(shell which brew),)
+	brew install actionlint
+else
+	$(warning Actionlint not installed. Please install it yourself.)
 endif
 
 .PHONY: install-codespell
