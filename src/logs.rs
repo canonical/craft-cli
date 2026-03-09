@@ -13,6 +13,8 @@ use crate::{
     utils,
 };
 
+/// A handler for log records from Python's `logging` library that
+/// integrates with Craft CLI's printer.
 #[pyclass]
 pub struct LogListener {
     /// A cached reference to the logging module to avoid re-importing

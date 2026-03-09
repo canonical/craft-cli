@@ -331,3 +331,6 @@ classmethod-decorators = ["pydantic.validator", "pydantic.root_validator"]
     "FBT002", # Boolean default value in function definition (preserving for backwards-comp)
     "S101",   # Use of `assert` detected
 ]
+"craft_cli/**.pyi" = [
+    "PYI021", # Allow comments in type stub files so they can appear in IDEs on hover.
+]
