@@ -35,12 +35,12 @@ uv add -r docs/requirements.txt --group docs-starter-pack
 In `docs/Makefile`, make sure these lines are changed like so:
 
 ```diff
--BUILDDIR        = _build
-+BUILDDIR        ?= _build
+- DOCS_BUILDDIR        = _build
++ DOCS_BUILDDIR        ?= _build
 ...
 
-- VALEDIR         = $(SPHINXDIR)/venv/lib/python*/site-packages/vale
-+ VALEDIR         ?= $(SPHINXDIR)/venv/lib/python*/site-packages/vale
+- VALE_DIR         = $(SPHINXDIR)/venv/lib/python*/site-packages/vale
++ VALE_DIR         ?= $(SPHINXDIR)/venv/lib/python*/site-packages/vale
 ```
 
 For safety, test the three main doc commands:

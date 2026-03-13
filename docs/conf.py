@@ -1,6 +1,5 @@
 import datetime
 import os
-import yaml
 
 # Configuration for the Sphinx documentation builder.
 # All configuration specific to your project should be done in this file.
@@ -154,7 +153,7 @@ extensions = [
     # "sphinx_config_options",
     # "sphinx_contributor_listing",
     # "sphinx_filtered_toctree",
-    # "sphinx_related_links",
+    "sphinx_related_links",
     "sphinx_roles",
     "sphinx_terminal",
     # "sphinx_ubuntu_images",
@@ -164,7 +163,6 @@ extensions = [
     "sphinx.ext.intersphinx",
     "sphinx_sitemap",
     # Custom Craft extensions
-    "sphinx-pydantic",
     "sphinxext.rediraffe",
     "sphinx.ext.autodoc",
     "sphinx.ext.doctest",
@@ -214,7 +212,7 @@ rst_prolog = """
 
 # Workaround for https://github.com/canonical/canonical-sphinx/issues/34
 if "discourse_prefix" not in html_context and "discourse" in html_context:
-    html_context["discourse_prefix"] = html_context["discourse"] + "/t/"
+    html_context["discourse_prefix"] = f"{html_context['discourse']}/t/"
 
 # Add configuration for intersphinx mapping
 intersphinx_mapping = {
