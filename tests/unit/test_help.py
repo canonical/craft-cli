@@ -1424,7 +1424,7 @@ def test_tool_exec_help_command_on_command_complex():
         ("-h, --help", "Show this help message and exit"),
         ("-o2, --option2", "help on option2"),
         ("-q, --quiet", "Only show warnings and errors, not progress"),
-        ("-v, --verbose", "Show debug information and be more verbose"),
+        ("-v, --verbose", "Enable verbose output (same as --verbosity=verbose)"),
         ("param1", "help on param1"),
         ("param2", "help on param2"),
         ("transformed3", "help on param2"),
@@ -1463,7 +1463,7 @@ def test_tool_exec_help_command_on_command_no_help():
         ),
         ("-h, --help", "Show this help message and exit"),
         ("-q, --quiet", "Only show warnings and errors, not progress"),
-        ("-v, --verbose", "Show debug information and be more verbose"),
+        ("-v, --verbose", "Enable verbose output (same as --verbosity=verbose)"),
         ("param", ""),
     ]
     assert sorted(args[1]) == expected_options

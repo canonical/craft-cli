@@ -103,7 +103,7 @@ _DEFAULT_GLOBAL_ARGS = [
         "flag",
         "-v",
         "--verbose",
-        "Show debug information and be more verbose",
+        "Enable verbose output (same as --verbosity=verbose)",
     ),
     GlobalArgument(
         "quiet",
