@@ -35,14 +35,14 @@ emitter = "craft_cli.pytest_plugin"
 
 [dependency-groups]
 dev = [
-    "coverage[toml]==7.13.0",
+    "coverage[toml]==7.13.4",
     "pytest>=9.0",
     "pytest-cov==7.0.0",
     "pytest-mock==3.15.1",
     "pytest-subprocess",
 ]
 lint = [
-    "codespell[toml]==2.4.1",
+    "codespell[toml]==2.4.2",
     # Imported in docs/conf.py, needed for pyright to validate
     "sphinx>=7.4.7",
 ]
@@ -53,7 +53,7 @@ types = [
     "types-setuptools",
 ]
 docs = [
-    "sphinx-toolbox==4.1.1",
+    "sphinx-toolbox==4.1.2",
     "sphinx-lint==1.0.2",
     "sphinxext-rediraffe==0.3.0",
     "pytest>=7.0.0",                 # pytest is imported by the code, which is parsed for api gen.
