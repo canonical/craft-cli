@@ -62,7 +62,7 @@ docs = [
 tics = ["flake8", "pylint"]
 
 [build-system]
-requires = ["setuptools==80.9.0", "setuptools_scm[toml]>=7.1"]
+requires = ["setuptools==80.10.2", "setuptools_scm[toml]>=7.1"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.dynamic]
