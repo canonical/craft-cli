@@ -118,7 +118,7 @@ def test_default_help_text(docs_url):
     )
     global_options = [
         ("-h, --help", "Show this help message and exit."),
-        ("-q, --quiet", "Only show warnings and errors, not progress."),
+        ("-q, --quiet", "Only show warnings and errors: equivalent to '--verbosity=quiet'."),
         ("--experimental-1", HIDDEN),
         ("--experimental-2", argparse.SUPPRESS),
     ]
@@ -137,7 +137,8 @@ def test_default_help_text(docs_url):
 
         Global options:
                   -h, --help:  Show this help message and exit.
-                 -q, --quiet:  Only show warnings and errors, not progress.
+                 -q, --quiet:  Only show warnings and errors: equivalent to '--
+                               verbosity=quiet'.
 
         Starter commands:
                         cmd1:  Cmd help which is very long but whatever.
@@ -189,7 +190,7 @@ def test_detailed_help_text(docs_url):
     )
     global_options = [
         ("-h, --help", "Show this help message and exit."),
-        ("-q, --quiet", "Only show warnings and errors, not progress."),
+        ("-q, --quiet", "Only show warnings and errors: equivalent to '--verbosity=quiet'."),
         ("--experimental-1", HIDDEN),
         ("--experimental-2", argparse.SUPPRESS),
     ]
@@ -208,7 +209,8 @@ def test_detailed_help_text(docs_url):
 
         Global options:
                   -h, --help:  Show this help message and exit.
-                 -q, --quiet:  Only show warnings and errors, not progress.
+                 -q, --quiet:  Only show warnings and errors: equivalent to '--
+                               verbosity=quiet'.
 
         Commands can be classified as follows:
 
@@ -454,7 +456,7 @@ def test_command_help_text_no_parameters(docs_url, output_format):
 
     options = [
         ("-h, --help", "Show this help message and exit."),
-        ("-q, --quiet", "Only show warnings and errors, not progress."),
+        ("-q, --quiet", "Only show warnings and errors: equivalent to '--verbosity=quiet'."),
         ("--name", "The name of the charm."),
         ("--revision", "The revision to release (defaults to latest)."),
     ]
@@ -474,7 +476,8 @@ def test_command_help_text_no_parameters(docs_url, output_format):
 
         Options:
              -h, --help:  Show this help message and exit.
-            -q, --quiet:  Only show warnings and errors, not progress.
+            -q, --quiet:  Only show warnings and errors: equivalent to '--
+                          verbosity=quiet'.
                  --name:  The name of the charm.
              --revision:  The revision to release (defaults to latest).
 
@@ -507,7 +510,7 @@ def test_command_help_text_no_parameters(docs_url, output_format):
         | | |
         |-|-|
         | `-h, --help` | Show this help message and exit. |
-        | `-q, --quiet` | Only show warnings and errors, not progress. |
+        | `-q, --quiet` | Only show warnings and errors: equivalent to '--verbosity=quiet'. |
         | `--name` | The name of the charm. |
         | `--revision` | The revision to release (defaults to latest). |
 
@@ -717,7 +720,7 @@ def test_command_help_text_complex_overview(docs_url, output_format):
 
     options = [
         ("-h, --help", "Show this help message and exit."),
-        ("-q, --quiet", "Only show warnings and errors, not progress."),
+        ("-q, --quiet", "Only show warnings and errors: equivalent to '--verbosity=quiet'."),
     ]
 
     help_builder = HelpBuilder("testapp", "general summary", command_groups, docs_url)
@@ -746,7 +749,8 @@ def test_command_help_text_complex_overview(docs_url, output_format):
 
         Options:
              -h, --help:  Show this help message and exit.
-            -q, --quiet:  Only show warnings and errors, not progress.
+            -q, --quiet:  Only show warnings and errors: equivalent to '--
+                          verbosity=quiet'.
 
         For a summary of all commands, run 'testapp help --all'.
     """
@@ -785,7 +789,7 @@ def test_command_help_text_complex_overview(docs_url, output_format):
         | | |
         |-|-|
         | `-h, --help` | Show this help message and exit. |
-        | `-q, --quiet` | Only show warnings and errors, not progress. |
+        | `-q, --quiet` | Only show warnings and errors: equivalent to '--verbosity=quiet'. |
     """
     )
     assert text == (
@@ -810,7 +814,7 @@ def test_command_help_text_loneranger(docs_url, output_format):
 
     options = [
         ("-h, --help", "Show this help message and exit."),
-        ("-q, --quiet", "Only show warnings and errors, not progress."),
+        ("-q, --quiet", "Only show warnings and errors: equivalent to '--verbosity=quiet'."),
     ]
 
     help_builder = HelpBuilder("testapp", "general summary", command_groups, docs_url)
@@ -826,7 +830,8 @@ def test_command_help_text_loneranger(docs_url, output_format):
 
         Options:
              -h, --help:  Show this help message and exit.
-            -q, --quiet:  Only show warnings and errors, not progress.
+            -q, --quiet:  Only show warnings and errors: equivalent to '--
+                          verbosity=quiet'.
 
         For a summary of all commands, run 'testapp help --all'.
     """
@@ -851,7 +856,7 @@ def test_command_help_text_loneranger(docs_url, output_format):
         | | |
         |-|-|
         | `-h, --help` | Show this help message and exit. |
-        | `-q, --quiet` | Only show warnings and errors, not progress. |
+        | `-q, --quiet` | Only show warnings and errors: equivalent to '--verbosity=quiet'. |
     """
     )
     assert text == (
@@ -1423,8 +1428,8 @@ def test_tool_exec_help_command_on_command_complex():
         ),
         ("-h, --help", "Show this help message and exit"),
         ("-o2, --option2", "help on option2"),
-        ("-q, --quiet", "Only show warnings and errors, not progress"),
-        ("-v, --verbose", "Enable verbose output (same as --verbosity=verbose)"),
+        ("-q, --quiet", "Only show warnings and errors: equivalent to '--verbosity=quiet'"),
+        ("-v, --verbose", "Show progress, warnings, and errors: equivalent to '--verbosity=verbose'"),
         ("param1", "help on param1"),
         ("param2", "help on param2"),
         ("transformed3", "help on param2"),
@@ -1462,8 +1467,8 @@ def test_tool_exec_help_command_on_command_no_help():
             "Set the verbosity level to 'quiet', 'brief', 'verbose', 'debug' or 'trace'",
         ),
         ("-h, --help", "Show this help message and exit"),
-        ("-q, --quiet", "Only show warnings and errors, not progress"),
-        ("-v, --verbose", "Enable verbose output (same as --verbosity=verbose)"),
+        ("-q, --quiet", "Only show warnings and errors: equivalent to '--verbosity=quiet'"),
+        ("-v, --verbose", "Show progress, warnings, and errors: equivalent to '--verbosity=verbose'"),
         ("param", ""),
     ]
     assert sorted(args[1]) == expected_options

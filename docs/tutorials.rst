@@ -127,8 +127,8 @@ output if you pass the ``help``, ``-h`` or ``--help`` parameters)::
 
     Global options:
            -h, --help:  Show this help message and exit
-        -v, --verbose:  Show debug information and be more verbose
-          -q, --quiet:  Only show warnings and errors, not progress
+        -v, --verbose:  Show progress, warnings, and errors: equivalent to '--verbosity=verbose'
+          -q, --quiet:  Only show warnings and errors: equivalent to '--verbosity=quiet'
           --verbosity:  Set the verbosity level to 'quiet', 'brief',
                         'verbose', 'debug' or 'trace'",
 
@@ -159,8 +159,8 @@ Ask help for specifically for the command::
 
     Options:
            -h, --help:  Show this help message and exit
-        -v, --verbose:  Show debug information and be more verbose
-          -q, --quiet:  Only show warnings and errors, not progress
+        -v, --verbose:  Show progress, warnings, and errors: equivalent to '--verbosity=verbose'
+          -q, --quiet:  Only show warnings and errors: equivalent to '--verbosity=quiet'
           --verbosity:  Set the verbosity level to 'quiet', 'brief',
                         'verbose', 'debug' or 'trace'",
 

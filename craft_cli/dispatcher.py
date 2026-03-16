@@ -103,14 +103,14 @@ _DEFAULT_GLOBAL_ARGS = [
         "flag",
         "-v",
         "--verbose",
-        "Enable verbose output (same as --verbosity=verbose)",
+        "Show progress, warnings, and errors: equivalent to '--verbosity=verbose'",
     ),
     GlobalArgument(
         "quiet",
         "flag",
         "-q",
         "--quiet",
-        "Only show warnings and errors, not progress",
+        "Only show warnings and errors: equivalent to '--verbosity=quiet'",
     ),
     GlobalArgument(
         "verbosity",
