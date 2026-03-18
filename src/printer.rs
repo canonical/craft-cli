@@ -56,37 +56,31 @@ impl From<Target> for indicatif::ProgressDrawTarget {
     }
 }
 
-/// Types of message for printing.
-#[derive(Clone, Copy, Debug)]
-pub enum MessageType {
-    /// Just plain text to display.
-    Text,
-
-    // Pending implementation of incremental progress bars using indicatif
-    #[expect(unused)]
-    /// Signals to create a progress bar.
-    ProgBar(u64),
-}
-
-/// A single message to be sent, and what type of message it is.
+/// A simple text message. See [Event::Text] for usage details.
 #[derive(Clone, Debug)]
-pub struct Message {
-    /// The message to be printed.
-    pub(crate) text: String,
+pub struct Text {
+    /// The message to emit.
+    pub(crate) message: String,
 
-    // Pending implementation of incremental progress bars using indicatif
-    #[expect(unused)]
-    /// The type of message to send.
-    pub(crate) model: MessageType,
-
-    /// Where the message should be sent.
+    /// The destination for this message.
     pub(crate) target: Option<Target>,
 
-    /// Whether or not this message should persist after the next message.
+    /// Whether or not this message should be permanent.
     ///
-    /// Depending on the exact type of message that follows, a non-permanent
-    /// message may still remain. Namely, after an error.
+    /// Setting this to true does not guarantee its permanence; verbosity
+    /// levels take precedence. The flag is only used when the permanence
+    /// of the message isn't enforced at a given verbosity level.
     pub(crate) permanent: bool,
+}
+
+/// Types of message for printing.
+#[derive(Clone, Debug)]
+pub enum Event {
+    /// A simple text message.
+    ///
+    /// Text events will emit to the specified `target`, and will always be
+    /// sent to the log file.
+    Text(Text),
 }
 
 /// An internal printer object meant to print from a separate thread.
@@ -95,7 +89,7 @@ struct InnerPrinter {
     ///
     /// If this channel is found to be closed, the program is over and this struct
     /// should begin to destruct itself.
-    channel: mpsc::Receiver<Message>,
+    channel: mpsc::Receiver<Event>,
 
     /// A handle on stdout.
     stdout: console::Term,
@@ -110,7 +104,7 @@ struct InnerPrinter {
 
 impl InnerPrinter {
     /// Instantiate a new `InnerPrinter`.
-    pub fn new(channel: mpsc::Receiver<Message>) -> Self {
+    pub fn new(channel: mpsc::Receiver<Event>) -> Self {
         let result = Self {
             stdout: console::Term::stdout(),
             stderr: console::Term::stderr(),
@@ -133,26 +127,30 @@ impl InnerPrinter {
         let main_style =
             indicatif::ProgressStyle::with_template("{spinner} {msg} ({elapsed})").unwrap();
         let mut spinner: Option<indicatif::ProgressBar> = None;
-        let mut maybe_prv_msg: Option<Message> = None;
+        let mut maybe_prv_msg: Option<Text> = None;
 
         loop {
             // Wait the standard 3 seconds for a message
-            match self.await_message(SPIN_TIMEOUT) {
-                Ok(msg) => {
+            match self.await_event(SPIN_TIMEOUT) {
+                Ok(event) => {
                     // If we were spinning, stop
                     if let Some(s) = spinner.take()
                         && let Some(mut prv_msg) = maybe_prv_msg.take()
                     {
                         s.finish_and_clear();
                         let dur = indicatif::HumanDuration(s.elapsed());
-                        prv_msg.text = format!("{} (took {:#})", prv_msg.text, dur);
+                        prv_msg.message = format!("{} (took {:#})", prv_msg.message, dur);
                         self.needs_overwrite = false;
                         self.handle_message(&prv_msg)?;
                     }
-                    // Store the most recently received message in case we need to
-                    // begin displaying a spin loader
-                    maybe_prv_msg = Some(msg.clone());
-                    self.handle_message(&msg)?;
+                    match event {
+                        Event::Text(text) => {
+                            // Store the most recently received message in case we need to
+                            // begin displaying a spin loader
+                            maybe_prv_msg = Some(text.clone());
+                            self.handle_message(&text)?;
+                        }
+                    }
                 }
                 // Break out of this loop if the channel is closed
                 Err(RecvTimeoutError::Disconnected) => break,
@@ -175,7 +173,7 @@ impl InnerPrinter {
 
                     let new_spinner = indicatif::ProgressBar::with_draw_target(None, target)
                         .with_style(main_style.clone())
-                        .with_message(msg.text.clone())
+                        .with_message(msg.message.clone())
                         .with_elapsed(SPIN_TIMEOUT);
                     self.stdout.clear_last_lines(1).unwrap();
                     new_spinner.enable_steady_tick(Duration::from_millis(100));
@@ -188,13 +186,13 @@ impl InnerPrinter {
     }
 
     /// Helper method for receiving a message from `self.channel`
-    fn await_message(&self, timeout: Duration) -> ::std::result::Result<Message, RecvTimeoutError> {
+    fn await_event(&self, timeout: Duration) -> ::std::result::Result<Event, RecvTimeoutError> {
         self.channel.recv_timeout(timeout)
     }
 
     /// Routing method for sending a message to the proper printing logic for a given
     /// message type.
-    fn handle_message(&mut self, msg: &Message) -> PyResult<()> {
+    fn handle_message(&mut self, msg: &Text) -> PyResult<()> {
         let res = match msg.target {
             None => return Ok(()),
             Some(target) => match target {
@@ -215,22 +213,22 @@ impl InnerPrinter {
     }
 
     /// Print a simple message to stdout.
-    fn print(&mut self, message: &Message) -> PyResult<()> {
+    fn print(&mut self, message: &Text) -> PyResult<()> {
         self.handle_overwrite()?;
-        self.stdout.write_line(&message.text)?;
+        self.stdout.write_line(&message.message)?;
         Ok(())
     }
 
     /// Print a simple message to stderr.
-    fn error(&mut self, message: &Message) -> PyResult<()> {
+    fn error(&mut self, message: &Text) -> PyResult<()> {
         self.handle_overwrite()?;
-        self.stderr.write_line(&message.text)?;
+        self.stderr.write_line(&message.message)?;
         Ok(())
     }
 
     #[expect(unused)]
     /// Handle an incremental progress bar.
-    fn progress_bar(&mut self, message: &Message) -> PyResult<()> {
+    fn progress_bar(&mut self, message: &Text) -> PyResult<()> {
         unimplemented!()
     }
 }
@@ -262,7 +260,7 @@ pub struct Printer {
     handle: OnceLock<JoinHandle<PyResult<()>>>,
 
     /// A channel to send messages to the `InnerPrinter` instance.
-    channel: OnceLock<mpsc::Sender<Message>>,
+    channel: OnceLock<mpsc::Sender<Event>>,
 
     /// A file handle to write to for logging operations.
     log_handle: Option<fs::File>,
@@ -324,17 +322,17 @@ impl Printer {
     }
 
     /// Send a message to the `InnerPrinter` for displaying
-    pub fn send(&mut self, mut msg: Message) -> PyResult<()> {
-        self.log(&msg.text)?;
-        // Skip after logging if there's nowhere to even send it
-        if msg.target.is_none() {
-            return Ok(());
+    pub fn send(&mut self, mut event: Event) -> PyResult<()> {
+        if let Event::Text(ref mut text) = event {
+            self.log(&text.message)?;
+            // Skip after logging if there's nowhere to even send it
+            if text.target.is_none() {
+                return Ok(());
+            }
+            self.apply_prefix(text);
         }
         match self.channel.get() {
-            Some(chan) => {
-                self.apply_prefix(&mut msg);
-                chan.send(msg).unwrap()
-            }
+            Some(chan) => chan.send(event).unwrap(),
             None => panic!("Receiver closed early?"),
         }
         Ok(())
@@ -382,10 +380,10 @@ impl Printer {
     }
 
     /// Apply the current prefix to a message, if any.
-    fn apply_prefix(&self, message: &mut Message) {
+    fn apply_prefix(&self, text: &mut Text) {
         if let Some(prefix) = &self.prefix {
-            let text = format!("{prefix} :: {}", message.text);
-            message.text = text;
+            let prefixed = format!("{prefix} :: {}", text.message);
+            text.message = prefixed;
         }
     }
 }
