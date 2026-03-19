@@ -10,6 +10,7 @@ use pyo3::{
 use crate::{
     logs::LogListener,
     printer::{Event, Target, Text},
+    progress::Progresser,
     streams::StreamHandle,
     utils,
 };
@@ -336,10 +337,41 @@ impl Emitter {
         Ok(())
     }
 
-    #[expect(unused)]
     /// Render an incremental progress bar.
-    fn progress_bar(&mut self, text: &str, total: u64) -> PyResult<()> {
-        unimplemented!()
+    #[pyo3(signature = (
+        text,
+        total,
+        *,
+        units = None,
+        show_eta = false,
+        show_progress = false,
+        show_percentage = false
+    ))]
+    fn progress_bar(
+        &mut self,
+        text: String,
+        total: u64,
+        units: Option<String>,
+        show_eta: bool,
+        show_progress: bool,
+        show_percentage: bool,
+    ) -> PyResult<Progresser> {
+        let target = if self.verbosity != Verbosity::Quiet {
+            Some(Target::Stderr)
+        } else {
+            None
+        };
+
+        Progresser::builder()
+            .message(text)
+            .total(total)
+            .maybe_units(units)
+            .show_eta(show_eta)
+            .show_progress(show_progress)
+            .show_percentage(show_percentage)
+            .target(target)
+            .should_timestamp(self.verbosity >= Verbosity::Debug)
+            .build()
     }
 
     /// Stop gracefully.

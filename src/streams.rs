@@ -240,7 +240,7 @@ impl PipeListener {
             }
             .to_string();
 
-            let event = Event::Text(Text {
+            let event = Event::Stream(Text {
                 message,
                 target,
                 permanent,

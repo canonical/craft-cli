@@ -4,7 +4,7 @@ use std::{
     fs,
     io::Write as _,
     sync::{
-        LazyLock, Mutex, MutexGuard, OnceLock,
+        Arc, LazyLock, Mutex, MutexGuard, OnceLock,
         mpsc::{self, RecvTimeoutError},
     },
     thread::{self, JoinHandle},
@@ -73,6 +73,12 @@ pub struct Text {
     pub(crate) permanent: bool,
 }
 
+/// A new progress bar. See [Event::NewProgressBar] for usage details.
+#[derive(Clone, Debug)]
+pub struct NewProgressBar {
+    pub(crate) bar: Arc<Mutex<indicatif::ProgressBar>>,
+}
+
 /// Types of message for printing.
 #[derive(Clone, Debug)]
 pub enum Event {
@@ -81,6 +87,46 @@ pub enum Event {
     /// Text events will emit to the specified `target`, and will always be
     /// sent to the log file.
     Text(Text),
+
+    /// A streamed message from a [StreamHandle][crate::streams::StreamHandle].
+    ///
+    /// Behaves identically to [Event::Text], except it will be silently converted
+    /// to [Event::PrintProgressBar] if a progress bar is active.
+    Stream(Text),
+
+    /// A logging record event.
+    ///
+    /// Behaves identically to [Event::Text], except it will be silently converted
+    /// to [Event::PrintProgressBar] if a progress bar is active.
+    Log(Text),
+
+    /// Create a new progress bar.
+    ///
+    /// Fails if any other progress bars are already running.
+    NewProgressBar(NewProgressBar),
+
+    /// Update progress on the progress bar.
+    ///
+    /// Fails if there is no progress bar to update.
+    UpdateProgressBar(u64),
+
+    /// Finish the progress bar.
+    ///
+    /// Fails if there is no progress bar to finish.
+    FinishProgressBar,
+
+    /// Aborts the progress bar.
+    ///
+    /// This does not print the bar at 100% at the end and will not clear the last
+    /// instance of it in the terminal. Useful for error states.
+    ///
+    /// Fails if there is no progress bar to finish.
+    AbortProgressBar,
+
+    /// Print a message above the progress bar.
+    ///
+    /// Fails if there is no progress bar.
+    PrintProgressBar(String),
 }
 
 /// An internal printer object meant to print from a separate thread.
@@ -128,6 +174,7 @@ impl InnerPrinter {
             indicatif::ProgressStyle::with_template("{spinner} {msg} ({elapsed})").unwrap();
         let mut spinner: Option<indicatif::ProgressBar> = None;
         let mut maybe_prv_msg: Option<Text> = None;
+        let mut progress_bar: Option<Arc<Mutex<indicatif::ProgressBar>>> = None;
 
         loop {
             // Wait the standard 3 seconds for a message
@@ -144,12 +191,44 @@ impl InnerPrinter {
                         self.handle_message(&prv_msg)?;
                     }
                     match event {
-                        Event::Text(text) => {
+                        Event::Text(text) | Event::Log(text) | Event::Stream(text) => {
                             // Store the most recently received message in case we need to
                             // begin displaying a spin loader
                             maybe_prv_msg = Some(text.clone());
                             self.handle_message(&text)?;
                         }
+                        Event::NewProgressBar(npb) => {
+                            self.handle_overwrite()?;
+                            _ = progress_bar.insert(npb.bar);
+                        }
+                        Event::UpdateProgressBar(delta) => match progress_bar {
+                            None => unreachable!(),
+                            Some(ref bar) => bar
+                                .lock()
+                                .expect("Unable to communicate with progress bar")
+                                .inc(delta),
+                        },
+                        Event::FinishProgressBar => match progress_bar {
+                            None => unreachable!(),
+                            Some(ref bar) => bar
+                                .lock()
+                                .expect("Unable to communicate with progress bar")
+                                .finish(),
+                        },
+                        Event::AbortProgressBar => match progress_bar {
+                            None => unreachable!(),
+                            Some(ref bar) => bar
+                                .lock()
+                                .expect("Unable to communicate with progress bar")
+                                .abandon(),
+                        },
+                        Event::PrintProgressBar(message) => match progress_bar {
+                            None => unreachable!(),
+                            Some(ref bar) => bar
+                                .lock()
+                                .expect("Unable to communicate with progress bar")
+                                .println(message),
+                        },
                     }
                 }
                 // Break out of this loop if the channel is closed
@@ -267,6 +346,9 @@ pub struct Printer {
 
     /// A prefix to prepend to every message.
     prefix: Option<String>,
+
+    /// Whether or not a progress bar is currently running.
+    in_progress: bool,
 }
 
 impl Printer {
@@ -322,20 +404,103 @@ impl Printer {
     }
 
     /// Send a message to the `InnerPrinter` for displaying
-    pub fn send(&mut self, mut event: Event) -> PyResult<()> {
-        if let Event::Text(ref mut text) = event {
-            self.log(&text.message)?;
-            // Skip after logging if there's nowhere to even send it
-            if text.target.is_none() {
-                return Ok(());
+    pub fn send(&mut self, event: Event) -> PyResult<()> {
+        let prepared_event = self.prepare_event(event)?;
+        match prepared_event {
+            None => Ok(()),
+            Some(event) => match self.channel.get() {
+                Some(chan) => {
+                    chan.send(event).unwrap();
+                    Ok(())
+                }
+                None => panic!("Receiver closed early?"),
+            },
+        }
+    }
+
+    fn prepare_event(&mut self, mut event: Event) -> PyResult<Option<Event>> {
+        match event {
+            Event::Text(ref mut text) => {
+                let should_emit = self.prepare_text(text)?;
+
+                // If a progress bar is running, throw an error to use `println` instead.
+                if self.in_progress {
+                    return Err(PyRuntimeError::new_err(
+                        "Messages cannot be emitted normally when displaying a progress bar. Use `println` instead.",
+                    ));
+                }
+
+                match should_emit {
+                    true => Ok(Some(event)),
+                    false => Ok(None),
+                }
             }
-            self.apply_prefix(text);
+            Event::NewProgressBar(_) => {
+                if self.in_progress {
+                    return Err(PyRuntimeError::new_err(
+                        "Attempted to replace an existing progress bar.",
+                    ));
+                }
+                self.in_progress = true;
+                Ok(Some(event))
+            }
+            Event::FinishProgressBar | Event::AbortProgressBar => {
+                if !self.in_progress {
+                    return Err(PyRuntimeError::new_err(
+                        "No progress bar available to update.",
+                    ));
+                }
+                self.in_progress = false;
+                Ok(Some(event))
+            }
+            Event::UpdateProgressBar(_) => {
+                if !self.in_progress {
+                    return Err(PyRuntimeError::new_err(
+                        "No progress bar available to update.",
+                    ));
+                }
+                Ok(Some(event))
+            }
+            Event::PrintProgressBar(ref text) => {
+                self.log(text)?;
+                if !self.in_progress {
+                    return Err(PyRuntimeError::new_err(
+                        "No progress bar available to update.",
+                    ));
+                }
+                Ok(Some(event))
+            }
+            Event::Stream(ref mut text) | Event::Log(ref mut text) => {
+                let should_emit = self.prepare_text(text)?;
+
+                // Although normally a Text-based event should fail while a progress bar
+                // is active, Logs and Streams can't really be held to the same rules as
+                // they can happen outside of an Emitter user's control (e.g. an external
+                // library creating a log record). Therefore, they should be sent via
+                // ProgressBar::println(). However, skip any that wouldn't have been printed
+                // anyways to preserve verbosity rules.
+                if self.in_progress && should_emit {
+                    let new_event = Event::PrintProgressBar(text.message.clone());
+                    return Ok(Some(new_event));
+                }
+
+                match should_emit {
+                    true => Ok(Some(event)),
+                    false => Ok(None),
+                }
+            }
         }
-        match self.channel.get() {
-            Some(chan) => chan.send(event).unwrap(),
-            None => panic!("Receiver closed early?"),
+    }
+
+    /// Prepare a text-based event and return if it should be emitted.
+    fn prepare_text(&mut self, text: &mut Text) -> PyResult<bool> {
+        self.log(&text.message)?;
+        // Skip after logging if there's nowhere to even send it
+        if text.target.is_none() {
+            return Ok(false);
         }
-        Ok(())
+        self.apply_prefix(text);
+        Ok(true)
     }
 
     /// Initialize the logger, if wanted.

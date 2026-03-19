@@ -1,6 +1,8 @@
 from enum import Enum
 from pathlib import Path
 
+from craft_cli._rs.progress import Progresser
+
 from .streams import StreamHandle
 
 class Verbosity(Enum):
@@ -132,3 +134,34 @@ class Emitter:
 
     def clear_prefix(self) -> None:
         """Clear the current prefix."""
+
+    def progress_bar(
+        self,
+        text: str,
+        total: int,
+        *,
+        units: str | None = None,
+        show_eta: bool = False,
+        show_progress: bool = False,
+        show_percentage: bool = False,
+    ) -> Progresser:
+        """Render an incremental progress bar.
+
+        This method must be used as a context manager.
+
+        :param text: A brief message to prefix before the progress bar.
+        :param total: The total size of the progress bar. Must be a positive number.
+        :param units: Units to display to the left of the progress bar, like "X/Y
+            units". Implies `show_progress = True`. If set to None, the total count will
+            not be showed at all. If set to "bytes", the total will automatically be
+            adjusted to an appropriate magnitude (e.g., MiB -> GiB). All other values are
+            used as-is. Defaults to None.
+        :param show_eta: Whether or not to display an estimated ETA to the right of the
+            progress bar.
+        :param show_progress: Whether or not to show progress to the right of the progress
+            bar, like "X/Y".
+        :param show_percentage: Whether or not to display a percentage of completion to the
+            right of the progress bar.
+
+        :return: A Progresser context manager.
+        """
