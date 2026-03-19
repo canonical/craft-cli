@@ -8,6 +8,7 @@ mod craft_cli_utils;
 mod emitter;
 mod logs;
 mod printer;
+mod progress;
 mod streams;
 mod test_utils;
 mod utils;
