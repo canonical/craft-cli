@@ -87,12 +87,24 @@ pub enum Event {
     /// sent to the log file.
     Text(Text),
 
+    /// Create a new progress bar.
+    ///
+    /// Fails if any other progress bars are already running.
     NewProgressBar(NewProgressBar),
 
+    /// Update progress on the progress bar.
+    ///
+    /// Fails if there is no progress bar to update.
     UpdateProgressBar(u64),
 
+    /// Finish the progress bar.
+    ///
+    /// Fails if there is no progress bar to finish.
     FinishProgressBar,
 
+    /// Print a message above the progress bar.
+    ///
+    /// Fails if there is no progress bar.
     PrintProgressBar(String),
 }
 
