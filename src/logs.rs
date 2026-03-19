@@ -47,7 +47,7 @@ impl LogListener {
         }
         let target = self.decide_target(&levelno)?;
 
-        let event = Event::Text(Text {
+        let event = Event::Log(Text {
             message,
             target,
             permanent,
