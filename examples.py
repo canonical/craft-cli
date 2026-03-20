@@ -329,7 +329,9 @@ def example_24() -> None:
     emit.progress("Deciding to build a computer or upload it...")
     time.sleep(1.5)
 
-    with emit.progress_bar("Uploading computer: planetary model", 1788, units="YB") as progress:
+    with emit.progress_bar(
+        "Uploading computer: planetary model", 1788, units="YB"
+    ) as progress:
         for uploaded in [500, 500, 500, 288]:
             progress.advance(uploaded)
             time.sleep(1.5)

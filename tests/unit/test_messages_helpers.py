@@ -215,6 +215,7 @@ def test_progresser_absolute_mode():
         delta=False,
         ephemeral_context=ephemeral,
         use_timestamp=use_timestamp,
+        units=None,
     ) as progresser:
         progresser.advance(20)
         progresser.advance(30.0)
@@ -224,10 +225,20 @@ def test_progresser_absolute_mode():
             stream, "test text (--->)", ephemeral=ephemeral, use_timestamp=use_timestamp
         ),
         call.progress_bar(
-            stream, text, progress=20, total=total, use_timestamp=use_timestamp
+            stream,
+            text,
+            progress=20,
+            total=total,
+            use_timestamp=use_timestamp,
+            units=None,
         ),
         call.progress_bar(
-            stream, text, progress=30.0, total=total, use_timestamp=use_timestamp
+            stream,
+            text,
+            progress=30.0,
+            total=total,
+            use_timestamp=use_timestamp,
+            units=None,
         ),
         call.show(
             stream, "test text (<---)", ephemeral=ephemeral, use_timestamp=use_timestamp
@@ -251,6 +262,7 @@ def test_progresser_delta_mode():
         delta=True,
         ephemeral_context=ephemeral,
         use_timestamp=use_timestamp,
+        units=None,
     ) as progresser:
         progresser.advance(20.5)
         progresser.advance(30)
@@ -260,10 +272,20 @@ def test_progresser_delta_mode():
             stream, "test text (--->)", ephemeral=ephemeral, use_timestamp=use_timestamp
         ),
         call.progress_bar(
-            stream, text, progress=20.5, total=total, use_timestamp=use_timestamp
+            stream,
+            text,
+            progress=20.5,
+            total=total,
+            use_timestamp=use_timestamp,
+            units=None,
         ),
         call.progress_bar(
-            stream, text, progress=50.5, total=total, use_timestamp=use_timestamp
+            stream,
+            text,
+            progress=50.5,
+            total=total,
+            use_timestamp=use_timestamp,
+            units=None,
         ),
         call.show(
             stream, "test text (<---)", ephemeral=ephemeral, use_timestamp=use_timestamp
@@ -283,6 +305,7 @@ def test_progresser_negative_values(delta):
         delta,
         True,  # noqa: FBT003
         True,  # noqa: FBT003
+        None,
     ) as progresser:
         with pytest.raises(ValueError, match="The advance amount cannot be negative"):
             progresser.advance(-1)
@@ -292,7 +315,16 @@ def test_progresser_dont_consume_exceptions():
     """It lets the exceptions go through."""
     fake_printer = MagicMock()
     with pytest.raises(ValueError):  # noqa: PT011
-        with _Progresser(fake_printer, 123, "test text", sys.stdout, True, True, True):  # noqa: FBT003
+        with _Progresser(
+            fake_printer,
+            123,
+            "test text",
+            sys.stdout,
+            delta=True,
+            use_timestamp=True,
+            ephemeral_context=True,
+            units=None,
+        ):
             raise ValueError
 
 

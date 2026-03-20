@@ -1053,7 +1053,7 @@ def test_progress_bar_valid_streams_captured(stream, recording_printer, monkeypa
 
     before = datetime.now()
     recording_printer.progress_bar(
-        stream, "test text", progress=20, total=100, use_timestamp=False
+        stream, "test text", progress=20, total=100, use_timestamp=False, units=None
     )
 
     # check message written
@@ -1505,7 +1505,9 @@ def test_secrets_progress_bar(capsys, log_filepath, monkeypatch):
     expected = "apple ***** orange *****"
 
     printer.set_secrets(secrets)
-    printer.progress_bar(stream, message, progress=0.0, total=1.0, use_timestamp=False)
+    printer.progress_bar(
+        stream, message, progress=0.0, total=1.0, use_timestamp=False, units=None
+    )
 
     _, stderr = capsys.readouterr()
     assert remove_control_characters(stderr).startswith(expected)
