@@ -73,6 +73,7 @@ pub struct Text {
     pub(crate) permanent: bool,
 }
 
+/// A new progress bar. See [Event::NewProgressBar] for usage details.
 #[derive(Clone, Debug)]
 pub struct NewProgressBar {
     pub(crate) bar: Arc<Mutex<indicatif::ProgressBar>>,
@@ -86,6 +87,18 @@ pub enum Event {
     /// Text events will emit to the specified `target`, and will always be
     /// sent to the log file.
     Text(Text),
+
+    /// A streamed message from a [StreamHandle][crate::streams::StreamHandle].
+    ///
+    /// Behaves identically to [Event::Text], except it will be silently converted
+    /// to [Event::PrintProgressBar] if a progress bar is active.
+    Stream(Text),
+
+    /// A logging record event.
+    ///
+    /// Behaves identically to [Event::Text], except it will be silently converted
+    /// to [Event::PrintProgressBar] if a progress bar is active.
+    Log(Text),
 
     /// Create a new progress bar.
     ///
@@ -170,7 +183,7 @@ impl InnerPrinter {
                         self.handle_message(&prv_msg)?;
                     }
                     match event {
-                        Event::Text(text) => {
+                        Event::Text(text) | Event::Log(text) | Event::Stream(text) => {
                             // Store the most recently received message in case we need to
                             // begin displaying a spin loader
                             maybe_prv_msg = Some(text.clone());
@@ -392,6 +405,8 @@ impl Printer {
     fn prepare_event(&mut self, mut event: Event) -> PyResult<Option<Event>> {
         match event {
             Event::Text(ref mut text) => {
+                let should_emit = self.prepare_text(text)?;
+
                 // If a progress bar is running, throw an error to use `println` instead.
                 if self.in_progress {
                     return Err(PyRuntimeError::new_err(
@@ -399,13 +414,10 @@ impl Printer {
                     ));
                 }
 
-                self.log(&text.message)?;
-                // Skip after logging if there's nowhere to even send it
-                if text.target.is_none() {
-                    return Ok(None);
+                match should_emit {
+                    true => Ok(Some(event)),
+                    false => Ok(None),
                 }
-                self.apply_prefix(text);
-                Ok(Some(event))
             }
             Event::NewProgressBar(_) => {
                 if self.in_progress {
@@ -433,7 +445,37 @@ impl Printer {
                 }
                 Ok(Some(event))
             }
+            Event::Stream(ref mut text) | Event::Log(ref mut text) => {
+                let should_emit = self.prepare_text(text)?;
+
+                // Although normally a Text-based event should fail while a progress bar
+                // is active, Logs and Streams can't really be held to the same rules as
+                // they can happen outside of an Emitter user's control (e.g. an external
+                // library creating a log record). Therefore, they should be sent via
+                // ProgressBar::println(). However, skip any that wouldn't have been printed
+                // anyways to preserve verbosity rules.
+                if self.in_progress && should_emit {
+                    let new_event = Event::PrintProgressBar(text.message.clone());
+                    return Ok(Some(new_event));
+                }
+
+                match should_emit {
+                    true => Ok(Some(event)),
+                    false => Ok(None),
+                }
+            }
         }
+    }
+
+    /// Prepare a text-based event and return if it should be emitted.
+    fn prepare_text(&mut self, text: &mut Text) -> PyResult<bool> {
+        self.log(&text.message)?;
+        // Skip after logging if there's nowhere to even send it
+        if text.target.is_none() {
+            return Ok(false);
+        }
+        self.apply_prefix(text);
+        Ok(true)
     }
 
     /// Initialize the logger, if wanted.
