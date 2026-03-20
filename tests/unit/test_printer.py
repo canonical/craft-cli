@@ -1016,7 +1016,7 @@ def test_progress_bar_valid_streams_terminal(stream, recording_printer, monkeypa
 
     before = datetime.now()
     recording_printer.progress_bar(
-        stream, "test text", progress=20, total=100, use_timestamp=False
+        stream, "test text", progress=20, total=100, use_timestamp=False, units=None
     )
 
     # check message written
@@ -1102,7 +1102,7 @@ def test_spin(isatty, monkeypatch, recording_printer):
 def test_progress_bar_no_stream(recording_printer):
     """No stream no message."""
     recording_printer.progress_bar(
-        None, "test text", progress=20, total=100, use_timestamp=False
+        None, "test text", progress=20, total=100, use_timestamp=False, units=None
     )
     assert not recording_printer.written_terminal_lines
     assert not recording_printer.written_terminal_bars
