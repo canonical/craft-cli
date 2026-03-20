@@ -24,6 +24,7 @@ import threading
 import time
 from datetime import datetime
 from io import StringIO
+from pathlib import Path
 
 import pytest
 from craft_cli import printer as printermod
@@ -781,6 +782,29 @@ def test_writebarterminal_having_previous_message_ephemeral(
     # stdout has the expected text but with a carriage return before
     out, err = capsys.readouterr()
     assert out == "\rtest text [██████████          ] 50/100"
+    assert not err
+
+
+def test_writebarterminal_uses_units(
+    capsys: pytest.CaptureFixture, monkeypatch: pytest.MonkeyPatch, log_filepath: Path
+) -> None:
+    monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 100)
+    printer = Printer(log_filepath)
+
+    msg = _MessageInfo(
+        sys.stdout,
+        "counting syllables in 'ubuntu'",
+        bar_progress=2,
+        bar_total=3,
+        bar_units="syllables",
+    )
+    printer._write_bar_terminal(msg)
+
+    out, err = capsys.readouterr()
+    assert (
+        out
+        == "counting syllables in 'ubuntu' [██████████████████████████████████                  ] 2/3 syllables"
+    )
     assert not err
 
 
