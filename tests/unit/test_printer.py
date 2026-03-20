@@ -24,6 +24,7 @@ import threading
 import time
 from datetime import datetime
 from io import StringIO
+from pathlib import Path
 
 import pytest
 from craft_cli import printer as printermod
@@ -784,6 +785,29 @@ def test_writebarterminal_having_previous_message_ephemeral(
     assert not err
 
 
+def test_writebarterminal_uses_units(
+    capsys: pytest.CaptureFixture, monkeypatch: pytest.MonkeyPatch, log_filepath: Path
+) -> None:
+    monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 100)
+    printer = Printer(log_filepath)
+
+    msg = _MessageInfo(
+        sys.stdout,
+        "counting syllables in 'ubuntu'",
+        bar_progress=2,
+        bar_total=3,
+        bar_units="syllables",
+    )
+    printer._write_bar_terminal(msg)
+
+    out, err = capsys.readouterr()
+    assert (
+        out
+        == "counting syllables in 'ubuntu' [██████████████████████████████████                  ] 2/3 syllables"
+    )
+    assert not err
+
+
 # -- tests for the writing bar (captured version) function
 
 
@@ -992,7 +1016,7 @@ def test_progress_bar_valid_streams_terminal(stream, recording_printer, monkeypa
 
     before = datetime.now()
     recording_printer.progress_bar(
-        stream, "test text", progress=20, total=100, use_timestamp=False
+        stream, "test text", progress=20, total=100, use_timestamp=False, units=None
     )
 
     # check message written
@@ -1029,7 +1053,7 @@ def test_progress_bar_valid_streams_captured(stream, recording_printer, monkeypa
 
     before = datetime.now()
     recording_printer.progress_bar(
-        stream, "test text", progress=20, total=100, use_timestamp=False
+        stream, "test text", progress=20, total=100, use_timestamp=False, units=None
     )
 
     # check message written
@@ -1078,7 +1102,7 @@ def test_spin(isatty, monkeypatch, recording_printer):
 def test_progress_bar_no_stream(recording_printer):
     """No stream no message."""
     recording_printer.progress_bar(
-        None, "test text", progress=20, total=100, use_timestamp=False
+        None, "test text", progress=20, total=100, use_timestamp=False, units=None
     )
     assert not recording_printer.written_terminal_lines
     assert not recording_printer.written_terminal_bars
@@ -1481,7 +1505,9 @@ def test_secrets_progress_bar(capsys, log_filepath, monkeypatch):
     expected = "apple ***** orange *****"
 
     printer.set_secrets(secrets)
-    printer.progress_bar(stream, message, progress=0.0, total=1.0, use_timestamp=False)
+    printer.progress_bar(
+        stream, message, progress=0.0, total=1.0, use_timestamp=False, units=None
+    )
 
     _, stderr = capsys.readouterr()
     assert remove_control_characters(stderr).startswith(expected)

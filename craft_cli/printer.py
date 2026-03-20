@@ -61,6 +61,7 @@ class _MessageInfo:
     ephemeral: bool = False
     bar_progress: int | float | None = None
     bar_total: int | float | None = None
+    bar_units: str | None = None
     use_timestamp: bool = False
     end_line: bool = False
     created_at: datetime = field(default_factory=datetime.now, compare=False)
@@ -369,7 +370,8 @@ class Printer:
             # Should not happen as the caller checks the message
             raise ValueError("Tried to write a bar message with invalid attributes")
 
-        numerical_progress = f"{message.bar_progress}/{message.bar_total}"
+        units = f" {message.bar_units}" if message.bar_units is not None else ""
+        numerical_progress = f"{message.bar_progress}/{message.bar_total}{units}"
         bar_percentage = min(message.bar_progress / message.bar_total, 1)
 
         # terminal size minus the text and numerical progress, and 5 (the cursor at the end,
@@ -471,6 +473,7 @@ class Printer:
         progress: float,
         total: float,
         use_timestamp: bool,
+        units: str | None,
     ) -> None:
         """Show a progress bar to the given stream."""
         text = self._apply_secrets(text)
@@ -480,6 +483,7 @@ class Printer:
             text=text.rstrip(),
             bar_progress=progress,
             bar_total=total,
+            bar_units=units,
             ephemeral=True,  # so it gets eventually overwritten by other message
             use_timestamp=use_timestamp,
         )

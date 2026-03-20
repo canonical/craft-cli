@@ -322,14 +322,16 @@ def example_23() -> None:
 
 
 def example_24() -> None:
-    """Show a progress bar in verbose mode."""
+    """Show a progress bar in verbose mode with units."""
     emit.set_mode(EmitterMode.VERBOSE)
 
     emit.progress("We need to know!", permanent=True)
     emit.progress("Deciding to build a computer or upload it...")
     time.sleep(1.5)
 
-    with emit.progress_bar("Uploading computer: planetary model", 1788) as progress:
+    with emit.progress_bar(
+        "Uploading computer: planetary model", 1788, units="YB"
+    ) as progress:
         for uploaded in [500, 500, 500, 288]:
             progress.advance(uploaded)
             time.sleep(1.5)
