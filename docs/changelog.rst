@@ -6,6 +6,16 @@ Changelog
 See the `Releases page`_ on GitHub for a complete list of commits that are
 included in each version.
 
+.. _release-3.4.0:
+
+3.4.0 (YYYY-MM-DD)
+------------------
+
+New features:
+
+- Add a ``units`` parameter :py:meth:`.Emitter.progress_bar` to label the units of
+  the displayed progress.
+
 .. _release-3.3.0:
 
 3.3.0 (2026-03-05)
