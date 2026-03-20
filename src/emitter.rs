@@ -9,7 +9,8 @@ use pyo3::{
 
 use crate::{
     logs::LogListener,
-    printer::{Message, MessageType, Target},
+    printer::{Event, Target, Text},
+    progress::Progresser,
     streams::StreamHandle,
     utils,
 };
@@ -153,12 +154,11 @@ impl Emitter {
                 format!("Logging execution to {}", self.log_filepath),
             ];
             for message in messages {
-                crate::printer::printer().send(Message {
-                    text: message,
-                    model: MessageType::Text,
+                crate::printer::printer().send(Event::Text(Text {
+                    message,
                     target: Some(Target::Stderr),
                     permanent: true,
-                })?;
+                }))?;
             }
         }
 
@@ -179,14 +179,13 @@ impl Emitter {
         };
         let text = maybe_timestamped.to_string();
 
-        let message = Message {
-            text,
-            model: MessageType::Text,
+        let event = Event::Text(Text {
+            message: text,
             target,
             permanent: true,
-        };
+        });
 
-        crate::printer::printer().send(message)?;
+        crate::printer::printer().send(event)?;
         Ok(())
     }
 
@@ -202,16 +201,15 @@ impl Emitter {
             Verbosity::Brief | Verbosity::Quiet | Verbosity::Verbose => None,
             _ => Some(Target::Stderr),
         };
-        let text = timestamped.to_string();
+        let message = timestamped.to_string();
 
-        let message = Message {
-            text,
-            model: MessageType::Text,
+        let event = Event::Text(Text {
+            message,
             target,
             permanent: true,
-        };
+        });
 
-        crate::printer::printer().send(message)?;
+        crate::printer::printer().send(event)?;
         Ok(())
     }
 
@@ -227,16 +225,15 @@ impl Emitter {
             Verbosity::Trace => Some(Target::Stderr),
             _ => None,
         };
-        let text = timestamped.to_string();
+        let message = timestamped.to_string();
 
-        let message = Message {
-            text,
-            model: MessageType::Text,
+        let event = Event::Text(Text {
+            message,
             target,
             permanent: true,
-        };
+        });
 
-        crate::printer::printer().send(message)?;
+        crate::printer::printer().send(event)?;
         Ok(())
     }
 
@@ -273,16 +270,15 @@ impl Emitter {
             }
         };
 
-        let final_text = maybe_timestamped.to_owned();
+        let message = maybe_timestamped.to_owned();
 
-        let message = Message {
-            text: final_text,
-            model: MessageType::Text,
+        let event = Event::Text(Text {
+            message,
             target,
             permanent,
-        };
+        });
 
-        crate::printer::printer().send(message)?;
+        crate::printer::printer().send(event)?;
 
         // If we're in streaming brief mode and the last message was ephemeral, set this message as the new prefix
         if matches!(self.verbosity, Verbosity::Brief) && !permanent && self.streaming_brief {
@@ -305,14 +301,13 @@ impl Emitter {
             _ => Some(Target::Stdout),
         };
 
-        let message = Message {
-            text,
-            model: MessageType::Text,
+        let event = Event::Text(Text {
+            message: text,
             target,
             permanent: true,
-        };
+        });
 
-        crate::printer::printer().send(message)?;
+        crate::printer::printer().send(event)?;
         Ok(())
     }
 
@@ -330,23 +325,53 @@ impl Emitter {
             Verbosity::Debug | Verbosity::Trace => (timestamped.as_ref(), Some(Target::Stderr)),
             _ => (prefixed.as_str(), Some(Target::Stderr)),
         };
-        let text = maybe_timestamped.to_string();
+        let message = maybe_timestamped.to_string();
 
-        let message = Message {
-            text,
-            model: MessageType::Text,
+        let event = Event::Text(Text {
+            message,
             target,
             permanent: true,
-        };
+        });
 
-        crate::printer::printer().send(message)?;
+        crate::printer::printer().send(event)?;
         Ok(())
     }
 
-    #[expect(unused)]
     /// Render an incremental progress bar.
-    fn progress_bar(&mut self, text: &str, total: u64) -> PyResult<()> {
-        unimplemented!()
+    #[pyo3(signature = (
+        text,
+        total,
+        *,
+        units = None,
+        show_eta = false,
+        show_progress = false,
+        show_percentage = false
+    ))]
+    fn progress_bar(
+        &mut self,
+        text: String,
+        total: u64,
+        units: Option<String>,
+        show_eta: bool,
+        show_progress: bool,
+        show_percentage: bool,
+    ) -> PyResult<Progresser> {
+        let target = if self.verbosity != Verbosity::Debug {
+            Some(Target::Stderr)
+        } else {
+            None
+        };
+
+        Progresser::builder()
+            .message(text)
+            .total(total)
+            .maybe_units(units)
+            .show_eta(show_eta)
+            .show_progress(show_progress)
+            .show_percentage(show_percentage)
+            .target(target)
+            .should_timestamp(self.verbosity >= Verbosity::Debug)
+            .build()
     }
 
     /// Stop gracefully.

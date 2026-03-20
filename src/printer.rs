@@ -4,7 +4,7 @@ use std::{
     fs,
     io::Write as _,
     sync::{
-        LazyLock, Mutex, MutexGuard, OnceLock,
+        Arc, LazyLock, Mutex, MutexGuard, OnceLock,
         mpsc::{self, RecvTimeoutError},
     },
     thread::{self, JoinHandle},
@@ -56,37 +56,69 @@ impl From<Target> for indicatif::ProgressDrawTarget {
     }
 }
 
-/// Types of message for printing.
-#[derive(Clone, Copy, Debug)]
-pub enum MessageType {
-    /// Just plain text to display.
-    Text,
-
-    // Pending implementation of incremental progress bars using indicatif
-    #[expect(unused)]
-    /// Signals to create a progress bar.
-    ProgBar(u64),
-}
-
-/// A single message to be sent, and what type of message it is.
+/// A simple text message. See [Event::Text] for usage details.
 #[derive(Clone, Debug)]
-pub struct Message {
-    /// The message to be printed.
-    pub(crate) text: String,
+pub struct Text {
+    /// The message to emit.
+    pub(crate) message: String,
 
-    // Pending implementation of incremental progress bars using indicatif
-    #[expect(unused)]
-    /// The type of message to send.
-    pub(crate) model: MessageType,
-
-    /// Where the message should be sent.
+    /// The destination for this message.
     pub(crate) target: Option<Target>,
 
-    /// Whether or not this message should persist after the next message.
+    /// Whether or not this message should be permanent.
     ///
-    /// Depending on the exact type of message that follows, a non-permanent
-    /// message may still remain. Namely, after an error.
+    /// Setting this to true does not guarantee its permanence; verbosity
+    /// levels take precedence. The flag is only used when the permanence
+    /// of the message isn't enforced at a given verbosity level.
     pub(crate) permanent: bool,
+}
+
+/// A new progress bar. See [Event::NewProgressBar] for usage details.
+#[derive(Clone, Debug)]
+pub struct NewProgressBar {
+    pub(crate) bar: Arc<Mutex<indicatif::ProgressBar>>,
+}
+
+/// Types of message for printing.
+#[derive(Clone, Debug)]
+pub enum Event {
+    /// A simple text message.
+    ///
+    /// Text events will emit to the specified `target`, and will always be
+    /// sent to the log file.
+    Text(Text),
+
+    /// A streamed message from a [StreamHandle][crate::streams::StreamHandle].
+    ///
+    /// Behaves identically to [Event::Text], except it will be silently converted
+    /// to [Event::PrintProgressBar] if a progress bar is active.
+    Stream(Text),
+
+    /// A logging record event.
+    ///
+    /// Behaves identically to [Event::Text], except it will be silently converted
+    /// to [Event::PrintProgressBar] if a progress bar is active.
+    Log(Text),
+
+    /// Create a new progress bar.
+    ///
+    /// Fails if any other progress bars are already running.
+    NewProgressBar(NewProgressBar),
+
+    /// Update progress on the progress bar.
+    ///
+    /// Fails if there is no progress bar to update.
+    UpdateProgressBar(u64),
+
+    /// Finish the progress bar.
+    ///
+    /// Fails if there is no progress bar to finish.
+    FinishProgressBar,
+
+    /// Print a message above the progress bar.
+    ///
+    /// Fails if there is no progress bar.
+    PrintProgressBar(String),
 }
 
 /// An internal printer object meant to print from a separate thread.
@@ -95,7 +127,7 @@ struct InnerPrinter {
     ///
     /// If this channel is found to be closed, the program is over and this struct
     /// should begin to destruct itself.
-    channel: mpsc::Receiver<Message>,
+    channel: mpsc::Receiver<Event>,
 
     /// A handle on stdout.
     stdout: console::Term,
@@ -110,7 +142,7 @@ struct InnerPrinter {
 
 impl InnerPrinter {
     /// Instantiate a new `InnerPrinter`.
-    pub fn new(channel: mpsc::Receiver<Message>) -> Self {
+    pub fn new(channel: mpsc::Receiver<Event>) -> Self {
         let result = Self {
             stdout: console::Term::stdout(),
             stderr: console::Term::stderr(),
@@ -133,26 +165,55 @@ impl InnerPrinter {
         let main_style =
             indicatif::ProgressStyle::with_template("{spinner} {msg} ({elapsed})").unwrap();
         let mut spinner: Option<indicatif::ProgressBar> = None;
-        let mut maybe_prv_msg: Option<Message> = None;
+        let mut maybe_prv_msg: Option<Text> = None;
+        let mut progress_bar: Option<Arc<Mutex<indicatif::ProgressBar>>> = None;
 
         loop {
             // Wait the standard 3 seconds for a message
-            match self.await_message(SPIN_TIMEOUT) {
-                Ok(msg) => {
+            match self.await_event(SPIN_TIMEOUT) {
+                Ok(event) => {
                     // If we were spinning, stop
                     if let Some(s) = spinner.take()
                         && let Some(mut prv_msg) = maybe_prv_msg.take()
                     {
                         s.finish_and_clear();
                         let dur = indicatif::HumanDuration(s.elapsed());
-                        prv_msg.text = format!("{} (took {:#})", prv_msg.text, dur);
+                        prv_msg.message = format!("{} (took {:#})", prv_msg.message, dur);
                         self.needs_overwrite = false;
                         self.handle_message(&prv_msg)?;
                     }
-                    // Store the most recently received message in case we need to
-                    // begin displaying a spin loader
-                    maybe_prv_msg = Some(msg.clone());
-                    self.handle_message(&msg)?;
+                    match event {
+                        Event::Text(text) | Event::Log(text) | Event::Stream(text) => {
+                            // Store the most recently received message in case we need to
+                            // begin displaying a spin loader
+                            maybe_prv_msg = Some(text.clone());
+                            self.handle_message(&text)?;
+                        }
+                        Event::NewProgressBar(npb) => {
+                            _ = progress_bar.insert(npb.bar);
+                        }
+                        Event::UpdateProgressBar(delta) => match progress_bar {
+                            None => unreachable!(),
+                            Some(ref bar) => bar
+                                .lock()
+                                .expect("Unable to communicate with progress bar")
+                                .inc(delta),
+                        },
+                        Event::FinishProgressBar => match progress_bar {
+                            None => unreachable!(),
+                            Some(ref bar) => bar
+                                .lock()
+                                .expect("Unable to communicate with progress bar")
+                                .finish(),
+                        },
+                        Event::PrintProgressBar(message) => match progress_bar {
+                            None => unreachable!(),
+                            Some(ref bar) => bar
+                                .lock()
+                                .expect("Unable to communicate with progress bar")
+                                .println(message),
+                        },
+                    }
                 }
                 // Break out of this loop if the channel is closed
                 Err(RecvTimeoutError::Disconnected) => break,
@@ -175,7 +236,7 @@ impl InnerPrinter {
 
                     let new_spinner = indicatif::ProgressBar::with_draw_target(None, target)
                         .with_style(main_style.clone())
-                        .with_message(msg.text.clone())
+                        .with_message(msg.message.clone())
                         .with_elapsed(SPIN_TIMEOUT);
                     self.stdout.clear_last_lines(1).unwrap();
                     new_spinner.enable_steady_tick(Duration::from_millis(100));
@@ -188,13 +249,13 @@ impl InnerPrinter {
     }
 
     /// Helper method for receiving a message from `self.channel`
-    fn await_message(&self, timeout: Duration) -> ::std::result::Result<Message, RecvTimeoutError> {
+    fn await_event(&self, timeout: Duration) -> ::std::result::Result<Event, RecvTimeoutError> {
         self.channel.recv_timeout(timeout)
     }
 
     /// Routing method for sending a message to the proper printing logic for a given
     /// message type.
-    fn handle_message(&mut self, msg: &Message) -> PyResult<()> {
+    fn handle_message(&mut self, msg: &Text) -> PyResult<()> {
         let res = match msg.target {
             None => return Ok(()),
             Some(target) => match target {
@@ -215,22 +276,22 @@ impl InnerPrinter {
     }
 
     /// Print a simple message to stdout.
-    fn print(&mut self, message: &Message) -> PyResult<()> {
+    fn print(&mut self, message: &Text) -> PyResult<()> {
         self.handle_overwrite()?;
-        self.stdout.write_line(&message.text)?;
+        self.stdout.write_line(&message.message)?;
         Ok(())
     }
 
     /// Print a simple message to stderr.
-    fn error(&mut self, message: &Message) -> PyResult<()> {
+    fn error(&mut self, message: &Text) -> PyResult<()> {
         self.handle_overwrite()?;
-        self.stderr.write_line(&message.text)?;
+        self.stderr.write_line(&message.message)?;
         Ok(())
     }
 
     #[expect(unused)]
     /// Handle an incremental progress bar.
-    fn progress_bar(&mut self, message: &Message) -> PyResult<()> {
+    fn progress_bar(&mut self, message: &Text) -> PyResult<()> {
         unimplemented!()
     }
 }
@@ -262,13 +323,16 @@ pub struct Printer {
     handle: OnceLock<JoinHandle<PyResult<()>>>,
 
     /// A channel to send messages to the `InnerPrinter` instance.
-    channel: OnceLock<mpsc::Sender<Message>>,
+    channel: OnceLock<mpsc::Sender<Event>>,
 
     /// A file handle to write to for logging operations.
     log_handle: Option<fs::File>,
 
     /// A prefix to prepend to every message.
     prefix: Option<String>,
+
+    /// Whether or not a progress bar is currently running.
+    in_progress: bool,
 }
 
 impl Printer {
@@ -324,20 +388,94 @@ impl Printer {
     }
 
     /// Send a message to the `InnerPrinter` for displaying
-    pub fn send(&mut self, mut msg: Message) -> PyResult<()> {
-        self.log(&msg.text)?;
-        // Skip after logging if there's nowhere to even send it
-        if msg.target.is_none() {
-            return Ok(());
+    pub fn send(&mut self, event: Event) -> PyResult<()> {
+        let prepared_event = self.prepare_event(event)?;
+        match prepared_event {
+            None => Ok(()),
+            Some(event) => match self.channel.get() {
+                Some(chan) => {
+                    chan.send(event).unwrap();
+                    Ok(())
+                }
+                None => panic!("Receiver closed early?"),
+            },
         }
-        match self.channel.get() {
-            Some(chan) => {
-                self.apply_prefix(&mut msg);
-                chan.send(msg).unwrap()
+    }
+
+    fn prepare_event(&mut self, mut event: Event) -> PyResult<Option<Event>> {
+        match event {
+            Event::Text(ref mut text) => {
+                let should_emit = self.prepare_text(text)?;
+
+                // If a progress bar is running, throw an error to use `println` instead.
+                if self.in_progress {
+                    return Err(PyRuntimeError::new_err(
+                        "Messages cannot be emitted normally when displaying a progress bar. Use `println` instead.",
+                    ));
+                }
+
+                match should_emit {
+                    true => Ok(Some(event)),
+                    false => Ok(None),
+                }
             }
-            None => panic!("Receiver closed early?"),
+            Event::NewProgressBar(_) => {
+                if self.in_progress {
+                    return Err(PyRuntimeError::new_err(
+                        "Attempted to replace an existing progress bar.",
+                    ));
+                }
+                self.in_progress = true;
+                Ok(Some(event))
+            }
+            Event::FinishProgressBar => {
+                if !self.in_progress {
+                    return Err(PyRuntimeError::new_err(
+                        "No progress bar available to update.",
+                    ));
+                }
+                self.in_progress = false;
+                Ok(Some(event))
+            }
+            Event::UpdateProgressBar(_) | Event::PrintProgressBar(_) => {
+                if !self.in_progress {
+                    return Err(PyRuntimeError::new_err(
+                        "No progress bar available to update.",
+                    ));
+                }
+                Ok(Some(event))
+            }
+            Event::Stream(ref mut text) | Event::Log(ref mut text) => {
+                let should_emit = self.prepare_text(text)?;
+
+                // Although normally a Text-based event should fail while a progress bar
+                // is active, Logs and Streams can't really be held to the same rules as
+                // they can happen outside of an Emitter user's control (e.g. an external
+                // library creating a log record). Therefore, they should be sent via
+                // ProgressBar::println(). However, skip any that wouldn't have been printed
+                // anyways to preserve verbosity rules.
+                if self.in_progress && should_emit {
+                    let new_event = Event::PrintProgressBar(text.message.clone());
+                    return Ok(Some(new_event));
+                }
+
+                match should_emit {
+                    true => Ok(Some(event)),
+                    false => Ok(None),
+                }
+            }
         }
-        Ok(())
+    }
+
+    /// Prepare a text-based event and return if it should be emitted.
+    fn prepare_text(&mut self, text: &mut Text) -> PyResult<bool> {
+        self.log(&text.message)?;
+        // Skip after logging if there's nowhere to even send it
+        if text.target.is_none() {
+            return Ok(false);
+        }
+        self.apply_prefix(text);
+        Ok(true)
     }
 
     /// Initialize the logger, if wanted.
@@ -382,10 +520,10 @@ impl Printer {
     }
 
     /// Apply the current prefix to a message, if any.
-    fn apply_prefix(&self, message: &mut Message) {
+    fn apply_prefix(&self, text: &mut Text) {
         if let Some(prefix) = &self.prefix {
-            let text = format!("{prefix} :: {}", message.text);
-            message.text = text;
+            let prefixed = format!("{prefix} :: {}", text.message);
+            text.message = prefixed;
         }
     }
 }

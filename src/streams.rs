@@ -17,7 +17,7 @@ use pyo3::{
 
 use crate::{
     emitter::Verbosity,
-    printer::{Message, MessageType, Target},
+    printer::{Event, Target, Text},
     utils,
 };
 
@@ -234,20 +234,19 @@ impl PipeListener {
         for part in parts {
             let parsed = String::from_utf8_lossy(part);
 
-            let text = match self.verbosity {
+            let message = match self.verbosity {
                 Verbosity::Debug | Verbosity::Trace => utils::apply_timestamp(&parsed),
                 _ => parsed,
             }
             .to_string();
 
-            let message = Message {
-                text,
-                model: MessageType::Text,
+            let event = Event::Stream(Text {
+                message,
                 target,
                 permanent,
-            };
+            });
 
-            crate::printer::printer().send(message)?;
+            crate::printer::printer().send(event)?;
         }
 
         self.remaining_content = last.to_vec();

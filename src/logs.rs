@@ -9,7 +9,7 @@ use pyo3::{
 
 use crate::{
     emitter::Verbosity,
-    printer::{Message, Target},
+    printer::{Event, Target, Text},
     utils,
 };
 
@@ -40,21 +40,20 @@ impl LogListener {
         }
 
         // Call `record.getMessage()` from Python and parse it into a Rust string
-        let mut text: String = record.call_method0(intern!(py, "getMessage"))?.extract()?;
+        let mut message: String = record.call_method0(intern!(py, "getMessage"))?.extract()?;
         let permanent = self.verbosity >= Verbosity::Verbose;
         if permanent {
-            text = utils::apply_timestamp(&text).into();
+            message = utils::apply_timestamp(&message).into();
         }
         let target = self.decide_target(&levelno)?;
 
-        let message = Message {
-            text,
+        let event = Event::Log(Text {
+            message,
             target,
-            model: crate::printer::MessageType::Text,
             permanent,
-        };
+        });
 
-        crate::printer::printer().send(message)?;
+        crate::printer::printer().send(event)?;
         Ok(())
     }
 }
