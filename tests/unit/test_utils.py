@@ -1,4 +1,3 @@
-
 import pytest
 from craft_cli.utils import humanize_list
 
