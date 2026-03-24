@@ -478,7 +478,7 @@ class Printer:
         progress: float,
         total: float,
         use_timestamp: bool,
-        units: str | None,
+        units: str | None = None,
     ) -> None:
         """Show a progress bar to the given stream."""
         text = self._apply_secrets(text)
