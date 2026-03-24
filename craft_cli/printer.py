@@ -370,7 +370,12 @@ class Printer:
             # Should not happen as the caller checks the message
             raise ValueError("Tried to write a bar message with invalid attributes")
 
-        units = f" {message.bar_units}" if message.bar_units is not None else ""
+        if message.bar_units:
+            sanitized = message.bar_units.replace("{", "{{").replace("}", "}}")
+            units = f" {sanitized}"
+        else:
+            units = ""
+
         numerical_progress = f"{message.bar_progress}/{message.bar_total}{units}"
         bar_percentage = min(message.bar_progress / message.bar_total, 1)
 
