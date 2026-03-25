@@ -25,7 +25,7 @@ from tempfile import NamedTemporaryFile
 from typing import TYPE_CHECKING, Any, Literal
 from unittest.mock import call
 
-import pytest
+import pytest  # type: ignore[import-not-found]
 from typing_extensions import Self
 
 from craft_cli import messages, printer
@@ -35,7 +35,7 @@ if TYPE_CHECKING:
 
 
 @pytest.fixture(autouse=True)
-def init_emitter(monkeypatch: pytest.MonkeyPatch) -> Generator[None]:
+def init_emitter(monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
     """Ensure ``emit`` is always clean, and initiated (in test mode).
 
     Note that the ``init`` is done in the current instance that all modules already

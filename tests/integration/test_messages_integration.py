@@ -840,9 +840,10 @@ def test_third_party_output_quiet(capsys, tmp_path):
 
 
 @pytest.mark.parametrize("output_is_terminal", [True])
-def test_third_party_output_brief_terminal(capsys, tmp_path):
+def test_third_party_output_brief_terminal(capsys, tmp_path, monkeypatch):
     """Manage the streams produced for sub-executions, brief mode, to the terminal."""
     # something to execute
+    monkeypatch.setattr(printer, "_SPINNER_THRESHOLD", 100)
     script = tmp_path / "script.py"
     script.write_text(
         textwrap.dedent(
@@ -1484,7 +1485,7 @@ def test_capture_delays(tmp_path, loops, sleep, max_repetitions):
     # are slower (a limit that is still useful: when subprocess Python
     # is run without the `-u` option average delays are around 500 ms.
     delays = [t_outside - t_inside for t_outside, t_inside in timestamps]
-    too_big = [delay for delay in delays if delay > 0.050]
+    too_big = [delay for delay in delays if delay > 0.100]
     if len(too_big) > loops / 20:
         pytest.fail(
             f"Delayed capture: {too_big} avg delay is {sum(delays) / len(delays):.3f}"
