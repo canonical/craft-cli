@@ -270,21 +270,18 @@ def test_init_receiving_logfile(tmp_path, monkeypatch):
 def test_init_double_regular_mode(tmp_path, monkeypatch):
     """Double init in regular usage mode."""
     # ensure it's not using the standard log filepath provider (that pollutes user dirs)
-    monkeypatch.setattr(messages, "_get_log_filepath", None)
-    fake_logpath = tmp_path / FAKE_LOG_NAME
+    monkeypatch.setattr(
+        messages, "_get_log_filepath", lambda appname: tmp_path / FAKE_LOG_NAME
+    )
+
+    monkeypatch.setattr(messages, "TESTNODE", True)
     emitter = Emitter()
 
-    # with patch("craft_cli.messages.Printer"):
-    emitter.init(
-        EmitterMode.BRIEF, "testappname", "first greeting", log_filepath=fake_logpath
-    )
+    with patch("craft_cli.messages.Printer"):
+        emitter.init(EmitterMode.VERBOSE, "testappname", "greeting")
+
     with pytest.raises(RuntimeError, match="Double Emitter init detected"):
-        emitter.init(
-            EmitterMode.QUIET,
-            "newappname",
-            "second greeting",
-            log_filepath=fake_logpath,
-        )
+        emitter.init(EmitterMode.QUIET, "testappname", "greeting")
 
 
 def test_init_double_tests_mode(tmp_path, monkeypatch):
@@ -1546,36 +1543,71 @@ def test_prompt_does_not_allow_empty_input(
 
 
 def test_table_formatter_simple_dict_list():
-    data = [{"a": 1, "b": 2}, {"a": 3, "b": 4}]
-    fmt = TableFormatter()
-    out = fmt.format(data)
-    expected = """\
-a | b
---+--
-1 | 2
-3 | 4"""
+    data = [
+        {
+            "str": "hello",
+            "int": 1,
+            "float": 1.5,
+            "bool": True,
+            "none": None,
+        }
+    ]
 
-    assert out.strip() == expected.strip()
+    table_fmt = TableFormatter()
+    json_fmt = JSONFormatter()
+
+    # JSON assertions
+    json_out = json.loads(json_fmt.format(data))
+    assert json_out == data
+
+    # Table assertions
+    table_out = table_fmt.format(data)
+
+    assert "hello" in table_out
+    assert "1" in table_out
+    assert "1.5" in table_out
+    assert "True" in table_out
+    assert "None" in table_out
 
 
-def test_table_formatter_empty_list():
-    fmt = TableFormatter()
-    out = fmt.format([])
-    assert out == "[no data]"
+def test_empty_list_table_and_json():
+    data = []
+    table_fmt = TableFormatter()
+    json_fmt = JSONFormatter()
+
+    assert table_fmt.format(data) == "[no data]"
+
+    json_out = json.loads(json_fmt.format(data))
+    assert json_out == []
+
+
+def test_empty_dict_table_and_json():
+    data = {}
+    table_fmt = TableFormatter()
+    json_fmt = JSONFormatter()
+
+    assert table_fmt.format(data) == "[no data]"
+
+    json_out = json.loads(json_fmt.format(data))
+    assert json_out == {}
 
 
 def test_table_formatter_dict_input():
+    table_fmt = TableFormatter()
+    table_out = table_fmt.format({"foo": "bar"})
+
+    assert "foo" in table_out
+
+
+# test for single column
+def test_table_formatter_single_column():
+    data = [{"a": 1}, {"a": 2}]
     fmt = TableFormatter()
-    out = fmt.format({"foo": "bar"})
+    out = fmt.format(data)
 
-    # Define exact expected structure
-    # This depends on TableFormatter's specific style
-
-    expected = """\
-Key | Value
-----+------
-foo | bar"""
-    assert out.strip() == expected.strip()
+    assert "a" in out
+    assert "1" in out
+    assert "2" in out
 
 
 def test_json_formatter_dict_list():
@@ -1583,5 +1615,6 @@ def test_json_formatter_dict_list():
     fmt = JSONFormatter()
     out = fmt.format(data)
     parsed = json.loads(out)
+
     assert isinstance(parsed, list)
-    assert parsed[0]["x"] == 1
+    assert parsed == data

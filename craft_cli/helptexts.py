@@ -328,7 +328,7 @@ class HelpBuilder:
         textblocks.append(f"Summary:{overview}")
 
         # column alignment is dictated by longest options title
-        max_title_len = max((len(title) for title, _ in options), default=0)
+        max_title_len = max(len(title) for title, _ in options)
 
         if parameters:
             # command positional arguments
@@ -344,11 +344,10 @@ class HelpBuilder:
                 )
 
         # command options
-        if options:
-            option_lines = ["Options:"]
-            for title, text in options:
-                option_lines.extend(_build_item_plain(title, text, max_title_len))
-            textblocks.append("\n".join(option_lines))
+        option_lines = ["Options:"]
+        for title, text in options:
+            option_lines.extend(_build_item_plain(title, text, max_title_len))
+        textblocks.append("\n".join(option_lines))
 
         if other_command_names:
             see_also_block = ["See also:"]

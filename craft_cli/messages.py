@@ -35,22 +35,24 @@ import sys
 import threading
 import traceback
 from abc import ABC, abstractmethod
-from collections.abc import Callable, Generator
+from collections.abc import Callable, Generator, Mapping, Sequence
 from contextlib import contextmanager
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Literal, TextIO, TypeVar, cast
 
-import platformdirs  # type: ignore [import-not-found]
+import platformdirs
 
 from craft_cli import errors
 from craft_cli.printer import Printer
 
-TabularData = list[dict[str, Any]] | dict[str, Any]
+ValueType = str | int | float | bool | None
+Row = Mapping[str, ValueType]
+TabularData = Sequence[Row] | Row
 
 
 class BaseFormatter(ABC):
     @abstractmethod
-    def format(self, data: TabularData, headers: dict[str, str] | None = None) -> str:
+    def format(self, data: TabularData) -> str:
         pass
 
 
@@ -60,13 +62,12 @@ class JSONFormatter(BaseFormatter):
     Example:
     -------
     >>> formatter = JSONFormatter()
-    >>> formatter.format([{"name":"Alice","age":30})
+    >>> formatter.format([{"name": "Alice", "age": 30}])
     '{"name":"Alice","age":30}'
 
     """
 
-    def format(self, data: TabularData, headers: dict[str, str] | None = None) -> str:
-        _ = headers
+    def format(self, data: TabularData) -> str:
         return json.dumps(data, indent=2, default=str)
 
 
@@ -76,25 +77,29 @@ class TableFormatter(BaseFormatter):
     Example:
     -------
     >>> formatter = TableFormatter()
-    >>> formatter.format([["Name", "Age"], ["Alice", 30]])
+    >>> formatter.format([{"Name": "Alice", "Age": 30}])
     'Name Age\nAlice 30'
 
     """
 
-    def format(self, data: TabularData, headers: dict[str, str] | None = None) -> str:
+    def format(self, data: TabularData) -> str:
         """Format a list of rows into a table string."""
-        _ = headers
         if not data:
             return "[no data]"
-        if isinstance(data, list):
-            all_keys: set[str] = set()
-            for row in data:
-                all_keys.update(str(k) for k in row)
-            table_headers = sorted(all_keys)
-            rows = [[str(row.get(h, "")) for h in table_headers] for row in data]
+
+        if isinstance(data, Mapping):
+            rows_data: Sequence[Row] = [data]
         else:
-            table_headers = ["Key", "Value"]
-            rows = [[str(k), str(v)] for k, v in data.items()]
+            rows_data = data
+
+        all_keys: set[str] = set()
+        for row in rows_data:
+            all_keys.update(row.keys())
+
+        table_headers = sorted(all_keys)
+
+        rows = [[str(row.get(h, "")) for h in table_headers] for row in rows_data]
+
         cols_widths = [
             max(len(str(item)) for item in col) for col in zip(table_headers, *rows)
         ]
@@ -806,39 +811,36 @@ class Emitter:
         self,
         data: TabularData,
         output_format: Literal["json", "table"] = "table",
-        headers: dict[str, str] | None = None,
     ) -> None:
         """Output structured data to the terminal in a specific format.
 
         :param data: The structured data to output( list of dicts or a single dict).
-        :param format: The format( defaults to 'table')
+        :param format: The format (defaults to 'table')
         :param headers: Optional dictionary to map internal data keys to displayed header.
         """
         formatter = self._formatters.get(output_format)
         if not formatter:
             raise ValueError(f"Unsupported format: {output_format}")
 
-        formatted_data = formatter.format(data, headers)
+        formatted_data = formatter.format(data)
         stream = None if self._mode == EmitterMode.QUIET else sys.stdout
-        self._printer.show(stream, formatted_data, raw_output=True)
+        self._printer.show(stream, formatted_data)
 
     @_active_guard()
     def table(
         self,
         data: TabularData,
-        headers: dict[str, str] | None = None,
     ) -> None:
         """Output data as table."""
-        self.data(data, output_format="table", headers=headers)
+        self.data(data, output_format="table")
 
     @_active_guard()
     def json(
         self,
         data: TabularData,
-        headers: dict[str, str] | None = None,
     ) -> None:
         """Output data as JSON."""
-        self.data(data, output_format="json", headers=headers)
+        self.data(data, output_format="json")
 
     @_active_guard()
     @contextmanager
