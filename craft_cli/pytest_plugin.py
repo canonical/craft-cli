@@ -34,7 +34,7 @@ if TYPE_CHECKING:
     from unittest.mock import _Call  # type: ignore[reportPrivateUsage]
 
 
-@pytest.fixture(autouse=True)  # type: ignore[misc]
+@pytest.fixture(autouse=True)
 def init_emitter(monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
     """Ensure ``emit`` is always clean, and initiated (in test mode).
 
@@ -243,7 +243,7 @@ class _RecordingProgresser:
         self.recording_emitter.record("advance", a, k)
 
 
-@pytest.fixture  # type: ignore[misc]
+@pytest.fixture
 def emitter(monkeypatch: pytest.MonkeyPatch) -> RecordingEmitter:
     """Provide a helper to test everything that was shown using the Emitter."""
     recording_emitter = RecordingEmitter()

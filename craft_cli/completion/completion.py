@@ -247,12 +247,11 @@ def complete(shell_cmd: str, get_app_info: Callable[[], DispatcherAndConfig]) ->
         if arg.type == "option"
     ]
 
-    result: str = template.render(
+    return template.render(
         shell_cmd=shell_cmd,
         commands=command_map,
         global_opts=global_opts,
     )
-    return result
 
 
 def _validate_app_info(raw_ref: str) -> Callable[[], DispatcherAndConfig]:
