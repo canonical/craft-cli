@@ -6,6 +6,7 @@ use pyo3::pymodule;
 
 mod craft_cli_utils;
 mod emitter;
+mod errors;
 mod logs;
 mod printer;
 mod progress;
@@ -24,4 +25,7 @@ mod craft_cli_extensions {
 
     #[pymodule_export]
     use crate::logs::LogListener;
+
+    #[pymodule_export]
+    use crate::errors::errors;
 }
