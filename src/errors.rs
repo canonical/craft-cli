@@ -1,12 +1,12 @@
 use pyo3::{
     Bound, PyResult, PyTypeInfo as _,
-    exceptions::PyBaseException,
+    exceptions::PyException,
     pyclass, pymethods, pymodule,
     types::{PyAnyMethods, PyDict, PyString, PySuper, PyTypeMethods},
 };
 
 #[derive(PartialEq)]
-#[pyclass(extends = PyBaseException, subclass, get_all, set_all, eq)]
+#[pyclass(extends = PyException, subclass, get_all, set_all, eq)]
 pub struct CraftError {
     pub message: String,
     pub details: Option<String>,

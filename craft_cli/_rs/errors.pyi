@@ -1,6 +1,6 @@
 """Base error type supported by an Emitter."""
 
-class CraftError(BaseException):
+class CraftError(Exception):
     """A program error to report with context."""
 
     message: str
