@@ -50,16 +50,16 @@ impl CraftError {
         }
     }
 
-    #[pyo3(name = "__init__", signature = (_message, **_kwargs))]
+    #[pyo3(name = "__init__", signature = (message, **_kwargs))]
     fn init(
         slf: &Bound<'_, Self>,
-        _message: &Bound<'_, PyString>,
+        message: &Bound<'_, PyString>,
         _kwargs: Option<&Bound<'_, PyDict>>,
     ) -> PyResult<()> {
         // See https://pyo3.rs/main/class.html#initializer for an explanation on why this method
         // needs to exist.
         // Call "super(self.__class__, self).__init__()"
-        PySuper::new(&PyBaseException::type_object(slf.py()), slf)?.call_method0("__init__")?;
+        PySuper::new(&Self::type_object(slf.py()), slf)?.call_method1("__init__", (message,))?;
         Ok(())
     }
 
