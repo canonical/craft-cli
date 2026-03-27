@@ -346,46 +346,48 @@ impl Emitter {
             self.clear_prefix();
         }
 
-        // Build the message
-        let message = {
-            let error = error.borrow();
-            let mut message = error.message.clone();
-
-            if self.verbosity != Verbosity::Quiet
-                && let Some(ref details) = error.details
-            {
-                message.push_str(&format!("\n{details}"));
+        let send_error_event = |mut message: String| -> PyResult<()> {
+            if self.verbosity >= Verbosity::Debug {
+                message = utils::apply_timestamp(&message).to_string();
             }
-
-            if let Some(ref resolution) = error.resolution {
-                message.push_str(&format!("\nRecommended resolution: {resolution}"));
-            }
-
-            // Give priority to `docs_url` in the event that it and `docs_slug` are both set.
-            if let Some(ref docs_url) = error.docs_url {
-                message.push_str(&format!("\nFor more information, visit {docs_url}"));
-            } else if let Some(ref docs_base_url) = self.docs_base_url
-                && let Some(ref doc_slug) = error.docs_slug
-            {
-                message.push_str(&format!(
-                    "\nFor more information, visit {docs_base_url}{doc_slug}",
-                ));
-            }
-
-            if error.show_logpath {
-                message.push_str(&format!("\nFull execution log: {}", self.log_filepath));
-            }
-
-            message
+            let event = Event::Text(Text {
+                message,
+                target: Some(Target::Stderr),
+                permanent: true,
+            });
+            crate::printer::printer().send(event)
         };
 
-        let event = Event::Text(Text {
-            message,
-            target: Some(Target::Stderr),
-            permanent: true,
-        });
+        let error = error.borrow();
 
-        crate::printer::printer().send(event)
+        send_error_event(error.message.clone())?;
+
+        if self.verbosity != Verbosity::Quiet
+            && let Some(ref details) = error.details
+        {
+            send_error_event(details.clone())?;
+        }
+
+        if let Some(ref resolution) = error.resolution {
+            send_error_event(format!("Recommended resolution: {resolution}"))?;
+        }
+
+        // Give priority to `docs_url` in the event that it and `docs_slug` are both set.
+        if let Some(ref docs_url) = error.docs_url {
+            send_error_event(format!("For more information, visit {docs_url}"))?;
+        } else if let Some(ref docs_base_url) = self.docs_base_url
+            && let Some(ref docs_slug) = error.docs_slug
+        {
+            send_error_event(format!(
+                "For more information, visit {docs_base_url}{docs_slug}",
+            ))?;
+        }
+
+        if error.show_logpath {
+            send_error_event(format!("Full execution log: {}", self.log_filepath))?;
+        }
+
+        Ok(())
     }
 
     /// Render an incremental progress bar.
