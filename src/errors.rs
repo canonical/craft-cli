@@ -14,7 +14,7 @@ pub struct CraftError {
     pub docs_url: Option<String>,
     pub docs_slug: Option<String>,
     pub show_logpath: bool,
-    pub retcode: i8,
+    pub retcode: u8,
 }
 
 #[pymethods]
@@ -37,7 +37,7 @@ impl CraftError {
         docs_url: Option<String>,
         docs_slug: Option<String>,
         show_logpath: bool,
-        retcode: i8,
+        retcode: u8,
     ) -> Self {
         Self {
             message,
