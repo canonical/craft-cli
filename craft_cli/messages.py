@@ -116,6 +116,7 @@ class _Progresser:
         delta: bool,  # noqa: FBT001 (boolean positional arg)
         use_timestamp: bool,  # noqa: FBT001 (boolean positional arg)
         ephemeral_context: bool,  # noqa: FBT001 (boolean positional arg)
+        units: str | None,
     ) -> None:
         self.printer = printer
         self.total = total
@@ -124,6 +125,7 @@ class _Progresser:
         self.stream = stream
         self.delta = delta
         self.use_timestamp = use_timestamp
+        self.units = units
 
         # this is only for the "before" and "after" messages; the progress itself
         # is always ephemeral
@@ -168,6 +170,7 @@ class _Progresser:
             progress=self.accumulated,
             total=self.total,
             use_timestamp=self.use_timestamp,
+            units=self.units,
         )
 
 
@@ -683,6 +686,8 @@ class Emitter:
         text: str,
         total: float,
         delta: bool = True,  # noqa: FBT001, FBT002
+        *,
+        units: str | None = None,
     ) -> _Progresser:
         """Progress information for a potentially long-running single step of a command.
 
@@ -694,7 +699,7 @@ class Emitter:
         """
         stream, use_timestamp, ephemeral = self._get_progress_params(permanent=False)
         return _Progresser(
-            self._printer, total, text, stream, delta, use_timestamp, ephemeral
+            self._printer, total, text, stream, delta, use_timestamp, ephemeral, units
         )
 
     @_active_guard()

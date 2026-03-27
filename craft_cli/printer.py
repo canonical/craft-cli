@@ -61,6 +61,7 @@ class _MessageInfo:
     ephemeral: bool = False
     bar_progress: int | float | None = None
     bar_total: int | float | None = None
+    bar_units: str | None = None
     use_timestamp: bool = False
     end_line: bool = False
     created_at: datetime = field(default_factory=datetime.now, compare=False)
@@ -369,13 +370,20 @@ class Printer:
             # Should not happen as the caller checks the message
             raise ValueError("Tried to write a bar message with invalid attributes")
 
+        if message.bar_units:
+            sanitized = message.bar_units.replace("{", "{{").replace("}", "}}")
+            units = f" {sanitized}"
+        else:
+            units = ""
+
         numerical_progress = f"{message.bar_progress}/{message.bar_total}"
         bar_percentage = min(message.bar_progress / message.bar_total, 1)
 
         # terminal size minus the text and numerical progress, and 5 (the cursor at the end,
         # two spaces before and after the bar, and two surrounding brackets)
         terminal_width = _get_terminal_width()
-        bar_width = terminal_width - len(text) - len(numerical_progress) - 5
+        bar_width_no_units = terminal_width - len(text) - len(numerical_progress) - 5
+        bar_width = bar_width_no_units - len(units)
 
         # only show the bar with progress if there is enough space, otherwise just the
         # message (truncated, if needed)
@@ -383,6 +391,11 @@ class Printer:
             completed_width = math.floor(bar_width * min(bar_percentage, 100))
             completed_bar = _PROGRESS_BAR_SYMBOL * completed_width
             empty_bar = " " * (bar_width - completed_width)
+            line = f"{maybe_cr}{text} [{completed_bar}{empty_bar}] {numerical_progress}{units}"
+        elif bar_width_no_units > 0:
+            completed_width = math.floor(bar_width_no_units * min(bar_percentage, 100))
+            completed_bar = _PROGRESS_BAR_SYMBOL * completed_width
+            empty_bar = " " * (bar_width_no_units - completed_width)
             line = f"{maybe_cr}{text} [{completed_bar}{empty_bar}] {numerical_progress}"
         else:
             text = text[: terminal_width - 1]  # space for cursor
@@ -471,6 +484,7 @@ class Printer:
         progress: float,
         total: float,
         use_timestamp: bool,
+        units: str | None = None,
     ) -> None:
         """Show a progress bar to the given stream."""
         text = self._apply_secrets(text)
@@ -480,6 +494,7 @@ class Printer:
             text=text.rstrip(),
             bar_progress=progress,
             bar_total=total,
+            bar_units=units,
             ephemeral=True,  # so it gets eventually overwritten by other message
             use_timestamp=use_timestamp,
         )
