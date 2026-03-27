@@ -9,6 +9,9 @@ class CraftError(Exception):
     details: str | None
     """Deeper, verbose error details that may help with diagnosing the deeper issue."""
 
+    resolution: str | None
+    """A brief suggestion for how the user might resolve the error themselves."""
+
     docs_url: str | None
     """A URL to point the user towards for troubleshooting.
 
