@@ -16,84 +16,13 @@
 
 """Error classes."""
 
+from typing import Any, cast
+
+from craft_cli._rs.errors import CraftError
+
 __all__ = [
     "CraftError",
 ]
-
-from typing import Any, cast
-
-
-class CraftError(Exception):
-    """Signal a program error with a lot of information to report."""
-
-    message: str
-    """The main message to the user, to be shown as first line (and probably only that,
-      according to the different modes); note that in some cases the log location will be
-      attached to this message."""
-
-    details: str | None
-    """The full error details received from a third party which originated the error
-      situation."""
-
-    resolution: str | None
-    """An extra line indicating to the user how the error may be fixed or avoided (to be
-      shown together with ``message``)."""
-
-    docs_url: str | None
-    """An URL to point the user to documentation (to be shown together with ``message``)."""
-
-    doc_slug: str | None
-    """The slug to the user documentation. Needs a base url to form a full address.
-      Note that ``docs_url`` has preference if it is set."""
-
-    logpath_report: bool
-    """Whether the location of the log filepath should be presented in the screen as the
-     final message."""
-
-    reportable: bool
-    """If an error report should be sent to some error-handling backend (like Sentry)."""
-
-    retcode: int
-    """The code to return when the application finishes."""
-
-    def __init__(
-        self,
-        message: str,
-        *,
-        details: str | None = None,
-        resolution: str | None = None,
-        docs_url: str | None = None,
-        logpath_report: bool = True,
-        reportable: bool = True,
-        retcode: int = 1,
-        doc_slug: str | None = None,
-    ) -> None:
-        super().__init__(message)
-        self.details = details
-        self.resolution = resolution
-        self.docs_url = docs_url
-        self.logpath_report = logpath_report
-        self.reportable = reportable
-        self.retcode = retcode
-        self.doc_slug = doc_slug
-        if doc_slug and not doc_slug.startswith("/"):
-            self.doc_slug = "/" + doc_slug
-
-    def __eq__(self, other: object) -> bool:
-        if isinstance(other, CraftError):
-            return all(
-                [
-                    self.args == other.args,
-                    self.details == other.details,
-                    self.resolution == other.resolution,
-                    self.docs_url == other.docs_url,
-                    self.logpath_report == other.logpath_report,
-                    self.reportable == other.reportable,
-                    self.retcode == other.retcode,
-                    self.doc_slug == other.doc_slug,
-                ]
-            )
-        return NotImplemented
 
 
 class CraftCommandError(CraftError):

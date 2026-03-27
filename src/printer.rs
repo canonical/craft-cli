@@ -349,6 +349,9 @@ pub struct Printer {
 
     /// Whether or not a progress bar is currently running.
     in_progress: bool,
+
+    /// Whether this printer has been stopped.
+    stopped: bool,
 }
 
 impl Printer {
@@ -400,11 +403,18 @@ impl Printer {
             return Err(*e.downcast::<PyErr>().unwrap());
         }
 
+        self.stopped = true;
+
         Ok(())
     }
 
     /// Send a message to the `InnerPrinter` for displaying
     pub fn send(&mut self, event: Event) -> PyResult<()> {
+        if self.stopped {
+            return Err(PyRuntimeError::new_err(
+                "Attempted to print after the printer was stopped",
+            ));
+        }
         let prepared_event = self.prepare_event(event)?;
         match prepared_event {
             None => Ok(()),
