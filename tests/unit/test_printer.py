@@ -808,6 +808,23 @@ def test_writebarterminal_uses_units(
     assert not err
 
 
+def test_writebarterminal_skip_long_units(
+    capsys: pytest.CaptureFixture, monkeypatch: pytest.MonkeyPatch, log_filepath: Path
+) -> None:
+    """Don't print out the units if they're too long for the terminal"""
+    monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
+    printer = Printer(log_filepath)
+
+    text = "0123456789"
+    msg = _MessageInfo(
+        sys.stdout, text, bar_progress=5, bar_total=10, bar_units="A" * 5000
+    )
+    printer._write_bar_terminal(msg)
+
+    out, _ = capsys.readouterr()
+    assert out == "0123456789 [██████████           ] 5/10"
+
+
 # -- tests for the writing bar (captured version) function
 
 

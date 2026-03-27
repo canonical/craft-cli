@@ -376,13 +376,14 @@ class Printer:
         else:
             units = ""
 
-        numerical_progress = f"{message.bar_progress}/{message.bar_total}{units}"
+        numerical_progress = f"{message.bar_progress}/{message.bar_total}"
         bar_percentage = min(message.bar_progress / message.bar_total, 1)
 
         # terminal size minus the text and numerical progress, and 5 (the cursor at the end,
         # two spaces before and after the bar, and two surrounding brackets)
         terminal_width = _get_terminal_width()
-        bar_width = terminal_width - len(text) - len(numerical_progress) - 5
+        bar_width_no_units = terminal_width - len(text) - len(numerical_progress) - 5
+        bar_width = bar_width_no_units - len(units)
 
         # only show the bar with progress if there is enough space, otherwise just the
         # message (truncated, if needed)
@@ -390,6 +391,11 @@ class Printer:
             completed_width = math.floor(bar_width * min(bar_percentage, 100))
             completed_bar = _PROGRESS_BAR_SYMBOL * completed_width
             empty_bar = " " * (bar_width - completed_width)
+            line = f"{maybe_cr}{text} [{completed_bar}{empty_bar}] {numerical_progress}{units}"
+        elif bar_width_no_units > 0:
+            completed_width = math.floor(bar_width_no_units * min(bar_percentage, 100))
+            completed_bar = _PROGRESS_BAR_SYMBOL * completed_width
+            empty_bar = " " * (bar_width_no_units - completed_width)
             line = f"{maybe_cr}{text} [{completed_bar}{empty_bar}] {numerical_progress}"
         else:
             text = text[: terminal_width - 1]  # space for cursor
