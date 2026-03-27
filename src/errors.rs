@@ -39,6 +39,7 @@ impl CraftError {
         show_logpath: bool,
         retcode: u8,
     ) -> Self {
+        let docs_slug = docs_slug.map(|slug| slug.trim_start_matches('/').into());
         Self {
             message,
             details,

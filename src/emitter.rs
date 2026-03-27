@@ -379,7 +379,7 @@ impl Emitter {
             && let Some(ref docs_slug) = error.docs_slug
         {
             send_error_event(format!(
-                "For more information, visit {docs_base_url}{docs_slug}",
+                "For more information, visit {docs_base_url}/{docs_slug}",
             ))?;
         }
 
