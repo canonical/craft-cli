@@ -18,5 +18,11 @@
 
 def humanize_list(values: list[str], conjunction: str = "and") -> str:
     """Convert a collection of values into a string that lists the values."""
-    start = ", ".join(values[:-1])
-    return f"{start}, {conjunction} {values[-1]}"
+    if len(values) == 1:
+        return values[0]
+
+    if len(values) == 2:  # noqa: PLR2004
+        return f"{values[0]} {conjunction} {values[1]}"
+
+    head, tail = values[:-1], values[-1]
+    return f"{', '.join(head)}, {conjunction} {tail}"
