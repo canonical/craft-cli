@@ -1,6 +1,7 @@
 from enum import Enum
 from pathlib import Path
 
+from craft_cli._rs.errors import CraftError
 from craft_cli._rs.progress import Progresser
 
 from .streams import StreamHandle
@@ -118,6 +119,12 @@ class Emitter:
         By default, messages will be prefixed with "WARNING: ". An alternative prefix
         can be provided via the ``prefix`` parameter.
         """
+
+    def error(self, error: CraftError) -> None:
+        """Show an error and terminate this Emitter."""
+
+    def report_error(self, error: CraftError) -> None:
+        """Show an error, but continue execution."""
 
     def ended_ok(self) -> None:
         """Stop gracefully."""
