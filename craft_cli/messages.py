@@ -453,13 +453,13 @@ class Emitter:
 
     def __init__(self) -> None:
         # these attributes will be set at "real init time", with the `init` method below
-        self._greeting: str = None  # type: ignore[assignment]
-        self._printer: Printer = None  # type: ignore[assignment]
+        self._greeting: str = None  # type: ignore[assignment] # ty: ignore[invalid-assignment]
+        self._printer: Printer = None  # type: ignore[assignment] # ty: ignore[invalid-assignment]
         self._mode: EmitterMode = None  # type: ignore[assignment]
         self._initiated = False
         self._stopped = False
-        self._log_filepath: pathlib.Path = None  # type: ignore[assignment]
-        self._log_handler: _Handler = None  # type: ignore[assignment]
+        self._log_filepath: pathlib.Path = None  # type: ignore[assignment] # ty: ignore[invalid-assignment]
+        self._log_handler: _Handler = None  # type: ignore[assignment] # ty: ignore[invalid-assignment]
         self._streaming_brief = False
         self._docs_base_url: str | None = None
 

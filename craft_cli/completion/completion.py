@@ -220,7 +220,7 @@ def complete(shell_cmd: str, get_app_info: Callable[[], DispatcherAndConfig]) ->
     for name, cmd_cls in dispatcher.commands.items():
         parser = argparse.ArgumentParser()
         cmd = cmd_cls(app_config)
-        cmd.fill_parser(parser)  # type: ignore[arg-type]
+        cmd.fill_parser(parser)  # type: ignore[arg-type] # ty: ignore[invalid-argument-type]
         # reason: for this module, we don't need the help/error
         # capabilities of _CustomArgumentParser
         actions = parser._actions  # noqa: SLF001
