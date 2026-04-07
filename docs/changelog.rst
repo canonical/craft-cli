@@ -8,7 +8,7 @@ included in each version.
 
 .. _release-3.4.0:
 
-3.4.0 (YYYY-MM-DD)
+3.4.0 (2026-04-08)
 ------------------
 
 New features:
