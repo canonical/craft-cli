@@ -35,7 +35,7 @@ import sys
 import threading
 import traceback
 from abc import ABC, abstractmethod
-from collections.abc import Callable, Generator, Mapping, Sequence
+from collections.abc import Callable, Generator, Sequence
 from contextlib import contextmanager
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Literal, TextIO, TypeVar, cast
@@ -45,9 +45,7 @@ import platformdirs
 from craft_cli import errors
 from craft_cli.printer import Printer
 
-ValueType = str | int | float | bool | None
-Row = Mapping[str, ValueType]
-TabularData = Sequence[Row] | Row
+TabularData = list[dict[str, Any]] | dict[str, Any]
 
 
 class BaseFormatter(ABC):
@@ -87,8 +85,8 @@ class TableFormatter(BaseFormatter):
         if not data:
             return "[no data]"
 
-        if isinstance(data, Mapping):
-            rows_data: Sequence[Row] = [data]
+        if isinstance(data, dict):
+            rows_data: Sequence[dict[str, Any]] = [data]
         else:
             rows_data = data
 
@@ -819,7 +817,7 @@ class Emitter:
     ) -> None:
         """Output structured data to the terminal in a specific format.
 
-        :param data: The structured data to output( list of dicts or a single dict).
+        :param data: The structured data to output (list of dicts or a single dict).
         :param format: The format (defaults to 'table')
         :param headers: Optional dictionary to map internal data keys to displayed header.
         """

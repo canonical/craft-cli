@@ -25,7 +25,7 @@ from tempfile import NamedTemporaryFile
 from typing import TYPE_CHECKING, Any, Literal
 from unittest.mock import call
 
-import pytest  # type: ignore[import-not-found]
+import pytest
 from typing_extensions import Self
 
 from craft_cli import messages, printer

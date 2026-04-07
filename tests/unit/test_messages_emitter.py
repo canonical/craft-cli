@@ -274,14 +274,13 @@ def test_init_double_regular_mode(tmp_path, monkeypatch):
         messages, "_get_log_filepath", lambda appname: tmp_path / FAKE_LOG_NAME
     )
 
-    monkeypatch.setattr(messages, "TESTNODE", True)
     emitter = Emitter()
 
     with patch("craft_cli.messages.Printer"):
         emitter.init(EmitterMode.VERBOSE, "testappname", "greeting")
 
-    with pytest.raises(RuntimeError, match="Double Emitter init detected"):
-        emitter.init(EmitterMode.QUIET, "testappname", "greeting")
+        with pytest.raises(RuntimeError, match="Double Emitter init detected"):
+            emitter.init(EmitterMode.VERBOSE, "testappname", "greeting")
 
 
 def test_init_double_tests_mode(tmp_path, monkeypatch):
@@ -1596,7 +1595,8 @@ def test_table_formatter_dict_input():
     table_fmt = TableFormatter()
     table_out = table_fmt.format({"foo": "bar"})
 
-    assert "foo" in table_out
+    expected = "foo\n---\nbar"
+    assert table_out == expected
 
 
 # test for single column
