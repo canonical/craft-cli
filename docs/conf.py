@@ -220,6 +220,10 @@ intersphinx_mapping = {
     "starflow": ("https://canonical-starflow.readthedocs-hosted.com", None),
 }
 
+# Block Intersphinx from looking up external sources with internal references. In other
+# words, only :external+<project>... will search in other projects.
+intersphinx_disabled_reftypes = ["std:*"]
+
 
 ##############################
 # Custom Craft configuration #
