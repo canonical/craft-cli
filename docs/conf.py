@@ -20,8 +20,14 @@ import os
 project = "Starbase"
 author = "Canonical"
 
-# Sidebar documentation title; best kept reasonably short
-html_title = project + " documentation"
+# Format the product name + version for the TOC and HTML title
+# When the product begins versioning, uncomment this block
+# release = <starcraft>.__version__
+# if ".post" in release:
+#     release = "dev"
+# else:
+#     major, minor, *_ = release.split(".")
+#     release = f"{major}.{minor}"
 
 # Copyright string; shown at the bottom of the page
 copyright = "2023-%s, %s" % (datetime.date.today().year, author)
