@@ -328,7 +328,7 @@ docs-%: docs-install
 
 # Run our own docs linting, then pass to the docs
 .PHONY: docs-lint
-docs-lint: docs  ##- Lint the documentation
+docs-lint: docs-install  ##- Lint the documentation
 ifneq ($(CI),)
 	@echo ::group::$@
 endif
