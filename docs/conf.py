@@ -18,7 +18,7 @@ import os
 
 # Project name
 project = "Starbase"
-author = "Canonical"
+author = "Canonical Ltd."
 
 # Format the product name + version for the TOC and HTML title
 # When the product begins versioning, uncomment this block
@@ -30,7 +30,7 @@ author = "Canonical"
 #     release = f"{major}.{minor}"
 
 # Copyright string; shown at the bottom of the page
-copyright = "2023-%s, %s" % (datetime.date.today().year, author)
+copyright = f"2023-{datetime.date.today().year}, {author}"
 
 # Documentation website URL
 ogp_site_url = "https://canonical-starbase.readthedocs-hosted.com/"
@@ -44,7 +44,7 @@ ogp_site_name = project
 ogp_image = "https://assets.ubuntu.com/v1/cc828679-docs_illustration.svg"
 
 # Product favicon; shown in bookmarks, browser tabs, etc.
-# html_favicon = '.sphinx/_static/favicon.png'
+# html_favicon = ".sphinx/_static/favicon.png"
 
 # Dictionary of values to pass into the Sphinx context for all pages:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-html_context
@@ -52,7 +52,7 @@ html_context = {
     # Product page URL; can be different from product docs URL
     "product_page": "github.com/canonical/starbase",
     # Product tag image; the orange part of your logo, shown in the page header
-    # 'product_tag': '_static/tag.png',
+    # "product_tag": "_static/tag.png",
     "discourse": "",
     # Your Mattermost channel URL
     "mattermost": "https://chat.canonical.com/canonical/channels/documentation",
@@ -61,24 +61,24 @@ html_context = {
     # Your documentation GitHub repository URL
     "github_url": "https://github.com/canonical/starbase",
     # Docs branch in the repo; used in links for viewing the source files
-    'repo_default_branch': 'main',
+    "repo_default_branch": "main",
     # Docs location in the repo; used in links for viewing the source files
     "repo_folder": "/docs/",
     # List contributors on individual pages
     "display_contributors": False,
     # Required for feedback button
-    'github_issues': 'enabled',
+    "github_issues": "enabled",
 }
 
 #html_extra_path = []
 
 # Enable the edit button on pages
 html_theme_options = {
-  'source_edit_link': "https://github.com/canonical/starbase",
+  "source_edit_link": "https://github.com/canonical/starbase",
 }
 
 # Project slug; see https://meta.discourse.org/t/what-is-category-slug/87897
-# slug = ''
+# slug = ""
 
 
 #########################
@@ -89,16 +89,16 @@ html_theme_options = {
 html_baseurl = os.environ.get("READTHEDOCS_CANONICAL_URL", "/")
 
 # sphinx-sitemap uses html_baseurl to generate the full URL for each page:
-sitemap_url_scheme = '{link}'
+sitemap_url_scheme = "{link}"
 
 # Include `lastmod` dates in the sitemap:
 # sitemap_show_lastmod = True
 
 # Exclude generated pages from the sitemap:
 sitemap_excludes = [
-    '404/',
-    'genindex/',
-    'search/',
+    "404/",
+    "genindex/",
+    "search/",
 ]
 
 
@@ -121,22 +121,21 @@ rediraffe_redirects = "redirects.txt"
 # Link checker exceptions #
 ###########################
 
-# A regex list of URLs that are ignored by 'make linkcheck'
-linkcheck_anchors_ignore = [
-    "#",
-    ":",
-    r"https://github\.com/.*",
-]
+# Whole sites and individuals URLs to ignore
 linkcheck_ignore = [
-    # Ignore releases, since we'll include the next release before it exists.
-    r"^https://github.com/canonical/[a-z]*craft[a-z-]*/releases/.*",
     # Entire domains to ignore due to flakiness or issues
+    r"^https://github.com",
     r"^https://www.gnu.org/",
     r"^https://crates.io/",
     r"^https://([\w-]*\.)?npmjs.org",
     r"^https://rsync.samba.org",
     r"^https://ubuntu.com",
+    r"^https://matrix.to/#",
+    r"^https://gitlab.gnome.org",
 ]
+
+# Anchor strings to ignore
+linkcheck_anchors_ignore = []
 
 # Give linkcheck multiple tries on failure
 linkcheck_retries = 20
@@ -181,14 +180,14 @@ exclude_patterns = [
     "reuse",
 ]
 
-# Adds custom CSS files, located under 'html_static_path'
+# Adds custom CSS files, located under html_static_path
 html_css_files = [
-    'css/cookie-banner.css'
+    "css/cookie-banner.css"
 ]
 
-# Adds custom JavaScript files, located under 'html_static_path'
+# Adds custom JavaScript files, located under html_static_path
 html_js_files = [
-    'js/bundle.js',
+    "js/bundle.js",
 ]
 
 # Specifies a reST snippet to be appended to each .rst file
@@ -199,8 +198,8 @@ rst_epilog = """
 # disable_feedback_button = True
 
 # Your manpage URL
-# manpages_url = 'https://manpages.ubuntu.com/manpages/{codename}/en/' + \
-#     'man{section}/{page}.{section}.html'
+# manpages_url = "https://manpages.ubuntu.com/manpages/{codename}/en/" + \
+#     "man{section}/{page}.{section}.html"
 
 # Specifies a reST snippet to be prepended to each .rst file
 # This defines a :center: role that centers table cell content.
