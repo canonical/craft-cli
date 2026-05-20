@@ -20,7 +20,7 @@ __all__ = [
     "CraftError",
 ]
 
-from typing import Any, cast
+from typing import Any
 
 
 class CraftError(Exception):
@@ -119,7 +119,7 @@ class CraftCommandError(CraftError):
         if isinstance(self._stderr, bytes):
             return self._stderr.decode("utf8", errors="replace")
         # pyright needs the cast here
-        return cast("str | None", self._stderr)  # type: ignore[redundant-cast]
+        return self._stderr
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, CraftCommandError):

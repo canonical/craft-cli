@@ -458,7 +458,7 @@ class Emitter:
         # these attributes will be set at "real init time", with the `init` method below
         self._greeting: str = None  # type: ignore[assignment] # ty: ignore[invalid-assignment]
         self._printer: Printer = None  # type: ignore[assignment] # ty: ignore[invalid-assignment]
-        self._mode: EmitterMode = None  # type: ignore[assignment]
+        self._mode: EmitterMode = None  # type: ignore[assignment] # ty: ignore[assignment]  # ty:ignore[ignore-comment-unknown-rule, invalid-assignment]
         self._initiated = False
         self._stopped = False
         self._log_filepath: pathlib.Path = None  # type: ignore[assignment] # ty: ignore[invalid-assignment]
