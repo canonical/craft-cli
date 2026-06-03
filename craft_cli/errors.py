@@ -118,7 +118,6 @@ class CraftCommandError(CraftError):
     def stderr(self) -> str | None:
         if isinstance(self._stderr, bytes):
             return self._stderr.decode("utf8", errors="replace")
-        # pyright needs the cast here
         return self._stderr
 
     def __eq__(self, other: object) -> bool:
