@@ -1257,7 +1257,7 @@ def test_tool_exec_command_dash_help_missing_params(help_option):
         parser.add_argument("mandatory")
 
     cmd = create_command("somecommand", "This command does that.")
-    cmd.fill_parser = fill_parser
+    cmd.fill_parser = fill_parser  # ty: ignore[invalid-assignment]
     command_groups = [CommandGroup("group", [cmd])]
     dispatcher = Dispatcher("testapp", command_groups)
 
@@ -1311,7 +1311,7 @@ def test_tool_exec_command_bad_option_type():
         parser.add_argument("--number", type=int)
 
     cmd = create_command("somecommand", "This command does that.")
-    cmd.fill_parser = fill_parser
+    cmd.fill_parser = fill_parser  # ty: ignore[invalid-assignment]
 
     command_groups = [CommandGroup("group", [cmd])]
     dispatcher = Dispatcher("testapp", command_groups, summary="general summary")
@@ -1399,7 +1399,7 @@ def test_tool_exec_help_command_on_command_complex():
         )
 
     cmd = create_command("somecommand", "This command does that.")
-    cmd.fill_parser = fill_parser
+    cmd.fill_parser = fill_parser  # ty: ignore[invalid-assignment]
     command_groups = [CommandGroup("group", [cmd])]
     dispatcher = Dispatcher("testapp", command_groups)
 
@@ -1440,7 +1440,7 @@ def test_tool_exec_help_command_on_command_no_help():
         parser.add_argument("--option")
 
     cmd = create_command("somecommand", "This command does that.")
-    cmd.fill_parser = fill_parser
+    cmd.fill_parser = fill_parser  # ty: ignore[invalid-assignment]
     command_groups = [CommandGroup("group", [cmd])]
     dispatcher = Dispatcher("testapp", command_groups)
 
