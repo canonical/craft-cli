@@ -443,8 +443,11 @@ def test_command_help_text_no_parameters(docs_url, output_format):
         Multiline!
     """
     )
-    cmd1 = create_command("somecommand", "Command one line help.", overview=overview)
     cmd2 = create_command("other-cmd-2", "Some help.")
+    # Inherit from cmd2 to check that superclasses are treated as different commands.
+    cmd1 = create_command(
+        "somecommand", "Command one line help.", overview=overview, base_class=cmd2
+    )
     cmd3 = create_command("other-cmd-3", "Some help.")
     cmd4 = create_command("other-cmd-4", "Some help.")
     command_groups = [
