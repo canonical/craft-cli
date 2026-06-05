@@ -25,6 +25,7 @@ import time
 from datetime import datetime
 from io import StringIO
 from pathlib import Path
+from typing import cast
 
 import pytest
 from craft_cli import printer as printermod
@@ -1206,6 +1207,74 @@ def test_stop_streams_unfinished_err(capsys, log_filepath):
     out, err = capsys.readouterr()
     assert not out
     assert err == "\n"
+
+
+def test_show_captured_broken_pipe_does_not_raise(log_filepath, monkeypatch):
+    """BrokenPipeError from a captured stream should not crash show()."""
+    monkeypatch.setattr(printermod, "TESTMODE", True)
+
+    class BrokenPipeStream:
+        closed = False
+
+        def isatty(self):
+            return False
+
+        def write(self, _text):
+            raise BrokenPipeError
+
+        def flush(self):
+            raise BrokenPipeError
+
+    stream = cast("StringIO", BrokenPipeStream())
+    printer = Printer(log_filepath)
+    printer.show(stream, "test text")
+
+
+def test_stop_broken_pipe_does_not_raise(log_filepath, monkeypatch):
+    """BrokenPipeError from an unfinished stream should not crash stop()."""
+    monkeypatch.setattr(printermod, "TESTMODE", True)
+
+    class BrokenPipeStream:
+        closed = False
+
+        def isatty(self):
+            return False
+
+        def write(self, _text):
+            raise BrokenPipeError
+
+        def flush(self):
+            raise BrokenPipeError
+
+    stream = cast("StringIO", BrokenPipeStream())
+    printer = Printer(log_filepath)
+    printer.unfinished_stream = stream
+    printer.prv_msg = _MessageInfo(stream, "test")
+    printer.stop()
+
+
+def test_stop_ephemeral_broken_pipe_does_not_raise(log_filepath, monkeypatch):
+    """BrokenPipeError from an unfinished ephemeral stream should not crash stop()."""
+    monkeypatch.setattr(printermod, "TESTMODE", True)
+    monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 10)
+
+    class BrokenPipeStream:
+        closed = False
+
+        def isatty(self):
+            return False
+
+        def write(self, _text):
+            raise BrokenPipeError
+
+        def flush(self):
+            raise BrokenPipeError
+
+    stream = cast("StringIO", BrokenPipeStream())
+    printer = Printer(log_filepath)
+    printer.unfinished_stream = stream
+    printer.prv_msg = _MessageInfo(stream, "test", ephemeral=True)
+    printer.stop()
 
 
 def test_stop_spinner_ok(log_filepath):
