@@ -29,6 +29,7 @@ import threading
 import time
 import weakref
 from collections.abc import Callable
+from contextlib import suppress
 from dataclasses import dataclass, field
 from datetime import datetime
 from functools import lru_cache
@@ -50,6 +51,21 @@ TESTMODE = False
 ANSI_CLEAR_LINE_TO_END = "\x1b[K"  # ANSI escape code to clear the rest of the line.
 ANSI_HIDE_CURSOR = "\x1b[?25l"
 ANSI_SHOW_CURSOR = "\x1b[?25h"
+ANSI_RESET = "\x1b[0m"
+
+
+def _safe_print(*args: Any, **kwargs: Any) -> None:
+    """Print to a stream, ignoring BrokenPipeError from downstream consumers."""
+    with suppress(BrokenPipeError):
+        print(*args, **kwargs)
+
+
+def reset_terminal_style(stream: TextIO | None) -> None:
+    """Reset ANSI terminal style on the given stream if supported."""
+    if stream is None:
+        return
+    if _stream_is_terminal(stream) and _supports_ansi_escape_sequences():
+        _safe_print(ANSI_RESET, end="", flush=True, file=stream)
 
 
 @dataclass
@@ -119,6 +135,24 @@ def _format_term_line(
                 text = text[: usable - 1] + "…"
 
     return previous_line_end + _fill_line(text + spintext)
+
+
+def _format_term_lines(
+    previous_line_end: str, text: str, spintext: str, *, ephemeral: bool
+) -> str:
+    """Format one or more terminal lines, clearing each rendered line fully."""
+    lines = text.split("\n")
+    if len(lines) == 1:
+        return _format_term_line(previous_line_end, text, spintext, ephemeral=ephemeral)
+
+    formatted = [
+        _format_term_line(previous_line_end, lines[0], "", ephemeral=ephemeral)
+    ]
+    formatted.extend(
+        _format_term_line("\n", line, "", ephemeral=ephemeral) for line in lines[1:-1]
+    )
+    formatted.append(_format_term_line("\n", lines[-1], spintext, ephemeral=ephemeral))
+    return "".join(formatted)
 
 
 class _Spinner(threading.Thread):
@@ -317,7 +351,7 @@ class Printer:
         # We don't need to rewrite the same ephemeral message repeatedly.
         should_overwrite = spintext or message.end_line or not message.ephemeral
         if should_overwrite or message != self.prv_msg:
-            line = _format_term_line(
+            line = _format_term_lines(
                 previous_line_end, text, spintext, ephemeral=message.ephemeral
             )
             print(line, end="", flush=True, file=message.stream)
@@ -436,9 +470,9 @@ class Printer:
 
     def _log(self, message: _MessageInfo) -> None:
         """Write the line message to the log file."""
-        # prepare the text with (maybe) the timestamp
         timestamp_str = message.created_at.isoformat(sep=" ", timespec="milliseconds")
-        self.log.write(f"{timestamp_str} {message.text}\n")
+        for line in message.text.split("\n"):
+            self.log.write(f"{timestamp_str} {line}\n")
         # Flush the file: protect a bit in case of crashes, and multiprocess-based
         # parallelism.
         self.log.flush()
