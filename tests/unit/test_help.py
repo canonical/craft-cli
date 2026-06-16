@@ -688,6 +688,99 @@ def test_command_help_text_with_parameters_with_no_help(docs_url, output_format)
 
 
 @pytest.mark.parametrize("output_format", list(OutputFormat))
+def test_command_help_text_see_also(docs_url, output_format):
+    """Only show non-hidden commands from the same group."""
+    overview = textwrap.dedent(
+        """
+        Quite some long text.
+
+        Multiline!
+    """
+    )
+    cmd1 = create_command("somecommand", "Command one line help.", overview=overview)
+    cmd2 = create_command("valid-cmd-2", "Some help.")
+    cmd3 = create_command("deprecated-cmd-3", "Some help.", hidden=True)
+    cmd4 = create_command("valid-cmd-4", "Some help.")
+    cmd5 = create_command("valid-cmd-5", "Some help.")
+    cmd6 = create_command("deprecated-cmd-6", "Some help.", hidden=True)
+    command_groups = [
+        # cmd1 is filtered because it's the active command
+        # cmd3 is filtered because it's hidden
+        CommandGroup("group1", [cmd1, cmd2, cmd3, cmd4]),
+        # cmd5 and cmd6 are filtered because they're in a different group
+        CommandGroup("group2", [cmd5, cmd6]),
+    ]
+
+    options = [
+        ("-h, --help", "Show this help message and exit."),
+        ("-q, --quiet", "Only show warnings and errors, not progress."),
+        ("--name", "The name of the charm."),
+        ("--revision", "The revision to release (defaults to latest)."),
+    ]
+
+    help_builder = HelpBuilder("testapp", "general summary", command_groups, docs_url)
+    text = help_builder.get_command_help(cmd1(None), options, output_format)
+
+    expected_plain = textwrap.dedent(
+        """\
+        Usage:
+            testapp somecommand [options]
+
+        Summary:
+            Quite some long text.
+
+            Multiline!
+
+        Options:
+             -h, --help:  Show this help message and exit.
+            -q, --quiet:  Only show warnings and errors, not progress.
+                 --name:  The name of the charm.
+             --revision:  The revision to release (defaults to latest).
+
+        See also:
+            valid-cmd-2
+            valid-cmd-4
+
+        For a summary of all commands, run 'testapp help --all'.
+    """
+    )
+    if docs_url:
+        expected_plain += (
+            "For more information, check out: "
+            "www.craft-app.com/docs/3.14159/reference/commands/somecommand\n"
+        )
+    expected_markdown = textwrap.dedent(
+        """\
+        ## Usage:
+        ```text
+        testapp somecommand [options]
+        ```
+
+        ## Summary:
+
+        Quite some long text.
+
+        Multiline!
+
+        ## Options:
+        | | |
+        |-|-|
+        | `-h, --help` | Show this help message and exit. |
+        | `-q, --quiet` | Only show warnings and errors, not progress. |
+        | `--name` | The name of the charm. |
+        | `--revision` | The revision to release (defaults to latest). |
+
+        ## See also:
+        - `valid-cmd-2`
+        - `valid-cmd-4`
+    """
+    )
+    assert text == (
+        expected_plain if output_format == OutputFormat.plain else expected_markdown
+    )
+
+
+@pytest.mark.parametrize("output_format", list(OutputFormat))
 def test_command_help_text_complex_overview(docs_url, output_format):
     """The overviews are processed in different ways."""
     overview = textwrap.dedent(
