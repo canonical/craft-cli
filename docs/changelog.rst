@@ -6,6 +6,15 @@ Changelog
 See the `Releases page`_ on GitHub for a complete list of commits that are
 included in each version.
 
+.. _release-3.4.1:
+
+3.4.1 (2026-06-17)
+------------------
+
+Bug fixes:
+
+- Command help no longer shows hidden commands in the "See also" section.
+
 .. _release-3.4.0:
 
 3.4.0 (2026-04-08)
