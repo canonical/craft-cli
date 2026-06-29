@@ -14,8 +14,6 @@ html_context = {
     "github_url": "https://github.com/canonical/craft-cli",
 }
 
-linkcheck_ignore = ["craft_cli.dispatcher.html#craft_cli.dispatcher.CommandGroup"]
-
 # Add extensions
 extensions = [
     "sphinx.ext.intersphinx",
@@ -50,9 +48,10 @@ def run_apidoc(_):
 
     sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
     cur_dir = os.path.abspath(os.path.dirname(__file__))
+    target = os.path.join(cur_dir, "reference")
     module = os.path.join(cur_dir, "..", "craft_cli")
-    exclude_patterns = ["*pytest_plugin*"]
-    main(["-e", "--no-toc", "--force", "-o", cur_dir, module, *exclude_patterns])
+    exclude_patterns = ["*pytest_plugin*", "*dispatcher*"]
+    main(["-e", "--no-toc", "--force", "-o", target, module, *exclude_patterns])
 
 
 def no_namedtuple_attrib_docstring(app, what, name, obj, options, lines):
