@@ -5,5 +5,3 @@
 # must be a file that _does exist_ in the source.
 
 "explanations" "explanation/index.rst"
-"tutorials" "tutorials/index.rst"
-"reference" "reference/index.rst"
