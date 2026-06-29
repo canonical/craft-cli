@@ -8,7 +8,7 @@ To define more automatic global arguments than the ones provided automatically b
 use the ``GlobalArgument`` object to create all you need and pass them to the
 ``Dispatcher`` at creation time.
 
-Check :class:`craft_cli.dispatcher.GlobalArgument` for more information about the
+Check :class:`craft_cli.GlobalArgument` for more information about the
 parameters needed, but it's very straightforward to create these objects. E.g.::
 
     ga_sec = GlobalArgument("secure_mode", "flag", "-s", "--secure", "Run the app in secure mode")

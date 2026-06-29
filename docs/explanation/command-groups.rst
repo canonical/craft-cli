@@ -5,8 +5,7 @@ Group of commands
 
 The Dispatcher's ``command_groups`` parameter is just a list ``CommandGroup`` objects,
 each of one grouping different commands for the different types of functionalities that
-may offer the application. See `its reference here
-<craft_cli.dispatcher.html#craft_cli.dispatcher.CommandGroup>`_, but its use is quite
+may offer the application. See :class:`craft_cli.CommandGroup` for its reference, but its use is quite
 straightforward. E.g.::
 
     CommandGroup("Basic", [LoginCommand, LogoutCommand])
