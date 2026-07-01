@@ -4,7 +4,9 @@
 # The old path must be a file that _doesn't exist_ in the source. The current path
 # must be a file that _does exist_ in the source.
 
-"explanations" "explanation/index.rst"
+"explanations.rst" "explanation/index.rst"
+"reference.rst" "reference/index.rst"
+"tutorials.rst" "tutorials/index.rst"
 
 "how-to-guides/index.rst" "how-to/index.rst"
 "how-to-guides/change-logfile.rst" "how-to/change-logfile.rst"
