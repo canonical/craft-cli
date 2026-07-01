@@ -105,7 +105,6 @@ constraint-dependencies = [
     "iniconfig>=1.1.0",
     "httplib2>=0.20.0",
     "libnacl>=2.0",
-    "lxml>=5.0",
     "markdown>=3.0",
     "markupsafe>=2.0",
     "oauthlib>=3.0.0",
@@ -119,7 +118,6 @@ constraint-dependencies = [
     "setuptools>=50",
     "sphinx-basic-ng>=1.0.0b1",
     "tornado>=4.0",
-    "urllib3>=2.0",
     "webencodings>=0.4.0",
     "wheel>=0.38",
 
