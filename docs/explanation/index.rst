@@ -1,8 +1,8 @@
+.. _explanation:
 .. _explanations:
 
-************
-Explanations
-************
+Explanation
+===========
 
 .. toctree::
     :maxdepth: 1
