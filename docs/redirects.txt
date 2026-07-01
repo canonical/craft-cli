@@ -5,8 +5,6 @@
 # must be a file that _does exist_ in the source.
 
 "explanations.rst" "explanation/index.rst"
-"reference.rst" "reference/index.rst"
-"tutorials.rst" "tutorials/index.rst"
 
 "how-to-guides/index.rst" "how-to/index.rst"
 "how-to-guides/change-logfile.rst" "how-to/change-logfile.rst"
