@@ -6,7 +6,7 @@ Welcome to Craft CLI's documentation!
    :hidden:
 
    tutorials/index
-   how-to-guides/index
+   how-to/index
    reference/index
    explanation/index
    changelog
