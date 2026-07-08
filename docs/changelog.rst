@@ -32,7 +32,7 @@ New features:
 
 New features:
 
-- Add an ``allow_default_command`` parameter to :py:class:`.dispatcher.Dispatcher` to
+- Add an ``allow_default_command`` parameter to :py:class:`craft_cli.Dispatcher` to
   allow using a default command.
 
 .. _release-3.2.0:

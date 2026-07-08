@@ -1,7 +1,4 @@
-
-*********
-Tutorials
-*********
+.. _tutorial-run-a-command-application:
 
 Run a command based application with craft-cli
 ==============================================
