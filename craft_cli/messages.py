@@ -237,7 +237,9 @@ class _PipeReaderThread(threading.Thread):
         #   \r+\n  – one or more CRs followed by LF (Windows \r\n and \r\r\n etc.)
         #   \r     – bare CR used for in-place line rewrites
         # Both are replaced with a plain \n so each segment becomes its own line.
-        data = re.sub(rb"\r+\n|\r", b"\n", data)
+        # The b"\r" guard avoids the regex overhead on the common CR-free case.
+        if b"\r" in data:
+            data = re.sub(rb"\r+\n|\r", b"\n", data)
         while True:
             # get the position of next newline (find starts in pointer position)
             newline_position = data.find(b"\n", pointer)
