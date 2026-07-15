@@ -6,6 +6,15 @@ Changelog
 See the `Releases page`_ on GitHub for a complete list of commits that are
 included in each version.
 
+.. _release-3.4.1:
+
+3.4.1 (2026-06-17)
+------------------
+
+Bug fixes:
+
+- Command help no longer shows hidden commands in the "See also" section.
+
 .. _release-3.4.0:
 
 3.4.0 (2026-04-08)
@@ -23,7 +32,7 @@ New features:
 
 New features:
 
-- Add an ``allow_default_command`` parameter to :py:class:`.dispatcher.Dispatcher` to
+- Add an ``allow_default_command`` parameter to :py:class:`craft_cli.Dispatcher` to
   allow using a default command.
 
 .. _release-3.2.0:

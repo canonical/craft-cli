@@ -3,3 +3,16 @@
 # Paths must be represented as source files relative to the root of the `docs` dir.
 # The old path must be a file that _doesn't exist_ in the source. The current path
 # must be a file that _does exist_ in the source.
+
+"explanations.rst" "explanation/index.rst"
+
+"how-to-guides/index.rst" "how-to/index.rst"
+"how-to-guides/change-logfile.rst" "how-to/change-logfile.rst"
+"how-to-guides/change-return-code.rst" "how-to/change-return-code.rst"
+"how-to-guides/create-hidden-options.rst" "how-to/create-hidden-options"
+"how-to-guides/raise-helpful-errors.rst" "how-to/raise-helpful-errors.rst"
+"how-to-guides/set-default-command.rst" "how-to/set-default-command.rst"
+"how-to-guides/unit-test-with-emitter" "how-to/unit-test-with-emitter.rst"
+"how-to-guides/use-global-args.rst" "how-to/use-global-args.rst"
+"how-to-guides/use-the-completion-module.rst" "how-to/use-the-completion-module.rst"
+"how-to-guides/yield-terminal-control.rst" "how-to/yield-terminal-control.rst"
