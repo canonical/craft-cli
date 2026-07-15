@@ -40,7 +40,7 @@ from typing import TYPE_CHECKING, Any, Literal, TextIO, TypeVar, cast
 
 import platformdirs
 
-from craft_cli import errors
+from craft_cli import errors, printer
 from craft_cli.printer import Printer
 
 if TYPE_CHECKING:
@@ -344,6 +344,7 @@ class _StreamContextManager:
         exc_tb: TracebackType | None,
     ) -> Literal[False]:
         self.pipe_reader.stop()
+        printer.reset_terminal_style(self.pipe_reader.stream)
         return False  # do not consume any exception
 
 
