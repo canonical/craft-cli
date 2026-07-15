@@ -262,7 +262,7 @@ def test_pipereader_carriage_returns(recording_printer, stream):
 
     Subprocess output can use bare \\r to overwrite the current line in-place when
     writing to a terminal.  When the output is redirected to a file those \\r
-    characters produce stray ^M characters.  The pipe reader must normalise them so
+    characters produce stray ^M characters.  The pipe reader must normalize them so
     that each \\r-delimited segment becomes its own output line.
     """
     flags = {"use_timestamp": False, "ephemeral": False, "end_line": True}
