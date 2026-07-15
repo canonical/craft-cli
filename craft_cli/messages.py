@@ -229,6 +229,11 @@ class _PipeReaderThread(threading.Thread):
         """Convert the byte stream into unicode lines and send it to the printer."""
         pointer = 0
         data = self.remaining_content + data
+        # Normalize Windows line endings (\r\n → \n) and bare carriage returns
+        # (\r → \n) so that subprocess output using in-place terminal updates
+        # does not produce stray ^M characters when the output is not a terminal
+        # (e.g. when redirected to a file).
+        data = data.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
         while True:
             # get the position of next newline (find starts in pointer position)
             newline_position = data.find(b"\n", pointer)

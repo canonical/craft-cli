@@ -256,6 +256,51 @@ def test_pipereader_tabs(recording_printer, stream):
     assert msg.text == "::   123  456"  # tabs expanded into 2 spaces
 
 
+@pytest.mark.parametrize("stream", [sys.stdout, sys.stderr])
+def test_pipereader_carriage_returns(recording_printer, stream):
+    """Check that carriage returns are translated to newlines.
+
+    Subprocess output can use bare \\r to overwrite the current line in-place when
+    writing to a terminal.  When the output is redirected to a file those \\r
+    characters produce stray ^M characters.  The pipe reader must normalise them so
+    that each \\r-delimited segment becomes its own output line.
+    """
+    flags = {"use_timestamp": False, "ephemeral": False, "end_line": True}
+    prt = _PipeReaderThread(recording_printer, stream, flags)
+    prt.start()
+    # Each \r-separated segment should be emitted as a separate line.
+    os.write(prt.write_pipe, b"Step 1\rStep 2\rStep 3\n")
+    prt.stop()
+
+    msg1, msg2, msg3 = recording_printer.written_terminal_lines
+    assert msg1.text == ":: Step 1"
+    assert msg2.text == ":: Step 2"
+    assert msg3.text == ":: Step 3"
+    # No carriage returns should survive in any message.
+    for msg in (msg1, msg2, msg3):
+        assert "\r" not in msg.text
+
+
+@pytest.mark.parametrize("stream", [sys.stdout, sys.stderr])
+def test_pipereader_windows_line_endings(recording_printer, stream):
+    """Check that Windows-style \\r\\n line endings are handled correctly.
+
+    When a subprocess on Windows (or a tool that emits Windows line endings) writes
+    \\r\\n, the output should be treated as a single line with no trailing \\r.
+    """
+    flags = {"use_timestamp": False, "ephemeral": False, "end_line": True}
+    prt = _PipeReaderThread(recording_printer, stream, flags)
+    prt.start()
+    os.write(prt.write_pipe, b"line1\r\nline2\r\n")
+    prt.stop()
+
+    msg1, msg2 = recording_printer.written_terminal_lines
+    assert msg1.text == ":: line1"
+    assert msg2.text == ":: line2"
+    assert "\r" not in msg1.text
+    assert "\r" not in msg2.text
+
+
 @pytest.mark.parametrize(
     ("invalid_text", "expected"),
     [
