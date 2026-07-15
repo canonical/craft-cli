@@ -29,6 +29,7 @@ import getpass
 import logging
 import os
 import pathlib
+import re
 import select
 import sys
 import threading
@@ -229,6 +230,16 @@ class _PipeReaderThread(threading.Thread):
         """Convert the byte stream into unicode lines and send it to the printer."""
         pointer = 0
         data = self.remaining_content + data
+        # Normalize carriage returns so that subprocess output using in-place
+        # terminal updates does not produce stray ^M characters when the output
+        # is not a terminal (e.g. when redirected to a file).
+        # A single regex pass handles:
+        #   \r+\n  – one or more CRs followed by LF (Windows \r\n and \r\r\n etc.)
+        #   \r     – bare CR used for in-place line rewrites
+        # Both are replaced with a plain \n so each segment becomes its own line.
+        # The b"\r" guard avoids the regex overhead on the common CR-free case.
+        if b"\r" in data:
+            data = re.sub(rb"\r+\n|\r", b"\n", data)
         while True:
             # get the position of next newline (find starts in pointer position)
             newline_position = data.find(b"\n", pointer)
