@@ -47,7 +47,7 @@ lint = [
     "sphinx>=7.4.7",
 ]
 types = [
-    "mypy[reports]==2.2.0",
+    "mypy[reports]==2.3.0",
     "types-Pygments",
     "types-colorama",
     "types-setuptools",
