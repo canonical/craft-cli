@@ -238,15 +238,11 @@ class _RecordingProgresser:
     def __exit__(self, *_exc_info: object) -> Literal[False]:
         return False  # do not consume any exception
 
-    def advance(self, amount: float) -> None:
-        """Record the advance usage.
-
-        Mirrors the validation done by the real ``_Progresser.advance`` so that
-        tests using the ``emitter`` fixture don't silently accept invalid usage.
-        """
+    def advance(self, amount: float, *a: Any, **k: Any) -> None:
+        """Record the advance usage."""
         if amount < 0:
             raise ValueError("The advance amount cannot be negative")
-        self.recording_emitter.record("advance", (amount,), {})
+        self.recording_emitter.record("advance", (amount, *a), k)
 
 
 @pytest.fixture
