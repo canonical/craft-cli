@@ -14,6 +14,9 @@ html_context = {
     "github_url": "https://github.com/canonical/craft-cli",
 }
 
+# The project slug passed to the sphinx-notfound-page extension
+slug = "craft-cli"
+
 # Add extensions
 extensions = [
     "sphinx.ext.intersphinx",

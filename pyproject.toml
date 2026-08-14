@@ -35,25 +35,25 @@ emitter = "craft_cli.pytest_plugin"
 
 [dependency-groups]
 dev = [
-    "coverage[toml]==7.15.0",
+    "coverage[toml]==7.15.4",
     "pytest>=9.0",
     "pytest-cov==7.1.0",
     "pytest-mock==3.15.1",
     "pytest-subprocess",
 ]
 lint = [
-    "codespell[toml]==2.4.2",
+    "codespell[toml]==2.4.3",
     # Imported in docs/conf.py, needed for pyright to validate
     "sphinx>=7.4.7",
 ]
 types = [
-    "mypy[reports]==2.2.0",
+    "mypy[reports]==2.3.0",
     "types-Pygments",
     "types-colorama",
     "types-setuptools",
 ]
 docs = [
-    "sphinx-toolbox==4.2.0",
+    "sphinx-toolbox==4.3.0",
     "sphinx-lint==1.0.2",
     "sphinxext-rediraffe==0.3.0",
     "pytest>=7.0.0",                 # pytest is imported by the code, which is parsed for api gen.
@@ -62,7 +62,7 @@ docs = [
 tics = ["flake8", "pylint"]
 
 [build-system]
-requires = ["setuptools==82.0.1", "setuptools_scm[toml]>=7.1"]
+requires = ["setuptools==83.0.0", "setuptools_scm[toml]>=7.1"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.dynamic]
