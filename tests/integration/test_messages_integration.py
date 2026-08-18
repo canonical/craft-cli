@@ -84,6 +84,7 @@ def remove_control_characters(string: str) -> str:
         string.replace(printer.ANSI_CLEAR_LINE_TO_END, "")
         .replace(printer.ANSI_HIDE_CURSOR, "")
         .replace(printer.ANSI_SHOW_CURSOR, "")
+        .replace(printer.ANSI_RESET, "")
     )
 
 
@@ -1184,6 +1185,29 @@ def test_error_multiline_brief(capsys):
         Line("Error line 2.", permanent=True),
     ]
     assert_outputs(capsys, emit, expected_err=expected, expected_log=expected)
+
+
+@pytest.mark.parametrize("output_is_terminal", [True])
+def test_multiline_permanent_progress_overwrites_temporary_progress(capsys):
+    """A permanent multiline progress should fully overwrite a previous temporary one."""
+    emit = Emitter()
+    emit.init(EmitterMode.BRIEF, "testapp", GREETING)
+
+    emit.progress("foo foo foo", permanent=False)
+    emit.progress("bar\nbar", permanent=True)
+    emit.ended_ok()
+
+    expected_err = [
+        Line("foo foo foo", permanent=False),
+        Line("bar", permanent=True),
+        Line("bar", permanent=True),
+    ]
+    expected_log = [
+        Line("foo foo foo"),
+        Line("bar"),
+        Line("bar"),
+    ]
+    assert_outputs(capsys, emit, expected_err=expected_err, expected_log=expected_log)
 
 
 @pytest.mark.parametrize(
