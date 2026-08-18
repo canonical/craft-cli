@@ -84,6 +84,7 @@ def remove_control_characters(string: str) -> str:
         string.replace(printer.ANSI_CLEAR_LINE_TO_END, "")
         .replace(printer.ANSI_HIDE_CURSOR, "")
         .replace(printer.ANSI_SHOW_CURSOR, "")
+        .replace(printer.ANSI_RESET, "")
     )
 
 

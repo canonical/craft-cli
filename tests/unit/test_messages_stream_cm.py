@@ -183,6 +183,56 @@ def test_streamcm_dont_consume_exceptions(recording_printer):
             raise ValueError
 
 
+@pytest.mark.parametrize("stream", [sys.stdout, sys.stderr])
+def test_streamcm_exit_resets_terminal_style(monkeypatch, recording_printer, stream):
+    """Closing a stream resets ANSI terminal state."""
+    calls = []
+
+    def fake_reset_terminal_style(target_stream):
+        calls.append(target_stream)
+
+    monkeypatch.setattr(printer, "reset_terminal_style", fake_reset_terminal_style)
+
+    scm = _StreamContextManager(
+        recording_printer,
+        "initial text",
+        stream=stream,
+        use_timestamp=False,
+        ephemeral_mode=False,
+    )
+
+    with scm:
+        pass
+
+    assert calls == [stream]
+
+
+@pytest.mark.parametrize("stream", [sys.stdout, sys.stderr])
+def test_streamcm_exit_always_delegates_terminal_reset(
+    monkeypatch, recording_printer, stream
+):
+    """Closing a stream delegates terminal reset to the printer helper."""
+    calls = []
+
+    def fake_reset_terminal_style(target_stream):
+        calls.append(target_stream)
+
+    monkeypatch.setattr(printer, "reset_terminal_style", fake_reset_terminal_style)
+
+    scm = _StreamContextManager(
+        recording_printer,
+        "initial text",
+        stream=stream,
+        use_timestamp=False,
+        ephemeral_mode=False,
+    )
+
+    with scm:
+        pass
+
+    assert calls == [stream]
+
+
 # -- tests for the pipe reader
 
 
