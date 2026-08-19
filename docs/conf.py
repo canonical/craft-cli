@@ -35,10 +35,6 @@ author = "Canonical Ltd."
 # The year in the copyright statement
 copyright = f"2023-{datetime.date.today().year}"
 
-# Sidebar documentation title
-# To disable the title, set it to an empty string.
-html_title = project + " documentation"
-
 # Documentation website URL
 ogp_site_url = "https://canonical-starbase.readthedocs-hosted.com/"
 
