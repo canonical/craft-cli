@@ -25,8 +25,8 @@
 
 ## Overview
 
-`canonical/starbase` is a Python CLI tool for (TODO: add an inline explanation of the
-app).
+`canonical/starbase` is a CLI tool written in Python for (TODO: add an inline
+explanation of the app).
 
 ## Craft apps and libraries
 
