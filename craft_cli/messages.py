@@ -195,7 +195,7 @@ class _PipeReaderThread(threading.Thread):
         super().__init__()
         self.printer_flags = printer_flags
 
-        # declare the types to satisfy mypy
+        # declare the types to satisfy the type checker
         self.read_pipe: int
         self.write_pipe: int
 
@@ -418,9 +418,9 @@ def _active_guard(ignore_when_stopped: bool = False) -> Callable[..., Any]:  # n
     def decorator(wrapped_func: FuncT) -> FuncT:
         @functools.wraps(wrapped_func)
         def func(self: Emitter, *args: Any, **kwargs: Any) -> Any:  # noqa: ANN401
-            if not self._initiated:  # type: ignore[reportPrivateUsage]
+            if not self._initiated:
                 raise RuntimeError("Emitter needs to be initiated first")
-            if self._stopped:  # type: ignore[reportPrivateUsage]
+            if self._stopped:
                 if ignore_when_stopped:
                     return None
                 raise RuntimeError("Emitter is stopped already")
@@ -456,13 +456,13 @@ class Emitter:
 
     def __init__(self) -> None:
         # these attributes will be set at "real init time", with the `init` method below
-        self._greeting: str = None  # type: ignore[assignment] # ty: ignore[invalid-assignment]
-        self._printer: Printer = None  # type: ignore[assignment] # ty: ignore[invalid-assignment]
-        self._mode: EmitterMode = None  # type: ignore[assignment] # ty: ignore[invalid-assignment]
+        self._greeting: str = None  # ty: ignore[invalid-assignment]
+        self._printer: Printer = None  # ty: ignore[invalid-assignment]
+        self._mode: EmitterMode = None  # ty: ignore[invalid-assignment]
         self._initiated = False
         self._stopped = False
-        self._log_filepath: pathlib.Path = None  # type: ignore[assignment] # ty: ignore[invalid-assignment]
-        self._log_handler: _Handler = None  # type: ignore[assignment] # ty: ignore[invalid-assignment]
+        self._log_filepath: pathlib.Path = None  # ty: ignore[invalid-assignment]
+        self._log_handler: _Handler = None  # ty: ignore[invalid-assignment]
         self._streaming_brief = False
         self._docs_base_url: str | None = None
 
@@ -886,7 +886,7 @@ class Emitter:
         if not sys.stdin.isatty():
             raise errors.CraftError("prompting not possible without tty")
 
-        method: Callable[[str], str] = getpass.getpass if hide else input  # type: ignore[assignment]
+        method: Callable[[str], str] = getpass.getpass if hide else input
 
         with self.pause():
             val = method(prompt_text).strip()
