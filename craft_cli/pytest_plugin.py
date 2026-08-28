@@ -31,7 +31,7 @@ from typing_extensions import Self
 from craft_cli import messages, printer
 
 if TYPE_CHECKING:
-    from unittest.mock import _Call  # type: ignore[reportPrivateUsage]
+    from unittest.mock import _Call
 
 
 @pytest.fixture(autouse=True)
