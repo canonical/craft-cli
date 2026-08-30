@@ -164,6 +164,13 @@ def test_emitter_record_progress_bar_ok(emitter):
     )
 
 
+def test_emitter_record_progress_bar_advance_negative(emitter):
+    """A negative advance is rejected, matching the real progress bar."""
+    with messages.emit.progress_bar("title", 20) as progress_bar:
+        with pytest.raises(ValueError, match="cannot be negative"):
+            progress_bar.advance(-1)
+
+
 def test_emitter_record_progress_bar_safe(emitter):
     """Mocking the progress bar context manager does not hide exceptions."""
     with pytest.raises(ValueError):  # noqa: PT011

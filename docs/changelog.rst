@@ -6,6 +6,16 @@ Changelog
 See the `Releases page`_ on GitHub for a complete list of commits that are
 included in each version.
 
+.. _release-3.4.2:
+
+3.4.2 (unreleased)
+------------------
+
+Bug fixes:
+
+- The ``emitter`` test fixture now rejects a negative ``advance`` amount,
+  matching the behavior of the real progress bar.
+
 .. _release-3.4.1:
 
 3.4.1 (2026-06-17)
