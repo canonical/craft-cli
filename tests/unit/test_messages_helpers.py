@@ -345,7 +345,7 @@ def test_handler_init(handler):
     """Default _Handler values."""
     assert isinstance(handler, logging.Handler)
     assert handler.level == 0
-    assert handler.mode == EmitterMode.QUIET  # type: ignore  # noqa: PGH003
+    assert handler.mode == EmitterMode.QUIET
 
 
 def test_handler_emit_full_message(handler):

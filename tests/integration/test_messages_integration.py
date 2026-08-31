@@ -115,7 +115,7 @@ def compare_lines(expected_lines: Collection[Line], raw_stream: str, std_stream)
                 f"Bad length {len(raw_stream)} ({width=}) {raw_stream=!r}"
             )
             args = [iter(raw_stream)] * width
-            lines = ["".join(x) for x in zip(*args)]  # pyright: ignore[reportGeneralTypeIssues]
+            lines = ["".join(x) for x in zip(*args)]
     else:
         # when the output is captured, each line is simple and it should end in newline, so use
         # that for splitting (but don't lose the newline)
@@ -127,7 +127,7 @@ def compare_lines(expected_lines: Collection[Line], raw_stream: str, std_stream)
         lines = lines[1:]
 
     assert len(expected_lines) == len(lines), repr(lines)
-    for expected, real in zip(expected_lines, lines):  # pyright: ignore[reportGeneralTypeIssues]
+    for expected, real in zip(expected_lines, lines):
         end_of_line = "\n" if expected.permanent else "\r"
         timestamp = TIMESTAMP_FORMAT if expected.timestamp else ""
 
@@ -1470,7 +1470,7 @@ def test_capture_delays(tmp_path, loops, sleep, max_repetitions):
     emit.ended_ok()
 
     timestamps = []
-    with open(emit._log_filepath, encoding="utf8") as filehandler:  # type: ignore  # noqa: PTH123, PGH003
+    with open(emit._log_filepath, encoding="utf8") as filehandler:  # noqa: PTH123
         for line in filehandler:
             match = re.match(rf"({TIMESTAMP_FORMAT}):: ({TIMESTAMP_FORMAT}).*\n", line)
             if not match:

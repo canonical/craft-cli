@@ -31,7 +31,7 @@ from typing_extensions import Self
 from craft_cli import messages, printer
 
 if TYPE_CHECKING:
-    from unittest.mock import _Call  # type: ignore[reportPrivateUsage]
+    from unittest.mock import _Call
 
 
 @pytest.fixture(autouse=True)
@@ -238,9 +238,11 @@ class _RecordingProgresser:
     def __exit__(self, *_exc_info: object) -> Literal[False]:
         return False  # do not consume any exception
 
-    def advance(self, *a: Any, **k: Any) -> None:
+    def advance(self, amount: float, *a: Any, **k: Any) -> None:
         """Record the advance usage."""
-        self.recording_emitter.record("advance", a, k)
+        if amount < 0:
+            raise ValueError("The advance amount cannot be negative")
+        self.recording_emitter.record("advance", (amount, *a), k)
 
 
 @pytest.fixture
