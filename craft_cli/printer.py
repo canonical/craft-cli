@@ -137,6 +137,24 @@ def _format_term_line(
     return previous_line_end + _fill_line(text + spintext)
 
 
+def _format_term_lines(
+    previous_line_end: str, text: str, spintext: str, *, ephemeral: bool
+) -> str:
+    """Format one or more terminal lines, clearing each rendered line fully."""
+    lines = text.split("\n")
+    if len(lines) == 1:
+        return _format_term_line(previous_line_end, text, spintext, ephemeral=ephemeral)
+
+    formatted = [
+        _format_term_line(previous_line_end, lines[0], "", ephemeral=ephemeral)
+    ]
+    formatted.extend(
+        _format_term_line("\n", line, "", ephemeral=ephemeral) for line in lines[1:-1]
+    )
+    formatted.append(_format_term_line("\n", lines[-1], spintext, ephemeral=ephemeral))
+    return "".join(formatted)
+
+
 class _Spinner(threading.Thread):
     """A supervisor thread that will repeat long-standing messages with a spinner besides it.
 
@@ -333,7 +351,7 @@ class Printer:
         # We don't need to rewrite the same ephemeral message repeatedly.
         should_overwrite = spintext or message.end_line or not message.ephemeral
         if should_overwrite or message != self.prv_msg:
-            line = _format_term_line(
+            line = _format_term_lines(
                 previous_line_end, text, spintext, ephemeral=message.ephemeral
             )
             print(line, end="", flush=True, file=message.stream)
@@ -452,9 +470,9 @@ class Printer:
 
     def _log(self, message: _MessageInfo) -> None:
         """Write the line message to the log file."""
-        # prepare the text with (maybe) the timestamp
         timestamp_str = message.created_at.isoformat(sep=" ", timespec="milliseconds")
-        self.log.write(f"{timestamp_str} {message.text}\n")
+        for line in message.text.split("\n"):
+            self.log.write(f"{timestamp_str} {line}\n")
         # Flush the file: protect a bit in case of crashes, and multiprocess-based
         # parallelism.
         self.log.flush()
