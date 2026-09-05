@@ -180,7 +180,7 @@ filecache = [
 
 [[package]]
 name = "canonical-sphinx"
-version = "0.6.0"
+version = "0.7.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "furo" },
@@ -191,9 +191,9 @@ dependencies = [
     { name = "sphinx", version = "9.0.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.11.*'" },
     { name = "sphinx", version = "9.1.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/2d/8c/c8b9cae5b0a4f2214e096c73f1ef20e62c2b37a23d55bbec04bc096d2f17/canonical_sphinx-0.6.0.tar.gz", hash = "sha256:a5a72a087727aced5ef5b6e5ab7225a00cdcbc87e91f5d1cdc069e376007c273", size = 1049303, upload-time = "2026-02-26T07:28:52.563Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/5a/11/86481a8df0c67b06085a74dfb9c50f66bddeb18df6bff19bd503947f0d94/canonical_sphinx-0.7.0.tar.gz", hash = "sha256:960033d106a77cb1b6520e4cf8c06936bc116a4249f1125973ac1c6b35e6c085", size = 1050119, upload-time = "2026-09-02T21:20:18.482Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b3/3b/deba42ad80932723daba144d70f0cabec215eeab62e59d9911b0b9792988/canonical_sphinx-0.6.0-py3-none-any.whl", hash = "sha256:3a74f3cbaf68493904f33b63b8802128e0813404c64913292b501e7a21e9d222", size = 1026784, upload-time = "2026-02-26T07:28:50.817Z" },
+    { url = "https://files.pythonhosted.org/packages/ba/b4/370ac06afd7734cb62dc3678f411d59a0f4c5550d5957ddd983c82fb035d/canonical_sphinx-0.7.0-py3-none-any.whl", hash = "sha256:125dfc3b96aece859972daaab98943630d82e3d727ce58ce9133cadca83b3460", size = 1026918, upload-time = "2026-09-02T21:20:16.292Z" },
 ]
 
 [package.optional-dependencies]
@@ -630,7 +630,7 @@ dev = [
     { name = "pytest-subprocess" },
 ]
 docs = [
-    { name = "canonical-sphinx", extras = ["full"], specifier = "==0.6.0" },
+    { name = "canonical-sphinx", extras = ["full"], specifier = "==0.7.0" },
     { name = "pytest", specifier = ">=7.0.0" },
     { name = "sphinx-lint", specifier = "==1.0.2" },
     { name = "sphinx-toolbox", specifier = "==4.3.0" },
