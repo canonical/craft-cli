@@ -66,6 +66,7 @@ jobs:
           name: pypi-packages
       - name: Release
         env:
+          GH_REPO: ${{ github.repository }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_TAG: ${{ github.ref_name }}
         run: gh release create "$RELEASE_TAG" --generate-notes -- *.whl *.tar.gz
