@@ -56,8 +56,20 @@ ANSI_RESET = "\x1b[0m"
 
 def _safe_print(*args: Any, **kwargs: Any) -> None:
     """Print to a stream, ignoring BrokenPipeError from downstream consumers."""
-    with suppress(BrokenPipeError):
+    stream = kwargs.get("file")
+    if stream is None:
+        stream = sys.stdout
+
+    try:
         print(*args, **kwargs)
+    except BrokenPipeError:
+        if stream in (sys.stdout, sys.stderr):
+            with suppress(OSError, ValueError):
+                devnull_fd = os.open(os.devnull, os.O_WRONLY)
+                try:
+                    os.dup2(devnull_fd, stream.fileno())
+                finally:
+                    os.close(devnull_fd)
 
 
 def reset_terminal_style(stream: TextIO | None) -> None:
@@ -356,7 +368,11 @@ class Printer:
         else:
             text = message.text
 
-        _safe_print(text, file=message.stream)
+        _safe_print(
+            text,
+            file=message.stream,
+            flush=message.stream in (sys.stdout, sys.stderr),
+        )
 
     def _write_bar_terminal(self, message: _MessageInfo) -> None:
         """Write a progress bar to the screen."""
