@@ -55,7 +55,7 @@ def test_getlogpath_firstcall(test_log_dir):
 
     # check the file is inside the proper dir and that it exists
     assert fpath.parent == test_log_dir / "testapp"
-    assert fpath.parent.exists
+    assert fpath.parent.exists()
 
     # check the file name format
     match = re.match(r"testapp-(\d+-\d+\.\d+).log", fpath.name)
@@ -193,7 +193,7 @@ def test_getlogpath_deep_dirs(tmp_path, monkeypatch):
 
     # check the file is inside the proper dir and that it exists
     assert fpath.parent == dirpath / "testapp"
-    assert fpath.parent.exists
+    assert fpath.parent.exists()
 
 
 # -- tests for the _Progresser class
