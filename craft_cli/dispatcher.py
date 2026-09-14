@@ -393,18 +393,23 @@ class Dispatcher:
         # produce the complete help message for the command
         command_options = self._get_global_options()
         for action in parser._actions:  # noqa: SLF001
-            # store the different options if present, otherwise it's just the dest
-            help_text = "" if action.help is None else action.help
             if action.option_strings:
-                command_options.append((", ".join(action.option_strings), help_text))
+                indicator = ", ".join(action.option_strings)
+            elif action.metavar is None:
+                indicator = action.dest
             else:
-                if action.metavar is None:
-                    dest = action.dest
-                else:
-                    # may be a tuple, but only for options
-                    assert isinstance(action.metavar, str)  # noqa: S101 (use of assert)
-                    dest = action.metavar
-                command_options.append((dest, help_text))
+                # may be a tuple, but only for options
+                assert isinstance(action.metavar, str)  # noqa: S101 (use of assert)
+                indicator = action.metavar
+
+            if action.help is None:
+                raise ValueError(
+                    f"Bad command configuration: argument {indicator!r} in command "
+                    f"{command.name!r} is missing help text. Add a 'help' argument "
+                    "to add_argument() or set help=argparse.SUPPRESS."
+                )
+
+            command_options.append((indicator, action.help))
 
         return self._help_builder.get_command_help(
             command, command_options, output_format
