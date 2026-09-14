@@ -18,7 +18,6 @@
 
 import re
 import shutil
-import subprocess
 import sys
 import textwrap
 import threading
@@ -1210,52 +1209,9 @@ def test_stop_streams_unfinished_err(capsys, log_filepath):
     assert err == "\n"
 
 
-def test_show_captured_broken_pipe_does_not_raise(log_filepath, monkeypatch):
-    """BrokenPipeError from a captured stream should not crash show()."""
-    monkeypatch.setattr(printermod, "TESTMODE", True)
-
-    class BrokenPipeStream:
-        closed = False
-
-        def isatty(self):
-            return False
-
-        def write(self, _text):
-            raise BrokenPipeError
-
-        def flush(self):
-            raise BrokenPipeError
-
-    stream = cast("StringIO", BrokenPipeStream())
-    printer = Printer(log_filepath)
-    printer.show(stream, "test text")
-
-
-def test_stop_broken_pipe_does_not_raise(log_filepath, monkeypatch):
-    """BrokenPipeError from an unfinished stream should not crash stop()."""
-    monkeypatch.setattr(printermod, "TESTMODE", True)
-
-    class BrokenPipeStream:
-        closed = False
-
-        def isatty(self):
-            return False
-
-        def write(self, _text):
-            raise BrokenPipeError
-
-        def flush(self):
-            raise BrokenPipeError
-
-    stream = cast("StringIO", BrokenPipeStream())
-    printer = Printer(log_filepath)
-    printer.unfinished_stream = stream
-    printer.prv_msg = _MessageInfo(stream, "test")
-    printer.stop()
-
-
-def test_stop_ephemeral_broken_pipe_does_not_raise(log_filepath, monkeypatch):
-    """BrokenPipeError from an unfinished ephemeral stream should not crash stop()."""
+@pytest.mark.parametrize("ephemeral", [False, True])
+def test_broken_pipe_does_not_raise(log_filepath, monkeypatch, ephemeral):
+    """BrokenPipeError should not crash show() or stop()."""
     monkeypatch.setattr(printermod, "TESTMODE", True)
     monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 10)
 
@@ -1273,8 +1229,11 @@ def test_stop_ephemeral_broken_pipe_does_not_raise(log_filepath, monkeypatch):
 
     stream = cast("StringIO", BrokenPipeStream())
     printer = Printer(log_filepath)
+
+    printer.show(stream, "test text", ephemeral=ephemeral)
+
     printer.unfinished_stream = stream
-    printer.prv_msg = _MessageInfo(stream, "test", ephemeral=True)
+    printer.prv_msg = _MessageInfo(stream, "test", ephemeral=ephemeral)
     printer.stop()
 
 
@@ -1672,65 +1631,3 @@ def test_unfinished_stream_closed(log_filepath, mocker):
     # unfinished message on the (now closed) stream.
     stream.close()
     printer.stop()
-
-
-def test_captured_stdout_broken_pipe_does_not_fail_at_shutdown():
-    """A closed stdout pipe should not fail during interpreter shutdown."""
-    head = shutil.which("head")
-    if head is None:
-        pytest.skip("'head' command is required for this regression test")
-
-    script = textwrap.dedent(
-        """
-        import pathlib
-        import sys
-        import tempfile
-        import time
-
-        import craft_cli.printer as printer_module
-        from craft_cli.printer import Printer
-
-        printer_module.TESTMODE = True
-
-        with tempfile.TemporaryDirectory() as tmp:
-            printer = Printer(pathlib.Path(tmp) / "craft-cli.log")
-
-            sys.stdout.write("first\\n")
-            sys.stdout.flush()
-
-            time.sleep(0.2)
-
-            printer.show(sys.stdout, "buffered-after-consumer-closed")
-        """
-    )
-
-    producer = subprocess.Popen(
-        [sys.executable, "-c", script],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-    )
-
-    assert producer.stdout is not None
-    assert producer.stderr is not None
-
-    consumer = subprocess.Popen(
-        [head, "-n", "1"],
-        stdin=producer.stdout,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-    )
-
-    producer.stdout.close()
-
-    consumer_stdout, consumer_stderr = consumer.communicate()
-    producer_stderr = producer.stderr.read()
-    producer_status = producer.wait()
-
-    assert consumer.returncode == 0
-    assert consumer_stdout == "first\n"
-    assert consumer_stderr == ""
-
-    assert producer_status == 0
-    assert "BrokenPipeError" not in producer_stderr

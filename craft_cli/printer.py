@@ -56,14 +56,13 @@ ANSI_RESET = "\x1b[0m"
 
 def _safe_print(*args: Any, **kwargs: Any) -> None:
     """Print to a stream, ignoring BrokenPipeError from downstream consumers."""
-    stream = kwargs.get("file")
-    if stream is None:
-        stream = sys.stdout
+    stream = kwargs.get("file", sys.stdout)
 
     try:
         print(*args, **kwargs)
     except BrokenPipeError:
         if stream in (sys.stdout, sys.stderr):
+            # The pipe is broken, dump all remaining output to /dev/null instead.
             with suppress(OSError, ValueError):
                 devnull_fd = os.open(os.devnull, os.O_WRONLY)
                 try:
