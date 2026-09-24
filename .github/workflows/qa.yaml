@@ -11,6 +11,9 @@ on:
 
 jobs:
   lint:
+    permissions:
+      contents: read
+      pull-requests: read
     uses: canonical/starflow/.github/workflows/lint-python.yaml@main
   test:
     uses: canonical/starflow/.github/workflows/test-python.yaml@main
