@@ -37,6 +37,9 @@ jobs:
         with:
           name: pypi-packages
           path: dist/
+  # NOTE: This PyPI publishing job is often unnecessary for most applications
+  # that use starbase. Please ensure this job is excluded from merges/PRs
+  # originating from starbase unless explicitly required for a specific app.
   pypi:
     needs: ["source-wheel"]
     runs-on: [self-hosted, amd64]
