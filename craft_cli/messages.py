@@ -234,8 +234,8 @@ class _PipeReaderThread(threading.Thread):
         # terminal updates does not produce stray ^M characters when the output
         # is not a terminal (e.g. when redirected to a file).
         # A single regex pass handles:
-        #   \r+\n  – one or more CRs followed by LF (Windows \r\n and \r\r\n etc.)
-        #   \r     – bare CR used for in-place line rewrites
+        #   \r+\n  - one or more CRs followed by LF (Windows \r\n and \r\r\n etc.)
+        #   \r     - bare CR used for in-place line rewrites
         # Both are replaced with a plain \n so each segment becomes its own line.
         # The b"\r" guard avoids the regex overhead on the common CR-free case.
         if b"\r" in data:
