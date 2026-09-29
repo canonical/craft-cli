@@ -226,10 +226,19 @@ class _PipeReaderThread(threading.Thread):
         self.printer = printer
         self.stream = stream
 
-    def _write(self, data: bytes) -> None:
+    def _write(self, data: bytes, *, end_of_stream: bool = False) -> None:
         """Convert the byte stream into unicode lines and send it to the printer."""
         pointer = 0
         data = self.remaining_content + data
+
+        # Hold back trailing carriage return(s) so they are not converted to newlines
+        # prematurely if a Windows \r\n sequence is split across pipe reads.
+        trailing_cr = b""
+        if not end_of_stream and data.endswith(b"\r"):
+            data_without_cr = data.rstrip(b"\r")
+            trailing_cr = data[len(data_without_cr) :]
+            data = data_without_cr
+
         # Normalize carriage returns so that subprocess output using in-place
         # terminal updates does not produce stray ^M characters when the output
         # is not a terminal (e.g. when redirected to a file).
@@ -246,7 +255,7 @@ class _PipeReaderThread(threading.Thread):
 
             # no more newlines, store the rest of data for the next time and break
             if newline_position == -1:
-                self.remaining_content = data[pointer:]
+                self.remaining_content = data[pointer:] + trailing_cr
                 break
 
             # get the useful line and update pointer for next cycle (plus one, to
@@ -262,6 +271,11 @@ class _PipeReaderThread(threading.Thread):
             unicode_line = unicode_line.replace("\t", "  ")
             text = f":: {unicode_line}"
             self.printer.show(self.stream, text, **self.printer_flags)
+
+    def _flush(self) -> None:
+        """Process any remaining buffered content at end of stream."""
+        if self.remaining_content.endswith(b"\r"):
+            self._write(b"", end_of_stream=True)
 
     def _run_posix(self) -> None:
         """Run the thread, handling pipes in the POSIX way."""
@@ -296,10 +310,13 @@ class _PipeReaderThread(threading.Thread):
 
     def run(self) -> None:
         """Run the thread."""
-        if sys.platform == "win32":
-            self._run_windows()
-        else:
-            self._run_posix()
+        try:
+            if sys.platform == "win32":
+                self._run_windows()
+            else:
+                self._run_posix()
+        finally:
+            self._flush()
 
     def stop(self) -> None:
         """Stop the thread.

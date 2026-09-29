@@ -282,21 +282,43 @@ def test_pipereader_carriage_returns(recording_printer, stream):
 
 
 @pytest.mark.parametrize("stream", [sys.stdout, sys.stderr])
-def test_pipereader_windows_line_endings(recording_printer, stream):
+def test_pipereader_windows_line_endings(recording_printer, monkeypatch, stream):
     """Check that Windows-style \\r\\n line endings are handled correctly.
 
     When a subprocess on Windows (or a tool that emits Windows line endings) writes
     \\r\\n, the output should be treated as a single line with no trailing \\r.
+    Forcing a small chunk size ensures that \\r\\n sequences split across reads
+    (e.g. line1\\r in the first chunk and \\n in the second) do not produce spurious
+    blank lines.
     """
+    monkeypatch.setattr(messages, "_PIPE_READER_CHUNK_SIZE", 6)
     flags = {"use_timestamp": False, "ephemeral": False, "end_line": True}
     prt = _PipeReaderThread(recording_printer, stream, flags)
     prt.start()
     os.write(prt.write_pipe, b"line1\r\nline2\r\n")
     prt.stop()
 
+    assert len(recording_printer.written_terminal_lines) == 2
     msg1, msg2 = recording_printer.written_terminal_lines
     assert msg1.text == ":: line1"
     assert msg2.text == ":: line2"
+    assert "\r" not in msg1.text
+    assert "\r" not in msg2.text
+
+
+@pytest.mark.parametrize("stream", [sys.stdout, sys.stderr])
+def test_pipereader_carriage_returns_trailing(recording_printer, stream):
+    """Check that trailing bare carriage returns at end of stream are emitted."""
+    flags = {"use_timestamp": False, "ephemeral": False, "end_line": True}
+    prt = _PipeReaderThread(recording_printer, stream, flags)
+    prt.start()
+    os.write(prt.write_pipe, b"Step 1\rStep 2\r")
+    prt.stop()
+
+    assert len(recording_printer.written_terminal_lines) == 2
+    msg1, msg2 = recording_printer.written_terminal_lines
+    assert msg1.text == ":: Step 1"
+    assert msg2.text == ":: Step 2"
     assert "\r" not in msg1.text
     assert "\r" not in msg2.text
 
