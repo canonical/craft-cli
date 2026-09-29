@@ -25,6 +25,7 @@ import time
 from datetime import datetime
 from io import StringIO
 from pathlib import Path
+from typing import cast
 
 import pytest
 from craft_cli import printer as printermod
@@ -1206,6 +1207,34 @@ def test_stop_streams_unfinished_err(capsys, log_filepath):
     out, err = capsys.readouterr()
     assert not out
     assert err == "\n"
+
+
+@pytest.mark.parametrize("ephemeral", [False, True])
+def test_broken_pipe_does_not_raise(log_filepath, monkeypatch, ephemeral):
+    """BrokenPipeError should not crash show() or stop()."""
+    monkeypatch.setattr(printermod, "TESTMODE", True)
+    monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 10)
+
+    class BrokenPipeStream:
+        closed = False
+
+        def isatty(self):
+            return False
+
+        def write(self, _text):
+            raise BrokenPipeError
+
+        def flush(self):
+            raise BrokenPipeError
+
+    stream = cast("StringIO", BrokenPipeStream())
+    printer = Printer(log_filepath)
+
+    printer.show(stream, "test text", ephemeral=ephemeral)
+
+    printer.unfinished_stream = stream
+    printer.prv_msg = _MessageInfo(stream, "test", ephemeral=ephemeral)
+    printer.stop()
 
 
 def test_stop_spinner_ok(log_filepath):
