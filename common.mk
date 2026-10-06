@@ -184,8 +184,14 @@ endif
 
 .PHONY: lint-uv-lockfile
 lint-uv-lockfile: install-uv  ##- Check that uv.lock matches expectations from pyproject.toml
+ifneq ($(CI),)
+	@echo ::group::$@
+endif
 	unset UV_FROZEN
 	uv lock --check
+ifneq ($(CI),)
+	@echo ::endgroup::
+endif
 
 .PHONY: lint-shfmt
 lint-shfmt: install-shfmt  ##- Lint shell script formatting
