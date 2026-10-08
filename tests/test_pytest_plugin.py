@@ -152,6 +152,33 @@ def test_emitter_record_trace_regex(emitter):
     emitter.assert_trace("[fx]oo.*", regex=True)
 
 
+@pytest.mark.parametrize(
+    "emit_method", ["message", "progress", "verbose", "warning", "debug", "trace"]
+)
+def test_emitter_record_no_call_plain(emitter, emit_method):
+    """Can verify that a call was never made."""
+    emit_fn = getattr(messages.emit, emit_method)
+    assert_fn = getattr(emitter, f"assert_no_{emit_method}")
+
+    emit_fn("something else we don't care about")
+    assert_fn("foobar")
+
+    emit_fn("foobar")
+    with pytest.raises(AssertionError):
+        assert_fn("foobar")
+
+
+def test_emitter_record_no_progress_permanent(emitter):
+    """Can verify that `progress` was never called with the given permanent flag."""
+    messages.emit.progress("foobar", permanent=True)
+
+    emitter.assert_no_progress("foobar", permanent=False)
+    # no permanent filter means only matching calls without the flag
+    emitter.assert_no_progress("foobar")
+    with pytest.raises(AssertionError):
+        emitter.assert_no_progress("foobar", permanent=True)
+
+
 def test_emitter_record_progress_bar_ok(emitter):
     """Calls to `progress_bar` are recorded."""
     with messages.emit.progress_bar("title", 20, delta=True) as progress_bar:

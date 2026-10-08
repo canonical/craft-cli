@@ -100,18 +100,31 @@ class RecordingEmitter:
         expected_text: str,
         method_name: str,
         regex: bool,  # noqa: FBT001
+        *,
+        invert: bool = False,
         **kwargs: Any,
     ) -> Any:
         """Really verify messages."""
         if regex:
             expected_text = _RegexComparingText(expected_text)
         expected_call = call(method_name, expected_text, **kwargs)
+        found = None
         for stored_call in self.interactions:
             if stored_call == expected_call:
-                return stored_call.args[1]
-        raise AssertionError(
-            f"Expected call {expected_call} not found in {self.interactions}"
-        )
+                found = stored_call.args[1]
+                break
+
+        if invert and found is not None:
+            raise AssertionError(
+                f"Found call {expected_call} when it should have been absent from {self.interactions}."
+            )
+
+        if not invert and found is None:
+            raise AssertionError(
+                f"Expected call {expected_call} not found in {self.interactions}"
+            )
+
+        return found
 
     def assert_message(
         self,
@@ -125,6 +138,20 @@ class RecordingEmitter:
         If 'regex' is True, the expected text will be used as a regular expression.
         """
         return self._check(expected_text, "message", regex)
+
+    def assert_no_message(
+        self,
+        expected_text: str,
+        *,
+        regex: bool = False,
+    ) -> Any:
+        """Check the 'message' method was not used.
+
+        It verifies that the method was never called with the expected text.
+
+        If 'regex' is True, the expected text will be used as a regular expression.
+        """
+        return self._check(expected_text, "message", regex, invert=True)
 
     def assert_progress(
         self,
@@ -145,6 +172,28 @@ class RecordingEmitter:
             result = self._check(expected_text, "progress", regex, permanent=permanent)
         return result
 
+    def assert_no_progress(
+        self,
+        expected_text: str,
+        permanent: bool | None = None,  # noqa: FBT001
+        *,
+        regex: bool = False,
+    ) -> Any:
+        """Check the 'progress' method was not used.
+
+        It verifies that the method was never called with the expected text (with
+        the given 'permanent' flag).
+
+        If 'regex' is True, the expected text will be used as a regular expression.
+        """
+        if permanent is None:
+            result = self._check(expected_text, "progress", regex, invert=True)
+        else:
+            result = self._check(
+                expected_text, "progress", regex, permanent=permanent, invert=True
+            )
+        return result
+
     def assert_verbose(
         self,
         expected_text: str,
@@ -158,6 +207,20 @@ class RecordingEmitter:
         """
         return self._check(expected_text, "verbose", regex)
 
+    def assert_no_verbose(
+        self,
+        expected_text: str,
+        *,
+        regex: bool = False,
+    ) -> Any:
+        """Check the 'verbose' method was not used.
+
+        It verifies that the method was never called with the expected text.
+
+        If 'regex' is True, the expected text will be used as a regular expression.
+        """
+        return self._check(expected_text, "verbose", regex, invert=True)
+
     def assert_warning(self, expected_text: str, *, regex: bool = False) -> Any:
         """Check the 'warning' method was properly used.
 
@@ -166,6 +229,20 @@ class RecordingEmitter:
         If 'regex' is True, the expected text will be used as a regular expression.
         """
         return self._check(expected_text, "warning", regex)
+
+    def assert_no_warning(
+        self,
+        expected_text: str,
+        *,
+        regex: bool = False,
+    ) -> Any:
+        """Check the 'warning' method was not used.
+
+        It verifies that the method was never called with the expected text.
+
+        If 'regex' is True, the expected text will be used as a regular expression.
+        """
+        return self._check(expected_text, "warning", regex, invert=True)
 
     def assert_debug(
         self,
@@ -180,6 +257,20 @@ class RecordingEmitter:
         """
         return self._check(expected_text, "debug", regex)
 
+    def assert_no_debug(
+        self,
+        expected_text: str,
+        *,
+        regex: bool = False,
+    ) -> Any:
+        """Check the 'debug' method was not used.
+
+        It verifies that the method was never called with the expected text.
+
+        If 'regex' is True, the expected text will be used as a regular expression.
+        """
+        return self._check(expected_text, "debug", regex, invert=True)
+
     def assert_trace(
         self,
         expected_text: str,
@@ -192,6 +283,20 @@ class RecordingEmitter:
         If 'regex' is True, the expected text will be used as a regular expression.
         """
         return self._check(expected_text, "trace", regex)
+
+    def assert_no_trace(
+        self,
+        expected_text: str,
+        *,
+        regex: bool = False,
+    ) -> Any:
+        """Check the 'trace' method was not used.
+
+        It verifies that the method was never called with the expected text.
+
+        If 'regex' is True, the expected text will be used as a regular expression.
+        """
+        return self._check(expected_text, "trace", regex, invert=True)
 
     def assert_messages(self, texts: list[str]) -> None:
         """Check that the 'message' method was called several times with the given texts.
