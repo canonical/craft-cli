@@ -638,7 +638,7 @@ dev = [
 ]
 docs = [
     { name = "canonical-sphinx", extras = ["full"], specifier = "==0.7.1" },
-    { name = "pytest", specifier = ">=7.0.0" },
+    { name = "pytest", specifier = ">=8.4" },
     { name = "sphinx-lint", specifier = "==1.0.2" },
     { name = "sphinx-toolbox", specifier = "==4.3.1" },
     { name = "sphinxext-rediraffe", specifier = "==0.3.0" },
