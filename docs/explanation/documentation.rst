@@ -1,7 +1,6 @@
 .. meta::
-  :description:
-    An explanation of the documentation system, process, and writing style
-    and conventions in Craft CLI.
+    :description: An explanation of the documentation system, process, and writing style
+                  and conventions in Craft CLI.
 
 
 .. _explanation-documentation:
