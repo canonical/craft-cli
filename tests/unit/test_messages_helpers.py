@@ -343,7 +343,7 @@ def handler(monkeypatch):
 
 def test_handler_init(handler):
     """Default _Handler values."""
-    assert isinstance(handler, logging.Handler)
+    assert isinstance(handler, _Handler)
     assert handler.level == 0
     assert handler.mode == EmitterMode.QUIET
 
