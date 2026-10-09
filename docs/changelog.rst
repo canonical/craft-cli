@@ -16,11 +16,19 @@ New features:
 - Add negative assertion methods to the ``emitter`` test fixture, such as
   :py:meth:`.RecordingEmitter.assert_no_message`, to verify that a message was
   never emitted.
+- Add an optional ``pytest`` dependency group (``craft-cli[pytest]``) to track
+  the minimum pytest version required by the ``emitter`` test plugin.
+- Add a :py:func:`~craft_cli.pytest_plugin.raises_craft_error` helper to assert
+  that a :py:class:`~craft_cli.errors.CraftError` is raised while matching on
+  its ``details``, ``resolution``, ``docs_url`` and ``retcode`` fields, which
+  ``pytest.raises``' ``match`` parameter cannot reach.
 
 Bug fixes:
 
 - The ``emitter`` test fixture now rejects a negative ``advance`` amount,
   matching the behavior of the real progress bar.
+- The ``emitter`` test plugin now reports a clear, actionable error message
+  when pytest is not installed, instead of a bare ``ModuleNotFoundError``.
 
 .. _release-3.4.1:
 
