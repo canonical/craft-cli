@@ -33,6 +33,9 @@ Issues = "https://github.com/canonical/craft-cli/issues"
 [project.entry-points.pytest11]
 emitter = "craft_cli.pytest_plugin"
 
+[project.optional-dependencies]
+pytest = ["pytest>=8.4"]
+
 [dependency-groups]
 dev = [
     "coverage[toml]==7.16.2",

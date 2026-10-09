@@ -25,7 +25,12 @@ from tempfile import NamedTemporaryFile
 from typing import TYPE_CHECKING, Any, Literal
 from unittest.mock import call
 
-import pytest
+try:
+    import pytest
+except ImportError as err:
+    raise ImportError(
+        "craft-cli's pytest plugin requires pytest; install it with 'craft-cli[pytest]'"
+    ) from err
 from typing_extensions import Self
 
 from craft_cli import messages, printer
