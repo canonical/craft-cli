@@ -245,7 +245,7 @@ select = [ # Base linting rule selections.
     "C4",   # Encourage comprehensions, which tend to be faster than alternatives.
     "T10",  # Don't call the debugger in production code
     "ISC",  # Implicit string concatenation that can cause subtle issues
-    "ICN",  # Only use common conventions for import aliases.
+    # "ICN",  # Only use common conventions for import aliases.
     "INP",  # Implicit namespace packages
     # flake8-pie: miscellaneous linters (enabled individually because they're not really related)
     "PIE790", # Unnecessary pass statement
