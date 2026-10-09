@@ -15,6 +15,10 @@ New features:
 
 - Add an optional ``pytest`` dependency group (``craft-cli[pytest]``) to track
   the minimum pytest version required by the ``emitter`` test plugin.
+- Add a :py:func:`~craft_cli.pytest_plugin.raises_craft_error` helper to assert
+  that a :py:class:`~craft_cli.errors.CraftError` is raised while matching on
+  its ``details``, ``resolution``, ``docs_url`` and ``retcode`` fields, which
+  ``pytest.raises``' ``match`` parameter cannot reach.
 
 Bug fixes:
 
