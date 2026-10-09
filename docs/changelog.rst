@@ -11,10 +11,17 @@ included in each version.
 3.4.2 (unreleased)
 ------------------
 
+New features:
+
+- Add an optional ``pytest`` dependency group (``craft-cli[pytest]``) to track
+  the minimum pytest version required by the ``emitter`` test plugin.
+
 Bug fixes:
 
 - The ``emitter`` test fixture now rejects a negative ``advance`` amount,
   matching the behavior of the real progress bar.
+- The ``emitter`` test plugin now reports a clear, actionable error message
+  when pytest is not installed, instead of a bare ``ModuleNotFoundError``.
 
 .. _release-3.4.1:
 

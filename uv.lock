@@ -1,5 +1,5 @@
 version = 1
-revision = 5
+revision = 3
 requires-python = ">=3.10"
 resolution-markers = [
     "python_full_version >= '3.15'",
@@ -582,6 +582,11 @@ dependencies = [
     { name = "typing-extensions" },
 ]
 
+[package.optional-dependencies]
+pytest = [
+    { name = "pytest" },
+]
+
 [package.dev-dependencies]
 dev = [
     { name = "coverage", extra = ["toml"] },
@@ -617,9 +622,11 @@ types = [
 requires-dist = [
     { name = "jinja2", specifier = ">=3.1.5" },
     { name = "platformdirs" },
+    { name = "pytest", marker = "extra == 'pytest'", specifier = ">=8.4" },
     { name = "pywin32", marker = "sys_platform == 'win32'" },
     { name = "typing-extensions" },
 ]
+provides-extras = ["pytest"]
 
 [package.metadata.requires-dev]
 dev = [
