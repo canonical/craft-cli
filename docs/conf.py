@@ -57,7 +57,7 @@ html_context = {
     # Your Discourse instance URL
     "discourse": "",
     # Your Mattermost channel URL
-    "mattermost": "https://chat.canonical.com/canonical/channels/documentation",
+    "mattermost": "",
     # Your Matrix channel URL
     "matrix": "https://matrix.to/#/#starcraft-development:ubuntu.com",
     # Your documentation GitHub repository URL. If set, links for viewing the
