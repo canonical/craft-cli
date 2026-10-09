@@ -1,19 +1,22 @@
 PROJECT=craft_cli
 # Define when more than the main package tree requires coverage
 # like is the case for snapcraft (snapcraft and snapcraft_legacy):
-# COVERAGE_SOURCE="starcraft"
+# COVERAGE_SOURCE="craft_cli"
 UV_TEST_GROUPS := "--group=dev"
 UV_DOCS_GROUPS := "--group=docs"
-UV_LINT_GROUPS := "--group=lint" "--group=types"
+UV_LINT_GROUPS := "--group=lint" "--group=types" $(UV_DOCS_GROUPS)
 UV_TICS_GROUPS := "--group=tics"
 
 include common.mk
 
 .PHONY: format
-format: format-ruff format-codespell format-prettier  ## Run all automatic formatters
+format: format-ruff format-codespell format-prettier format-shfmt format-tombi format-pre-commit  ## Run all automatic formatters
 
 .PHONY: lint
-lint: lint-ruff lint-ty lint-codespell lint-prettier lint-shellcheck lint-docs lint-twine  ## Run all linters
+lint: lint-code lint-docs lint-twine lint-uv-lockfile lint-actions  ## Run all linters
+
+.PHONY: lint-code
+lint-code: lint-ruff lint-ty lint-codespell lint-prettier lint-shfmt lint-shellcheck lint-tombi  ## Run code-specific linters
 
 .PHONY: pack
 pack: pack-pip  ## Build all packages

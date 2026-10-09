@@ -17,7 +17,7 @@ Welcome to Craft CLI's documentation!
 
       **Get started** with hands-on introductions to Craft CLI
 
-   .. grid-item-card:: :doc:`how-to-guides/index`
+   .. grid-item-card:: :doc:`how-to/index`
 
       **Step-by-step guides** covering key operations and common tasks
 
