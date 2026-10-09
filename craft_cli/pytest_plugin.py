@@ -34,9 +34,64 @@ except ImportError as err:
 from typing_extensions import Self
 
 from craft_cli import messages, printer
+from craft_cli.errors import CraftError
 
 if TYPE_CHECKING:
     from unittest.mock import _Call
+
+
+def raises_craft_error(
+    expected_exception: type[CraftError] = CraftError,
+    *,
+    match: str | re.Pattern[str] | None = None,
+    details: str | re.Pattern[str] | None = None,
+    resolution: str | re.Pattern[str] | None = None,
+    docs_url: str | re.Pattern[str] | None = None,
+    retcode: int | None = None,
+) -> pytest.RaisesExc[CraftError]:
+    """Assert that a `CraftError` is raised, matching on its fields.
+
+    This is a thin wrapper around `pytest.raises` that, in addition to
+    pytest's `match` (a regex against the error's message), lets you match
+    against the other `CraftError` fields that `match` cannot reach.
+
+    Like `pytest.raises`, the expected exception type is the first positional
+    argument and defaults to `CraftError`; pass a subclass to be more specific.
+
+    `match`, `details`, `resolution` and `docs_url` are regular expressions
+    matched with `re.search`; `retcode` is compared for exact equality. Any
+    field left as `None` is not checked.
+
+    The returned object is a real `pytest.raises` context manager, so the
+    `as` binding and `pytest.RaisesGroup` composition work as usual:
+
+        with raises_craft_error(CraftCommandError, match="Failed to pull", retcode=2):
+            app.run()
+
+    On a field mismatch the assertion error names the offending field, e.g.
+    `retcode mismatch: expected 2, got 1`.
+    """
+
+    def _check_fields(exc: CraftError) -> bool:
+        for field_name, pattern in (
+            ("details", details),
+            ("resolution", resolution),
+            ("docs_url", docs_url),
+        ):
+            if pattern is None:
+                continue
+            value = getattr(exc, field_name)
+            if value is None or not re.search(pattern, value):
+                raise AssertionError(
+                    f"{field_name} mismatch: expected {pattern!r}, got {value!r}"
+                )
+        if retcode is not None and exc.retcode != retcode:
+            raise AssertionError(
+                f"retcode mismatch: expected {retcode}, got {exc.retcode}"
+            )
+        return True
+
+    return pytest.raises(expected_exception, match=match, check=_check_fields)
 
 
 @pytest.fixture(autouse=True)

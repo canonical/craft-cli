@@ -19,6 +19,8 @@ from unittest.mock import call
 
 import pytest
 from craft_cli import messages, printer
+from craft_cli.errors import CraftCommandError, CraftError
+from craft_cli.pytest_plugin import raises_craft_error
 
 # -- tests for the `init_emitter` auto-fixture
 
@@ -265,3 +267,98 @@ def test_emitter_interactions_negative(emitter):
     messages.emit.trace("something")
     with pytest.raises(AssertionError):
         emitter.assert_interactions(None)
+
+
+# -- tests for the `raises_craft_error` helper
+
+
+def test_raises_craft_error_message_only():
+    """The message is matched with a regex, like pytest.raises' match."""
+    with raises_craft_error(match="Failed to pull"):
+        raise CraftError("Failed to pull some source")
+
+    with pytest.raises(AssertionError):
+        with raises_craft_error(match="different message"):
+            raise CraftError("Failed to pull some source")
+
+
+def test_raises_craft_error_subclass():
+    """The expected exception type is the first argument, like pytest.raises."""
+    with raises_craft_error(CraftCommandError, match="boom"):
+        raise CraftCommandError("boom", stderr="some stderr")
+
+    # a subclass of the expected type is accepted
+    with raises_craft_error(CraftError, match="boom"):
+        raise CraftCommandError("boom", stderr="some stderr")
+
+    # a sibling/base that is not the expected subclass is not accepted
+    with pytest.raises(CraftError) as err_info:
+        with raises_craft_error(CraftCommandError):
+            raise CraftError("boom")
+    assert not isinstance(err_info.value, CraftCommandError)
+
+
+def test_raises_craft_error_as_binding():
+    """The returned context manager supports the `as` binding, like pytest.raises."""
+    with raises_craft_error(match="boom") as err:
+        raise CraftError("boom", details="the details", retcode=7)
+    assert err.value.details == "the details"
+    assert err.value.retcode == 7
+
+
+@pytest.mark.parametrize(
+    ("field", "kwargs", "error_kwargs"),
+    [
+        ("details", {"details": "network .* down"}, {"details": "network is down"}),
+        ("resolution", {"resolution": "try again"}, {"resolution": "please try again"}),
+        ("docs_url", {"docs_url": "http://a/b"}, {"docs_url": "http://a/b/c"}),
+    ],
+)
+def test_raises_craft_error_text_fields(field, kwargs, error_kwargs):
+    """The extra text fields are matched with re.search."""
+    with raises_craft_error(**kwargs):
+        raise CraftError("boom", **error_kwargs)
+
+
+def test_raises_craft_error_retcode_exact():
+    """The retcode is matched by exact equality."""
+    with raises_craft_error(retcode=2):
+        raise CraftError("boom", retcode=2)
+
+    with pytest.raises(AssertionError, match="retcode mismatch"):
+        with raises_craft_error(retcode=2):
+            raise CraftError("boom", retcode=3)
+
+
+def test_raises_craft_error_field_mismatch_message():
+    """A field mismatch raises an AssertionError naming the field."""
+    with pytest.raises(AssertionError, match="details mismatch"):
+        with raises_craft_error(details="expected"):
+            raise CraftError("boom", details="actual")
+
+
+def test_raises_craft_error_combined():
+    """Several fields can be matched at once."""
+    with raises_craft_error(
+        CraftCommandError, match="Failed to pull", details="network .* down", retcode=2
+    ):
+        raise CraftCommandError(
+            "Failed to pull some source",
+            stderr="cmd output",
+            details="network is down",
+            retcode=2,
+        )
+
+
+def test_raises_craft_error_wrong_type_propagates():
+    """A non-CraftError exception is not swallowed."""
+    with pytest.raises(ValueError):  # noqa: PT011
+        with raises_craft_error(match="boom"):
+            raise ValueError("boom")
+
+
+def test_raises_craft_error_did_not_raise():
+    """Fails if no exception is raised."""
+    with pytest.raises(pytest.fail.Exception, match="DID NOT RAISE"):
+        with raises_craft_error(match="boom"):
+            pass
