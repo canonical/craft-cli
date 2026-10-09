@@ -13,6 +13,9 @@ included in each version.
 
 New features:
 
+- Add negative assertion methods to the ``emitter`` test fixture, such as
+  :py:meth:`.RecordingEmitter.assert_no_message`, to verify that a message was
+  never emitted.
 - Add an optional ``pytest`` dependency group (``craft-cli[pytest]``) to track
   the minimum pytest version required by the ``emitter`` test plugin.
 - Add a :py:func:`~craft_cli.pytest_plugin.raises_craft_error` helper to assert
