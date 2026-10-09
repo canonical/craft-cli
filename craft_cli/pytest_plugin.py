@@ -41,8 +41,9 @@ if TYPE_CHECKING:
 
 
 def raises_craft_error(
-    match: str | re.Pattern[str] | None = None,
+    expected_exception: type[CraftError] = CraftError,
     *,
+    match: str | re.Pattern[str] | None = None,
     details: str | re.Pattern[str] | None = None,
     resolution: str | re.Pattern[str] | None = None,
     docs_url: str | re.Pattern[str] | None = None,
@@ -54,6 +55,9 @@ def raises_craft_error(
     pytest's `match` (a regex against the error's message), lets you match
     against the other `CraftError` fields that `match` cannot reach.
 
+    Like `pytest.raises`, the expected exception type is the first positional
+    argument and defaults to `CraftError`; pass a subclass to be more specific.
+
     `match`, `details`, `resolution` and `docs_url` are regular expressions
     matched with `re.search`; `retcode` is compared for exact equality. Any
     field left as `None` is not checked.
@@ -61,7 +65,7 @@ def raises_craft_error(
     The returned object is a real `pytest.raises` context manager, so the
     `as` binding and `pytest.RaisesGroup` composition work as usual:
 
-        with raises_craft_error("Failed to pull", retcode=2):
+        with raises_craft_error(CraftCommandError, match="Failed to pull", retcode=2):
             app.run()
 
     On a field mismatch the assertion error names the offending field, e.g.
@@ -87,7 +91,7 @@ def raises_craft_error(
             )
         return True
 
-    return pytest.raises(CraftError, match=match, check=_check_fields)
+    return pytest.raises(expected_exception, match=match, check=_check_fields)
 
 
 @pytest.fixture(autouse=True)
