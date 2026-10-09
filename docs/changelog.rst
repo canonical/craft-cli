@@ -11,6 +11,12 @@ included in each version.
 3.4.2 (unreleased)
 ------------------
 
+New features:
+
+- Add negative assertion methods to the ``emitter`` test fixture, such as
+  :py:meth:`.RecordingEmitter.assert_no_message`, to verify that a message was
+  never emitted.
+
 Bug fixes:
 
 - The ``emitter`` test fixture now rejects a negative ``advance`` amount,
