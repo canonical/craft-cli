@@ -7,6 +7,7 @@ Explanation
 .. toctree::
     :maxdepth: 1
 
+    Documentation <documentation>
     emit-mode
     log-management
     global-args

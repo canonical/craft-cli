@@ -1,12 +1,31 @@
+# Environment
+*env*/
+.venv/
+
+# Sphinx
+_dev/warnings.txt
+_dev/.wordlist.dic
+_dev/.doctrees/
+_dev/update/
+_dev/node_modules/
+
+# Vale
+_dev/styles/*
+_dev/vale.ini
+
+# Build outputs
+_build
+
+# Node.js
+package*.json
+
+# Unrelated cache and config files
+.DS_Store
+__pycache__/
+.idea/
+.vscode/
+
+# Repository-specific generated Sphinx files
 craft_cli.rst
 craft_cli.*.rst
 modules.rst
-/*env*/
-.sphinx/venv/
-.sphinx/warnings.txt
-.sphinx/.wordlist.dic
-.sphinx/.doctrees/
-_build
-.DS_Store
-__pycache__
-.idea/

@@ -2,7 +2,12 @@
 # https://github.com/canonical/starbase
 
 SOURCES=$(wildcard *.py) $(PROJECT) tests
-DOCS=docs
+# Env vars for the docs Sphinx Stack. They must be exported so make can pass them to the
+# docs Makefile.
+export DOCS_BUILDDIR ?= _build
+export DOCS_VENVDIR ?= ../.venv
+export VALE_DIR ?= $(DOCS_VENVDIR)/lib/python*/site-packages/vale
+export SPHINX_AUTOBUILD_OPTS ?= --ignore "$(DOCS_VENVDIR)/*" --ignore "reference/commands/*" -D=llms_txt_enabled=0
 
 ifneq ($(OS),Windows_NT)
 	OS := $(shell uname)
@@ -54,8 +59,14 @@ setup: install-uv _setup-docs _setup-lint _setup-tests setup-precommit install-b
 	uv sync $(UV_TEST_GROUPS) $(UV_LINT_GROUPS) $(UV_DOCS_GROUPS)
 
 .PHONY: setup-docs
-setup-docs: _setup-docs  ##- Set up a documentation-only environment
+setup-docs: _setup-docs  ##- Set up the documentation environment
+ifneq ($(CI),)
+	@echo ::group::$@
+endif
 	uv sync --no-dev $(UV_DOCS_GROUPS)
+ifneq ($(CI),)
+	@echo ::endgroup::
+endif
 
 .PHONY: _setup-docs
 _setup-docs: install-uv
@@ -91,9 +102,9 @@ else
 endif
 
 .PHONY: clean
-clean:  ## Clean up the development environment
+clean: docs-clean  ## Clean up the development environment
 	uv tool run pyclean .
-	rm -rf dist/ build/ docs/_build/ *.snap .coverage*
+	rm -rf dist build docs/_build docs/_linkcheck docs/reference/gen *.snap .coverage* .venv
 
 .PHONY: autoformat
 autoformat: format  # Hidden alias for 'format'
@@ -180,15 +191,7 @@ ifneq ($(CI),)
 	@echo ::endgroup::
 endif
 
-.PHONY: lint-docs
-lint-docs:  ##- Lint the documentation
-ifneq ($(CI),)
-	@echo ::group::$@
-endif
-	uv run $(UV_DOCS_GROUPS) sphinx-lint --max-line-length 88 --ignore docs/reference/commands --ignore docs/_build --enable all $(DOCS) -d missing-underscore-after-hyperlink,missing-space-in-hyperlink
-ifneq ($(CI),)
-	@echo ::endgroup::
-endif
+
 
 .PHONY: lint-twine
 lint-twine: pack-pip  ##- Lint Python packages with twine
@@ -230,13 +233,105 @@ endif
 test-find-slow:  ##- Identify slow tests. Set cutoff time in seconds with SLOW_CUTOFF_TIME
 	uv run pytest --durations 0 --durations-min $(SLOW_CUTOFF_TIME)
 
+# Alias for `html` target in docs project. We want to use our own `.venv`, so we
+# replace it.
 .PHONY: docs
-docs:  ## Build documentation
-	uv run $(UV_DOCS_GROUPS) sphinx-build -b html -W $(DOCS) $(DOCS)/_build
+docs:  ## Render the documentation to disk
+ifneq ($(CI),)
+	@echo ::group::$@
+endif
+	$(MAKE) docs-install
+	$(MAKE) -C docs html --no-print-directory
+ifneq ($(CI),)
+	@echo ::endgroup::
+endif
 
+# Alias for `serve` target in docs project
 .PHONY: docs-auto
-docs-auto:  ## Build and host docs with sphinx-autobuild
-	uv run --group docs sphinx-autobuild -b html --open-browser --port=8080 --watch $(PROJECT) -W $(DOCS) $(DOCS)/_build
+docs-auto:  ##- Render the documentation in a live session
+	$(MAKE) docs-install
+	$(MAKE) -C docs run --no-print-directory
+
+# Override for `install` target in docs project. We still need the Vale setup, so we
+# run that after the parent docs setup.
+.PHONY: docs-install
+docs-install: _setup-docs  ##- Set up documentation packages
+ifneq ($(CI),)
+ifeq ($(MAKELEVEL),0)
+	@echo ::group::$@
+endif
+endif
+	$(MAKE) -C docs vale-install --no-print-directory
+ifneq ($(CI),)
+ifeq ($(MAKELEVEL),0)
+	@echo ::endgroup::
+endif
+endif
+
+# Alias for `setup-docs`
+.PHONY: docs-setup
+docs-setup: setup-docs
+
+# Override for `clean` target in docs project. We don't want to touch `.venv`.
+.PHONY: docs-clean
+docs-clean:  ##- Clean the temporary files used in documentation
+	$(MAKE) -C docs clean-doc --no-print-directory
+	rm -rf docs/_dev/node_modules/
+	rm -rf docs/_dev/styles
+	rm -f docs/_dev/vale.ini
+
+# Override for `help` target in docs project
+.PHONY: docs-help
+docs-help:  ##- List the individual commands in the documentation subproject.
+	@echo "Commands in the documentation subproject:"
+	$(MAKE) -C docs help --no-print-directory
+	@echo "Run these commands from inside the 'docs/' directory."
+
+# Override for `pymarkdownlnt-install` target in docs project. Make it a noop.
+.PHONY: docs-pymarkdownlnt-install
+docs-pymarkdownlnt-install:
+	@echo "Cannot run 'docs-pymarkdownlnt'. This project doesn't use Markdown."
+
+# Override for `lint-md` target in docs project. Make it a noop.
+.PHONY: docs-lint-md
+docs-lint-md:
+	@echo "Cannot run 'docs-lint-md'. This project doesn't use Markdown."
+
+# Passthrough for the rest of the targets in docs project
+.PHONY: docs-%
+docs-%:
+ifneq ($(CI),)
+	@echo ::group::$@
+endif
+	$(MAKE) docs-install
+	$(MAKE) -C docs $(@:docs-%=%) --no-print-directory
+ifneq ($(CI),)
+	@echo ::endgroup::
+endif
+
+# Run our own docs linting, then pass to the docs
+.PHONY: docs-lint
+docs-lint:  ##- Lint the documentation
+ifneq ($(CI),)
+	@echo ::group::$@
+endif
+	$(MAKE) docs-install
+	uv run $(UV_DOCS_GROUPS) sphinx-lint docs \
+	--ignore docs/_dev \
+	--ignore docs/_build \
+	--ignore docs/reference/commands \
+	--enable all \
+	-d line-too-long,missing-underscore-after-hyperlink,missing-space-in-hyperlink
+	$(MAKE) -C docs spelling --no-print-directory
+	$(MAKE) -C docs woke --no-print-directory
+	$(MAKE) -C docs linkcheck --no-print-directory
+ifneq ($(CI),)
+	@echo ::endgroup::
+endif
+
+# Legacy alias for linting docs
+.PHONY: lint-docs
+lint-docs: docs-lint  ##- Lint the documentation
 
 .PHONY: pack-pip
 pack-pip:  ##- Build packages for pip (sdist, wheel)
