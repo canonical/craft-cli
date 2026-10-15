@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   lint:
-    uses: canonical/starflow/.github/workflows/lint-python.yaml@main
+    uses: canonical/starflow/.github/workflows/lint-python.yaml@work/separate-linkcheck
   test:
     uses: canonical/starflow/.github/workflows/test-python.yaml@main
     with:
