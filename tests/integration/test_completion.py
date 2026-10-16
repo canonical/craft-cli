@@ -19,9 +19,8 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-import pytest
-
 import craft_cli
+import pytest
 from craft_cli.completion import complete
 from craft_cli.completion.completion import DispatcherAndConfig
 
