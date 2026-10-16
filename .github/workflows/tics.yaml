@@ -3,12 +3,15 @@ on:
   push:
     branches:
       - "main"
-      # For debugging
-      - "work/tiobe*"
+      # For troubleshooting
+      - "work/tiobe**"
 
 jobs:
   TICS:
+    permissions:
+      contents: read
     uses: canonical/starflow/.github/workflows/tics.yaml@main
     with:
       project: "craft-cli"
-    secrets: inherit
+    secrets:
+      TICSAUTHTOKEN: ${{ secrets.TICSAUTHTOKEN }}

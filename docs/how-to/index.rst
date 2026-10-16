@@ -1,7 +1,12 @@
+.. meta::
+    :description: The practical, goal-oriented documentation for Craft CLI. These guides provide directions for completing tasks and solving problems with Craft CLI.
+
 .. _how-to-guides:
 
 How-to guides
 =============
+
+These pages provide directions for completing tasks and solving problems with Craft CLI.
 
 .. toctree::
     :maxdepth: 1

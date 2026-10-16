@@ -35,7 +35,7 @@ freefont
 Furo
 genindex
 getter
-github
+GitHub
 GlobalArgument
 GPG
 Grafana

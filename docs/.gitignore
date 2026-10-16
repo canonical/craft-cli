@@ -21,7 +21,7 @@ package*.json
 
 # Unrelated cache and config files
 .DS_Store
-__pycache__/
+__pycache__
 .idea/
 .vscode/
 
