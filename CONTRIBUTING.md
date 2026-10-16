@@ -293,7 +293,6 @@ assigned automatically to your work.
 ### Follow up for the review
 
 The Craft CLI maintainers try to review every PR in a timely manner, typically within a
-||||||| 3abeb80
 week for contributions that resolve an approved issue. While they can't guarantee
 immediate feedback, they aim to ensure that all contributions are reviewed thoroughly
 and thoughtfully.
