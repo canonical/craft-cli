@@ -13,9 +13,13 @@
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import shutil
+import subprocess
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
+
+import pytest
 
 import craft_cli
 from craft_cli.completion import complete
@@ -73,8 +77,24 @@ def get_app_info_func(
 
 
 def test_completion_output() -> None:
+    shfmt = shutil.which("shfmt")
+    if shfmt is None:
+        pytest.skip("'shfmt' command is required to normalize shell script formatting")
+
     app_info_func = get_app_info_func([FakeLsCommand, FakeCpCommand])
     actual_output = complete("testcraft", app_info_func)
+
+    # Normalize the generated script through shfmt before comparing: the
+    # fixture file is covered by the repo's shfmt formatting (while the Jinja2
+    # template that produces this output is excluded), so both sides must be
+    # compared in shfmt-normalized form.
+    actual_output = subprocess.run(
+        [shfmt, "-i", "2"],
+        input=actual_output,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout
 
     expected_output = (
         Path(__file__).parent / "test_completion" / "expected_script.sh"

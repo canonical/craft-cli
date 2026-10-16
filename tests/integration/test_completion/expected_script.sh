@@ -5,9 +5,9 @@
 
 # shellcheck disable=2207
 
-_complete_testcraft(){
+_complete_testcraft() {
   local cur prev all_cmds cmd
-  all_cmds=( ls cp )
+  all_cmds=(ls cp)
   cur="$2"
   prev="$3"
   # Remove "$cur" (the last element) from $COMP_WORDS
@@ -22,7 +22,7 @@ _complete_testcraft(){
     if [[ "${arg:0:1}" != "-" ]]; then
       cmd="${arg}"
       break
-    elif [[ "${arg}" == "--help" ]]; then  # "--help" works the same as "help"
+    elif [[ "${arg}" == "--help" ]]; then # "--help" works the same as "help"
       cmd="help"
       break
     fi
@@ -32,49 +32,49 @@ _complete_testcraft(){
   # Global arguments may be used either before or after the command name, so we
   # use those global arguments in each function.
   case "${cmd}" in
-    ls)
-      case "${prev}" in
-        -h|--help)
-          COMPREPLY=($(compgen -- "$cur"))
-          return
-          ;;
-        --color)
-          COMPREPLY=($(compgen -W 'always auto never' -- "$cur"))
-          return
-          ;;
-        *)
-          # Not in the middle of a command option, present all options.
-          COMPREPLY=(
-            $(compgen -W "-h --help -a --all --color" -- "$cur")
-            $(compgen -o bashdefault -A file -- "$cur")
-          )
-          return
-          ;;
-      esac
+  ls)
+    case "${prev}" in
+    -h | --help)
+      COMPREPLY=($(compgen -- "$cur"))
+      return
       ;;
-    cp)
-      case "${prev}" in
-        -h|--help)
-          COMPREPLY=($(compgen -- "$cur"))
-          return
-          ;;
-        *)
-          # Not in the middle of a command option, present all options.
-          COMPREPLY=(
-            $(compgen -W "-h --help" -- "$cur")
-            $(compgen -o bashdefault -A file -- "$cur")
-          )
-          return
-          ;;
-      esac
+    --color)
+      COMPREPLY=($(compgen -W 'always auto never' -- "$cur"))
+      return
       ;;
+    *)
+      # Not in the middle of a command option, present all options.
+      COMPREPLY=(
+        $(compgen -W "-h --help -a --all --color" -- "$cur")
+        $(compgen -o bashdefault -A file -- "$cur")
+      )
+      return
+      ;;
+    esac
+    ;;
+  cp)
+    case "${prev}" in
+    -h | --help)
+      COMPREPLY=($(compgen -- "$cur"))
+      return
+      ;;
+    *)
+      # Not in the middle of a command option, present all options.
+      COMPREPLY=(
+        $(compgen -W "-h --help" -- "$cur")
+        $(compgen -o bashdefault -A file -- "$cur")
+      )
+      return
+      ;;
+    esac
+    ;;
   esac
 
   case "${prev}" in
-    --verbosity)
-      COMPREPLY=($(compgen -W 'quiet brief verbose debug trace' -- "$cur"))
-      return
-      ;;
+  --verbosity)
+    COMPREPLY=($(compgen -W 'quiet brief verbose debug trace' -- "$cur"))
+    return
+    ;;
   esac
 
   COMPREPLY=($(compgen -W "${all_cmds[*]}" -- "$cur"))
