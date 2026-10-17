@@ -90,8 +90,8 @@ def get_initiated_emitter(tmp_path, monkeypatch):
 
 
 def emitter_methods(
-    init: bool,  # noqa: FBT001
-    stop: bool = True,  # noqa: FBT001, FBT002
+    init: bool,
+    stop: bool = True,
     exclude: list[str] | None = None,
 ) -> list[Callable[..., Any]]:
     """Provide a list of all public methods on an Emitter object.
