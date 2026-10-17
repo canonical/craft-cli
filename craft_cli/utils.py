@@ -18,6 +18,9 @@
 
 def humanize_list(values: list[str], conjunction: str = "and") -> str:
     """Convert a collection of values into a string that lists the values."""
+    if not all(isinstance(value, str) for value in values):
+        raise TypeError("all values must be strings")
+
     if len(values) == 1:
         return values[0]
 
