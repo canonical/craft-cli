@@ -2,6 +2,7 @@
 # https://github.com/canonical/starbase
 
 SOURCES=$(wildcard *.py) $(PROJECT) tests
+
 # Env vars for the docs Sphinx Stack. They must be exported so make can pass them to the
 # docs Makefile.
 export DOCS_BUILDDIR ?= _build
@@ -18,7 +19,7 @@ else
 	APT := apt-get
 endif
 
-PRETTIER=npm exec --package=prettier -- prettier --log-level warn
+PRETTIER=npm exec --package=prettier@3.6.0 -- prettier --log-level warn # renovate: datasource=npm
 PRETTIER_FILES="**/*.{yaml,yml,json,json5,css,md}"
 
 # Cutoff (in seconds) before a test is considered slow by pytest
@@ -35,24 +36,12 @@ export UV_FROZEN := true
 
 .PHONY: help
 help: ## Show this help.
-	@printf "\e[1m%-30s\e[0m | \e[1m%s\e[0m\n" "Target" "Description"
-	printf "\e[2m%-30s + %-41s\e[0m\n" "------------------------------" "------------------------------------------------"
-	egrep '^[^:]+\: [^#]*##' $$(echo $(MAKEFILE_LIST) | tac --separator=' ') | sed -e 's/^[^:]*://' -e 's/:[^#]*/ /' | sort -V| awk -F '[: ]*' \
-	'{
-		if ($$2 == "##")
-		{
-			$$1=sprintf(" %-28s", $$1);
-			$$2=" | ";
-			print $$0;
-		}
-		else
-		{
-			$$1=sprintf("  └ %-25s", $$1);
-			$$2=" | ";
-			$$3=sprintf(" └ %s", $$3);
-			print $$0;
-		}
-	}' | uniq
+	@printf "\033[1m%-30s\033[0m | \033[1m%s\033[0m\n" "Target" "Description"
+	@printf "\033[2m%-30s + %-41s\033[0m\n" "------------------------------" "------------------------------------------------"
+	@cat $$(echo $(MAKEFILE_LIST) | tac --separator=' ' 2>/dev/null || echo $(MAKEFILE_LIST)) | grep -E '^[^[:space:]][^:]*\:[^#]*##' | \
+	sed -e 's/:[^#]*/ /' | sort -V | \
+	awk -F '[: ]+' '{ if ($$2 == "##") { $$1=sprintf(" %-28s", $$1); $$2=" | "; print $$0; } else { $$1=sprintf("  └ %-25s", $$1); $$2=" | "; $$3=sprintf(" └ %s", $$3); print $$0; } }' | \
+	uniq
 
 .PHONY: setup
 setup: install-uv _setup-docs _setup-lint _setup-tests setup-precommit install-build-deps  ## Set up a development environment
@@ -76,7 +65,7 @@ setup-lint: _setup-lint  ##- Set up a linting-only environment
 	uv sync $(UV_LINT_GROUPS)
 
 .PHONY: _setup-lint
-_setup-lint: install-uv install-shellcheck install-pyright install-lint-build-deps
+_setup-lint: install-uv install-shellcheck install-shfmt install-lint-build-deps install-actionlint
 
 .PHONY: setup-tests
 setup-tests: _setup-tests ##- Set up a testing environment without linters
@@ -120,9 +109,23 @@ format-ruff: install-ruff  ##- Automatically format with ruff
 format-codespell:  ##- Fix spelling issues with codespell
 	uv run codespell --toml pyproject.toml --write-changes $(SOURCES)
 
+.PHONY: format-pre-commit
+format-pre-commit:  ##- Format the entire repository using pre-commit
+	uv tool run pre-commit run
+
 .PHONY: format-prettier
 format-prettier: install-npm  ##- Format files with prettier
 	$(PRETTIER) --write $(PRETTIER_FILES)
+
+.PHONY: format-shfmt
+format-shfmt: install-shfmt ##- Format shell scripts
+	@# jinja2 shell script templates are mistakenly counted as "true" shell scripts due to their shebang,
+	@# so explicitly filter them out
+	git ls-files -z | xargs -0 sh -c 'for f; do case "$$f" in *.sh.j2) continue;; esac; file --mime-type -Nn -- "$$f" | grep -q shellscript && printf "%s\0" "$$f"; done' -- | xargs -0r shfmt -w
+
+.PHONY: format-tombi
+format-tombi: install-tombi  ##- Format TOML files with tombi
+	tombi format
 
 .PHONY: lint-ruff
 lint-ruff: install-ruff  ##- Lint with ruff
@@ -145,26 +148,35 @@ ifneq ($(CI),)
 	@echo ::endgroup::
 endif
 
-.PHONY: lint-mypy
-lint-mypy:  ##- Check types with mypy
+.PHONY: lint-ty
+lint-ty: install-ty  ##- Check types with Astral ty
 ifneq ($(CI),)
 	@echo ::group::$@
 endif
-	uv run mypy --show-traceback --show-error-codes $(PROJECT)
+	ty check --python .venv $(SOURCES)
 ifneq ($(CI),)
 	@echo ::endgroup::
 endif
 
-.PHONY: lint-pyright
-lint-pyright:  ##- Check types with pyright
+.PHONY: lint-uv-lockfile
+lint-uv-lockfile: install-uv  ##- Check that uv.lock matches expectations from pyproject.toml
 ifneq ($(CI),)
 	@echo ::group::$@
 endif
-ifneq ($(shell which pyright),) # Prefer the system pyright
-	pyright --pythonpath .venv/bin/python
-else
-	uv tool run pyright --pythonpath .venv/bin/python
+	unset UV_FROZEN
+	uv lock --check
+ifneq ($(CI),)
+	@echo ::endgroup::
 endif
+
+.PHONY: lint-shfmt
+lint-shfmt: install-shfmt  ##- Lint shell script formatting
+ifneq ($(CI),)
+	@echo ::group::$@
+endif
+	@# jinja2 shell script templates are mistakenly counted as "true" shell scripts due to their shebang,
+	@# so explicitly filter them out
+	git ls-files -z | xargs -0 sh -c 'for f; do case "$$f" in *.sh.j2) continue;; esac; file --mime-type -Nn -- "$$f" | grep -q shellscript && printf "%s\0" "$$f"; done' -- | xargs -0r shfmt --diff
 ifneq ($(CI),)
 	@echo ::endgroup::
 endif
@@ -176,10 +188,11 @@ ifneq ($(CI),)
 endif
 	@# jinja2 shell script templates are mistakenly counted as "true" shell scripts due to their shebang,
 	@# so explicitly filter them out
-	git ls-files | grep -vE "\.sh\.j2$$" | file --mime-type -Nnf- | grep shellscript | cut -f1 -d: | xargs -r shellcheck
+	git ls-files -z | xargs -0 sh -c 'for f; do case "$$f" in *.sh.j2) continue;; esac; file --mime-type -Nn -- "$$f" | grep -q shellscript && printf "%s\0" "$$f"; done' -- | xargs -0r shellcheck
 ifneq ($(CI),)
 	@echo ::endgroup::
 endif
+
 
 .PHONY: lint-prettier
 lint-prettier: install-npm  ##- Lint files with prettier
@@ -191,7 +204,29 @@ ifneq ($(CI),)
 	@echo ::endgroup::
 endif
 
+.PHONY: lint-tombi
+lint-tombi: install-tombi  ##- Check TOML formatting with tombi
+ifneq ($(CI),)
+	@echo ::group::$@
+endif
+	tombi format --check --diff
+ifneq ($(CI),)
+	@echo ::endgroup::
+endif
 
+.PHONY: lint-actions
+lint-actions: install-actionlint  ##- Lint GitHub actions with actionlint
+ifneq ($(CI),)
+	@echo ::group::$@
+endif
+	actionlint
+ifneq ($(CI),)
+	@echo ::endgroup::
+endif
+
+# Legacy alias for linting docs
+.PHONY: lint-docs
+lint-docs: docs-lint  ##- Lint the documentation
 
 .PHONY: lint-twine
 lint-twine: pack-pip  ##- Lint Python packages with twine
@@ -216,7 +251,7 @@ test-slow:  ##- Run slow tests
 	uv run pytest -m 'slow'
 
 .PHONY: test-coverage
-test-coverage:  ## Generate coverage report
+test-coverage:  ##- Generate coverage report
 ifeq ($(COVERAGE_SOURCE),)
 	uv run coverage run --source $(PROJECT),tests -m pytest
 else
@@ -329,10 +364,6 @@ ifneq ($(CI),)
 	@echo ::endgroup::
 endif
 
-# Legacy alias for linting docs
-.PHONY: lint-docs
-lint-docs: docs-lint  ##- Lint the documentation
-
 .PHONY: pack-pip
 pack-pip:  ##- Build packages for pip (sdist, wheel)
 ifneq ($(CI),)
@@ -359,6 +390,17 @@ else
 	curl -LsSf https://astral.sh/uv/install.sh | sh
 endif
 
+.PHONY: install-actionlint
+install-actionlint:
+ifneq ($(shell which actionlint),)
+else ifneq ($(shell which snap),)
+	sudo snap install actionlint
+else ifneq ($(shell which brew),)
+	brew install actionlint
+else
+	$(warning Actionlint not installed. Please install it yourself.)
+endif
+
 .PHONY: install-codespell
 install-codespell:
 ifneq ($(shell which codespell),)
@@ -369,17 +411,6 @@ else ifneq ($(shell which brew),)
 	uv tool install codespell
 else
 	$(warning Codespell not installed. Please install it yourself.)
-endif
-
-.PHONY: install-pyright
-install-pyright: install-uv
-ifneq ($(shell which pyright),)
-else ifneq ($(shell which snap),)
-	sudo snap install --classic pyright
-else
-	# Workaround for a bug in npm
-	[ -d "$(HOME)/.npm/_cacache" ] && chown -R `id -u`:`id -g` "$(HOME)/.npm" || true
-	uv tool install pyright
 endif
 
 .PHONY: install-ruff
@@ -401,6 +432,40 @@ else ifneq ($(shell which brew),)
 	brew install shellcheck
 else
 	$(warning Shellcheck not installed. Please install it yourself.)
+endif
+
+.PHONY: install-shfmt
+install-shfmt:
+ifneq ($(shell which shfmt),)
+else ifneq ($(shell which snap),)
+	sudo snap install shfmt
+else ifneq ($(shell which brew),)
+	brew install shfmt
+else
+	$(warning shfmt not installed. Please install it yourself.)
+endif
+
+.PHONY: install-tombi
+install-tombi:
+ifneq ($(shell which tombi),)
+else ifneq ($(shell which snap),)
+	sudo snap install --classic tombi
+else ifneq ($(shell which brew),)
+	brew install tombi
+else
+	make install-uv
+	uv tool install tombi
+endif
+
+.PHONY: install-ty
+install-ty:
+ifneq ($(shell which ty),)
+else ifneq ($(shell which snap),)
+	sudo snap install --beta astral-ty
+	sudo snap alias astral-ty.ty ty
+else
+	make install-uv
+	uv tool install ty
 endif
 
 .PHONY: install-npm
