@@ -119,6 +119,13 @@ def process_overview_for_markdown(text: str) -> str:
     return "\n".join(result)
 
 
+# Directives whose body is literal text rather than nested directives, so a
+# marker-like line inside their body (e.g. ``.. note::`` inside an example
+# ``.. code-block::``) is content to keep, not a marker to strip.
+_LITERAL_DIRECTIVES = frozenset({"code", "code-block", "raw", "parsed-literal"})
+_DIRECTIVE_MARKER_RE = re.compile(r"(?P<indent>[ \t]*)\.\. (?P<name>[a-zA-Z][\w-]*)::")
+
+
 def _strip_sphinx_markup(text: str) -> str:
     """Strip Sphinx roles and directives from plain help text.
 
@@ -131,14 +138,32 @@ def _strip_sphinx_markup(text: str) -> str:
       roles ``:role:`Title <target>``` become ``text`` / ``Title``; a
       leading ``~`` shows only the last component, as Sphinx renders it.
     - directive marker lines (``.. note::``, ``.. code-block:: python``)
-      are removed, keeping the directive content.
+      are removed, keeping the directive content. Marker-like lines inside
+      a literal directive body (``code``, ``code-block``, ``raw``,
+      ``parsed-literal``) are content, not markers, so they are kept.
     """
-    lines = [
-        line
-        for line in text.split("\n")
-        if not re.match(r"\s*\.\. [a-zA-Z][\w-]*::", line)
-    ]
-    text = "\n".join(lines)
+    result = []
+    # Indent of the literal directive marker whose body we are inside, or None.
+    # A body ends at the first non-blank line dedented to the marker level.
+    literal_indent = None
+    for line in text.split("\n"):
+        match = _DIRECTIVE_MARKER_RE.match(line)
+        if match is not None:
+            indent = len(match.group("indent"))
+            if literal_indent is not None and indent > literal_indent:
+                # marker-like line nested in a literal directive body
+                result.append(line)
+                continue
+            literal_indent = None
+            if match.group("name") in _LITERAL_DIRECTIVES:
+                literal_indent = indent
+            continue
+        if literal_indent is not None and line.strip():
+            line_indent = len(line) - len(line.lstrip(" \t"))
+            if line_indent <= literal_indent:
+                literal_indent = None
+        result.append(line)
+    text = "\n".join(result)
 
     def _role_replacement(match: re.Match[str]) -> str:
         content = match.group(1)

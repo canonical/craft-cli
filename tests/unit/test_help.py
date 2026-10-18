@@ -486,6 +486,50 @@ def test_command_help_text_strip_sphinx_markup():
     assert text == expected
 
 
+def test_command_help_text_strip_sphinx_markup_literal_body():
+    """Ensure marker-like lines inside a code block body are kept."""
+    overview = textwrap.dedent("""
+        For example:
+
+        .. code-block:: text
+
+           .. note:: not a real directive, just example content
+
+           run the command
+    """)
+
+    cmd = create_command("thecommand", "Witty one-liner", overview=overview)
+    command_groups = [
+        CommandGroup("group1", [cmd]),
+    ]
+    options = [("-h, --help", "Show this help message and exit.")]
+
+    help_builder = HelpBuilder("testapp", "general summary", command_groups, None)
+    text = help_builder.get_command_help(cmd(None), options, OutputFormat.plain)
+
+    expected = textwrap.dedent(
+        """\
+    Usage:
+        testapp thecommand [options]
+
+    Summary:
+        For example:
+
+
+           .. note:: not a real directive, just example content
+
+           run the command
+
+    Options:
+        -h, --help:  Show this help message and exit.
+
+    For a summary of all commands, run 'testapp help --all'.
+    """
+    )
+
+    assert text == expected
+
+
 def test_command_help_text_sphinx_markup_markdown():
     """Ensure Sphinx markup is kept in any non-plaintext output."""
     overview = textwrap.dedent("""
