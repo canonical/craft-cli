@@ -119,6 +119,45 @@ def process_overview_for_markdown(text: str) -> str:
     return "\n".join(result)
 
 
+def _strip_sphinx_markup(text: str) -> str:
+    """Strip Sphinx roles and directives from plain help text.
+
+    Overviews are shared between terminal help and rendered docs, so app
+    authors write them with Sphinx markup. In plain terminal help that
+    markup would show literally, so it is removed here while the readable
+    text is kept:
+
+    - roles ``:role:`text```, ``:domain:role:`text``` and explicit-title
+      roles ``:role:`Title <target>``` become ``text`` / ``Title``; a
+      leading ``~`` shows only the last component, as Sphinx renders it.
+    - directive marker lines (``.. note::``, ``.. code-block:: python``)
+      are removed, keeping the directive content.
+    """
+    lines = [
+        line
+        for line in text.split("\n")
+        if not re.match(r"\s*\.\. [a-zA-Z][\w-]*::", line)
+    ]
+    text = "\n".join(lines)
+
+    def _role_replacement(match: re.Match[str]) -> str:
+        content = match.group(1)
+        # explicit title form: "Title <target>"
+        title_match = re.match(r"(.+?)\s*<[^>]*>$", content)
+        if title_match:
+            content = title_match.group(1)
+        # "~" prefix means "show only the last component"
+        if content.startswith("~"):
+            content = content[1:].rsplit(".", 1)[-1]
+        return content
+
+    return re.sub(
+        r":(?:[a-zA-Z][\w+.-]*:)?[a-zA-Z][\w-]*:`([^`]+)`",
+        _role_replacement,
+        text,
+    )
+
+
 class HelpBuilder:
     """Produce the different help texts."""
 
@@ -325,6 +364,8 @@ class HelpBuilder:
         # Remove reST-style double backticks
         # Match _only_ double backticks, never triples
         overview = re.sub(r"(?<!`)``(?!`)", "", overview)
+        # Remove Sphinx roles and directives, keeping the readable text
+        overview = _strip_sphinx_markup(overview)
         textblocks.append(f"Summary:{overview}")
 
         # column alignment is dictated by longest options title

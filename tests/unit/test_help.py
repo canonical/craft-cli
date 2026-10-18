@@ -433,6 +433,100 @@ def test_command_help_text_backticks_markdown():
     assert text == expected
 
 
+def test_command_help_text_strip_sphinx_markup():
+    """Ensure Sphinx roles and directives are removed from plaintext help."""
+    overview = textwrap.dedent("""
+        Manage charms, see :doc:`the tutorial <tutorials/index>` for a walkthrough.
+
+        .. note::
+           This command requires :command:`charmcraft pack` to have run first.
+
+        .. code-block:: python
+
+           charmcraft pack
+
+        See :class:`~craft_cli.BaseCommand`, :ref:`how to do that <expl_global_args>` and
+        :external+starflow:ref:`the style guide <starcraft-style-guide>`.
+    """)
+
+    cmd = create_command("thecommand", "Witty one-liner", overview=overview)
+    command_groups = [
+        CommandGroup("group1", [cmd]),
+    ]
+    options = [("-h, --help", "Show this help message and exit.")]
+
+    help_builder = HelpBuilder("testapp", "general summary", command_groups, None)
+    text = help_builder.get_command_help(cmd(None), options, OutputFormat.plain)
+
+    # Directive content keeps its relative indentation (7 spaces: the 4-space
+    # help indent plus the 3-space directive content indent).
+    expected = textwrap.dedent(
+        """\
+    Usage:
+        testapp thecommand [options]
+
+    Summary:
+        Manage charms, see the tutorial for a walkthrough.
+
+           This command requires charmcraft pack to have run first.
+
+
+           charmcraft pack
+
+        See BaseCommand, how to do that and
+        the style guide.
+
+    Options:
+        -h, --help:  Show this help message and exit.
+
+    For a summary of all commands, run 'testapp help --all'.
+    """
+    )
+
+    assert text == expected
+
+
+def test_command_help_text_sphinx_markup_markdown():
+    """Ensure Sphinx markup is kept in any non-plaintext output."""
+    overview = textwrap.dedent("""
+        Manage charms, see :doc:`the tutorial <tutorials/index>` for a walkthrough.
+
+        .. note::
+           This command requires :command:`charmcraft pack` to have run first.
+    """)
+
+    cmd = create_command("thecommand", "Witty one-liner", overview=overview)
+    command_groups = [
+        CommandGroup("group1", [cmd]),
+    ]
+    options = [("-h, --help", "Show this help message and exit.")]
+
+    help_builder = HelpBuilder("testapp", "general summary", command_groups, None)
+    text = help_builder.get_command_help(cmd(None), options, OutputFormat.markdown)
+
+    expected = textwrap.dedent(
+        """\
+    ## Usage:
+    ```text
+    testapp thecommand [options]
+    ```
+
+    ## Summary:
+
+    Manage charms, see :doc:`the tutorial <tutorials/index>` for a walkthrough.
+
+    .. note::    This command requires :command:`charmcraft pack` to have run first.
+
+    ## Options:
+    | | |
+    |-|-|
+    | `-h, --help` | Show this help message and exit. |
+    """
+    )
+
+    assert text == expected
+
+
 @pytest.mark.parametrize("output_format", list(OutputFormat))
 def test_command_help_text_no_parameters(docs_url, output_format):
     """All different parts for a specific command help that doesn't have parameters."""
