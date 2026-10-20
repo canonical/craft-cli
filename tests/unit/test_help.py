@@ -1344,7 +1344,7 @@ def test_tool_exec_command_dash_help_reverse(help_option):
 
 @pytest.mark.parametrize("help_option", ["-h", "--help"])
 def test_tool_exec_command_dash_help_missing_params(help_option):
-    """Execute a command (which needs params) asking for help."""
+    """Missing positional help raises a clear configuration error for dash-help too."""
 
     def fill_parser(self, parser):
         parser.add_argument("mandatory")
@@ -1354,24 +1354,14 @@ def test_tool_exec_command_dash_help_missing_params(help_option):
     command_groups = [CommandGroup("group", [cmd])]
     dispatcher = Dispatcher("testapp", command_groups)
 
-    with patch("craft_cli.helptexts.HelpBuilder.get_command_help") as mock:
-        mock.return_value = "test help"
-        with pytest.raises(ProvideHelpException) as exc_cm:
-            dispatcher.pre_parse_args(["somecommand", help_option])
-
-    # check the result of the full help builder is what is transmitted
-    assert str(exc_cm.value) == "test help"
-
-    # check the given information to the help text builder
-    args = mock.call_args[0]
-    assert args[0].__class__ == cmd
-    assert sorted(x[0] for x in args[1]) == [
-        "--verbosity",
-        "-h, --help",
-        "-q, --quiet",
-        "-v, --verbose",
-        "mandatory",
-    ]
+    with pytest.raises(
+        ValueError,
+        match=(
+            r"Bad command configuration: argument 'mandatory' in command "
+            r"'somecommand' is missing help text\."
+        ),
+    ):
+        dispatcher.pre_parse_args(["somecommand", help_option])
 
 
 def test_tool_exec_command_wrong_option():
@@ -1526,7 +1516,7 @@ def test_tool_exec_help_command_on_command_complex():
 
 
 def test_tool_exec_help_command_on_command_no_help():
-    """Execute the app asking for help on a command with an options and params without help."""
+    """Missing positional help raises a clear configuration error."""
 
     def fill_parser(self, parser):
         parser.add_argument("param")
@@ -1537,29 +1527,36 @@ def test_tool_exec_help_command_on_command_no_help():
     command_groups = [CommandGroup("group", [cmd])]
     dispatcher = Dispatcher("testapp", command_groups)
 
-    with patch("craft_cli.helptexts.HelpBuilder.get_command_help") as mock:
-        mock.return_value = "test help"
-        with pytest.raises(ProvideHelpException) as exc_cm:
-            dispatcher.pre_parse_args(["help", "somecommand"])
-
-    # check the result of the help builder is what is transmitted
-    assert str(exc_cm.value) == "test help"
-
-    # check the given information to the help text builder
-    args = mock.call_args[0]
-    assert args[0].__class__ == cmd
-    expected_options = [
-        ("--option", ""),
-        (
-            "--verbosity",
-            "Set the verbosity level to 'quiet', 'brief', 'verbose', 'debug' or 'trace'",
+    with pytest.raises(
+        ValueError,
+        match=(
+            r"Bad command configuration: argument 'param' in command "
+            r"'somecommand' is missing help text\."
         ),
-        ("-h, --help", "Show this help message and exit"),
-        ("-q, --quiet", "Only show warnings and errors, not progress"),
-        ("-v, --verbose", "Show debug information and be more verbose"),
-        ("param", ""),
-    ]
-    assert sorted(args[1]) == expected_options
+    ):
+        dispatcher.pre_parse_args(["help", "somecommand"])
+
+
+def test_tool_exec_help_command_on_command_option_no_help():
+    """Missing option help raises a clear configuration error."""
+
+    def fill_parser(self, parser):
+        parser.add_argument("param", help="A parameter.")
+        parser.add_argument("--option")
+
+    cmd = create_command("somecommand", "This command does that.")
+    cmd.fill_parser = fill_parser  # ty: ignore[invalid-assignment]
+    command_groups = [CommandGroup("group", [cmd])]
+    dispatcher = Dispatcher("testapp", command_groups)
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            r"Bad command configuration: argument '--option' in command "
+            r"'somecommand' is missing help text\."
+        ),
+    ):
+        dispatcher.pre_parse_args(["help", "somecommand"])
 
 
 def test_tool_exec_help_command_on_command_wrong():
