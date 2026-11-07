@@ -28,6 +28,7 @@ from craft_cli.dispatcher import (
     GlobalArgument,
 )
 from craft_cli.errors import ArgumentParsingError
+from craft_cli.helptexts import HelpBuilder, OutputFormat
 
 from tests.factory import create_command
 
@@ -730,8 +731,42 @@ def test_basecommand_overview_from_docstring():
 
     command = TestCommand(None)
     assert command.overview == (
-        "Do the test thing.\n\nLonger description of\nthe test thing."
+        "\nDo the test thing.\n\nLonger description of\nthe test thing.\n"
     )
+
+
+@pytest.mark.parametrize("output_format", list(OutputFormat))
+def test_basecommand_overview_from_docstring_help(output_format):
+    """A docstring overview is shown in the help like a regular overview."""
+
+    class DocstringCommand(BaseCommand):
+        """Do the test thing.
+
+        Longer description.
+        """
+
+        help_msg = "help message"
+        name = "test"
+
+        def run(self, parsed_args):
+            pass
+
+    class OverviewCommand(DocstringCommand):
+        overview = textwrap.dedent(
+            """
+            Do the test thing.
+
+            Longer description.
+            """
+        )
+
+    options = [("-h, --help", "Show this help message and exit.")]
+    texts = []
+    for cmd in (DocstringCommand, OverviewCommand):
+        groups = [CommandGroup("group", [cmd])]
+        help_builder = HelpBuilder("testapp", "general summary", groups)
+        texts.append(help_builder.get_command_help(cmd(None), options, output_format))
+    assert texts[0] == texts[1]
 
 
 def test_basecommand_overview_not_inherited_from_parent_docstring():
