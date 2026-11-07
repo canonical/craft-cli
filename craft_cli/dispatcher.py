@@ -246,6 +246,9 @@ class Dispatcher:
         a deprecation warning. If false, using the default command will raise an error.
         This parameter will be removed in a future release of craft-cli (#361).
     :param docs_base_url: The base address of the documentation, for help messages.
+    :param allow_abbrev: If true (the default), long command options can be
+        abbreviated to any unambiguous prefix, like ``--dest`` for ``--destination``.
+        If false, long options must be written in full.
     """
 
     def __init__(
@@ -258,8 +261,10 @@ class Dispatcher:
         default_command: type[BaseCommand] | None = None,
         allow_default_command: bool = True,
         docs_base_url: str | None = None,
+        allow_abbrev: bool = True,
     ) -> None:
         self._app_name = appname
+        self._allow_abbrev = allow_abbrev
         self._default_command = default_command
         self._allow_default_command = allow_default_command
         self._docs_base_url = docs_base_url
@@ -287,7 +292,9 @@ class Dispatcher:
 
         # load and parse the command specific options/params
         parser = _CustomArgumentParser(
-            self._help_builder, prog=self._loaded_command.name
+            self._help_builder,
+            prog=self._loaded_command.name,
+            allow_abbrev=self._allow_abbrev,
         )
         self._loaded_command.fill_parser(parser)
         self._parsed_command_args = parser.parse_args(self._command_args)

@@ -22,6 +22,9 @@ New features:
   that a :py:class:`~craft_cli.errors.CraftError` is raised while matching on
   its ``details``, ``resolution``, ``docs_url`` and ``retcode`` fields, which
   ``pytest.raises``' ``match`` parameter cannot reach.
+- Add an ``allow_abbrev`` parameter to :py:class:`~craft_cli.dispatcher.Dispatcher`.
+  Set it to ``False`` to require command options to be written in full instead
+  of accepting abbreviations, such as ``--dest`` for ``--destination``.
 
 Bug fixes:
 
