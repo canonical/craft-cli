@@ -162,10 +162,11 @@ class BaseCommand:
     def __init__(self, config: dict[str, Any] | None) -> None:
         self.config = config
 
-        # use the command's own docstring if it doesn't define an overview
+        # use the command's own docstring if it doesn't define an overview, wrapped
+        # in newlines like the usual ``textwrap.dedent("""...""")`` overviews
         doc = type(self).__doc__
         if not hasattr(self, "overview") and doc:
-            self.overview = inspect.cleandoc(doc)
+            self.overview = f"\n{inspect.cleandoc(doc)}\n"
 
         # validate attributes
         mandatory = ("name", "help_msg", "overview")
