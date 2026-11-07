@@ -696,11 +696,9 @@ def test_basecommand_mandatory_attribute_help_message():
 
 
 def test_basecommand_mandatory_attribute_overview():
-    """BaseCommand subclasses must override the overview attribute."""
+    """BaseCommand subclasses without a docstring must define the overview attribute."""
 
     class TestCommand(BaseCommand):
-        """Specifically defined command."""
-
         help_msg = "help message"
         name = "test"
 
@@ -712,6 +710,63 @@ def test_basecommand_mandatory_attribute_overview():
     assert (
         str(exc_cm.value) == "Bad command configuration: missing value in 'overview'."
     )
+
+
+def test_basecommand_overview_from_docstring():
+    """Use the command's docstring if the overview attribute isn't defined."""
+
+    class TestCommand(BaseCommand):
+        """Do the test thing.
+
+        Longer description of
+        the test thing.
+        """
+
+        help_msg = "help message"
+        name = "test"
+
+        def run(self, parsed_args):
+            pass
+
+    command = TestCommand(None)
+    assert command.overview == (
+        "Do the test thing.\n\nLonger description of\nthe test thing."
+    )
+
+
+def test_basecommand_overview_not_inherited_from_parent_docstring():
+    """Don't use a parent class's docstring as the overview."""
+
+    class ParentCommand(BaseCommand):
+        """Parent command docstring."""
+
+    class TestCommand(ParentCommand):
+        help_msg = "help message"
+        name = "test"
+
+        def run(self, parsed_args):
+            pass
+
+    with pytest.raises(
+        ValueError, match="Bad command configuration: missing value in 'overview'."
+    ):
+        TestCommand(None)
+
+
+def test_basecommand_overview_takes_priority_over_docstring():
+    """An explicit overview is used instead of the docstring."""
+
+    class TestCommand(BaseCommand):
+        """Docstring."""
+
+        help_msg = "help message"
+        name = "test"
+        overview = "explicit overview"
+
+        def run(self, parsed_args):
+            pass
+
+    assert TestCommand(None).overview == "explicit overview"
 
 
 @pytest.mark.parametrize("cmd_name", ["name", None])
