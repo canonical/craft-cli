@@ -6,6 +6,16 @@ Changelog
 See the `Releases page`_ on GitHub for a complete list of commits that are
 included in each version.
 
+.. _release-3.6.0:
+
+3.6.0 (unreleased)
+------------------
+
+New features:
+
+- If a command doesn't define the ``overview`` attribute, its class docstring
+  is now used as the overview.
+
 .. _release-3.5.0:
 
 3.5.0 (2026-11-18)
