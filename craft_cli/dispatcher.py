@@ -20,6 +20,7 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import difflib
+import inspect
 from collections.abc import Callable, Sequence
 from typing import Any, Literal, NamedTuple, NoReturn
 
@@ -129,7 +130,8 @@ class BaseCommand:
     """Base class to build application commands.
 
     Subclass this to create a new command; the subclass must define the ``name``,
-    ``help_msg``, and ``overview`` attributes. Additionally, it may override the
+    ``help_msg``, and ``overview`` attributes. If ``overview`` isn't defined, the
+    subclass's docstring is used instead. Additionally, it may override the
     ``common`` and ``hidden`` attributes to change from their default values.
 
     The subclass may also override some methods for the proper command behaviour (see each
@@ -146,7 +148,8 @@ class BaseCommand:
     """A one-line help message for user documentation."""
 
     overview: str
-    """Longer, multi-line text with the whole command description."""
+    """Longer, multi-line text with the whole command description. If not defined,
+      the command class's docstring is used."""
 
     common: bool = False
     """Whether this is a common/starter command, which are prioritized in the help
@@ -158,6 +161,12 @@ class BaseCommand:
 
     def __init__(self, config: dict[str, Any] | None) -> None:
         self.config = config
+
+        # use the command's own docstring if it doesn't define an overview, wrapped
+        # in newlines like the usual ``textwrap.dedent("""...""")`` overviews
+        doc = type(self).__doc__
+        if not hasattr(self, "overview") and doc:
+            self.overview = f"\n{inspect.cleandoc(doc)}\n"
 
         # validate attributes
         mandatory = ("name", "help_msg", "overview")

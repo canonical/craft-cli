@@ -22,6 +22,8 @@ New features:
   that a :py:class:`~craft_cli.errors.CraftError` is raised while matching on
   its ``details``, ``resolution``, ``docs_url`` and ``retcode`` fields, which
   ``pytest.raises``' ``match`` parameter cannot reach.
+- If a command doesn't define the ``overview`` attribute, its class docstring
+  is now used as the overview.
 
 Bug fixes:
 

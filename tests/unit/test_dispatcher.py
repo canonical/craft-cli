@@ -28,6 +28,7 @@ from craft_cli.dispatcher import (
     GlobalArgument,
 )
 from craft_cli.errors import ArgumentParsingError
+from craft_cli.helptexts import HelpBuilder, OutputFormat
 
 from tests.factory import create_command
 
@@ -696,11 +697,9 @@ def test_basecommand_mandatory_attribute_help_message():
 
 
 def test_basecommand_mandatory_attribute_overview():
-    """BaseCommand subclasses must override the overview attribute."""
+    """BaseCommand subclasses without a docstring must define the overview attribute."""
 
     class TestCommand(BaseCommand):
-        """Specifically defined command."""
-
         help_msg = "help message"
         name = "test"
 
@@ -712,6 +711,97 @@ def test_basecommand_mandatory_attribute_overview():
     assert (
         str(exc_cm.value) == "Bad command configuration: missing value in 'overview'."
     )
+
+
+def test_basecommand_overview_from_docstring():
+    """Use the command's docstring if the overview attribute isn't defined."""
+
+    class TestCommand(BaseCommand):
+        """Do the test thing.
+
+        Longer description of
+        the test thing.
+        """
+
+        help_msg = "help message"
+        name = "test"
+
+        def run(self, parsed_args):
+            pass
+
+    command = TestCommand(None)
+    assert command.overview == (
+        "\nDo the test thing.\n\nLonger description of\nthe test thing.\n"
+    )
+
+
+@pytest.mark.parametrize("output_format", list(OutputFormat))
+def test_basecommand_overview_from_docstring_help(output_format):
+    """A docstring overview is shown in the help like a regular overview."""
+
+    class DocstringCommand(BaseCommand):
+        """Do the test thing.
+
+        Longer description.
+        """
+
+        help_msg = "help message"
+        name = "test"
+
+        def run(self, parsed_args):
+            pass
+
+    class OverviewCommand(DocstringCommand):
+        overview = textwrap.dedent(
+            """
+            Do the test thing.
+
+            Longer description.
+            """
+        )
+
+    options = [("-h, --help", "Show this help message and exit.")]
+    texts = []
+    for cmd in (DocstringCommand, OverviewCommand):
+        groups = [CommandGroup("group", [cmd])]
+        help_builder = HelpBuilder("testapp", "general summary", groups)
+        texts.append(help_builder.get_command_help(cmd(None), options, output_format))
+    assert texts[0] == texts[1]
+
+
+def test_basecommand_overview_not_inherited_from_parent_docstring():
+    """Don't use a parent class's docstring as the overview."""
+
+    class ParentCommand(BaseCommand):
+        """Parent command docstring."""
+
+    class TestCommand(ParentCommand):
+        help_msg = "help message"
+        name = "test"
+
+        def run(self, parsed_args):
+            pass
+
+    with pytest.raises(
+        ValueError, match="Bad command configuration: missing value in 'overview'."
+    ):
+        TestCommand(None)
+
+
+def test_basecommand_overview_takes_priority_over_docstring():
+    """An explicit overview is used instead of the docstring."""
+
+    class TestCommand(BaseCommand):
+        """Docstring."""
+
+        help_msg = "help message"
+        name = "test"
+        overview = "explicit overview"
+
+        def run(self, parsed_args):
+            pass
+
+    assert TestCommand(None).overview == "explicit overview"
 
 
 @pytest.mark.parametrize("cmd_name", ["name", None])
