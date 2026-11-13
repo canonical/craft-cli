@@ -25,6 +25,8 @@ New features:
 
 Bug fixes:
 
+- Plain command help now strips Sphinx roles and directives from command
+  overviews, instead of rendering the raw markup in the terminal.
 - The ``emitter`` test fixture now rejects a negative ``advance`` amount,
   matching the behavior of the real progress bar.
 - The ``emitter`` test plugin now reports a clear, actionable error message
