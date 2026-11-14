@@ -32,6 +32,16 @@ def test_humanize_list_strings_with_spaces():
     assert humanize_list(["foo", "bar baz"]) == "foo and bar baz"
 
 
+def test_humanize_list_non_string_item_raises():
+    """Non-string values should raise TypeError instead of being coerced."""
+    with pytest.raises(TypeError):
+        humanize_list(["1", 2])
+    with pytest.raises(TypeError):
+        humanize_list([1])
+    with pytest.raises(TypeError):
+        humanize_list(["a", "b", 3])
+
+
 def test_humanize_list_empty_list_raises():
     """The current implementation raises IndexError on empty input."""
     with pytest.raises(IndexError):
