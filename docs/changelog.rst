@@ -6,9 +6,9 @@ Changelog
 See the `Releases page`_ on GitHub for a complete list of commits that are
 included in each version.
 
-.. _release-3.4.2:
+.. _release-3.5.0:
 
-3.4.2 (unreleased)
+3.5.0 (2026-11-18)
 ------------------
 
 New features:
@@ -29,6 +29,10 @@ Bug fixes:
   matching the behavior of the real progress bar.
 - The ``emitter`` test plugin now reports a clear, actionable error message
   when pytest is not installed, instead of a bare ``ModuleNotFoundError``.
+- Strip stray carriage returns when outputting to a file rather than a TTY.
+- Handle permanent progress messages with multi-line content.
+- Ignore broken pipes on output streams.
+- Reset terminal styling after ``Emitter.open_stream``.
 
 .. _release-3.4.1:
 
