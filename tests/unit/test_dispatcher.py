@@ -103,6 +103,45 @@ def test_dispatcher_parsed_args():
     assert not parsed_after.option3
 
 
+class _DestinationCommand(BaseCommand):
+    name = "somecommand"
+    help_msg = "some help"
+    overview = "fake overview"
+
+    def fill_parser(self, parser):
+        parser.add_argument("--destination")
+
+
+def test_dispatcher_allow_abbrev_default():
+    """Long options can be abbreviated by default."""
+    groups = [CommandGroup("title", [_DestinationCommand])]
+    dispatcher = Dispatcher("appname", groups)
+    dispatcher.pre_parse_args(["somecommand", "--dest", "foo"])
+    dispatcher.load_command(None)
+
+    assert dispatcher.parsed_args().destination == "foo"
+
+
+def test_dispatcher_allow_abbrev_disabled():
+    """Abbreviated long options are rejected if allow_abbrev is False."""
+    groups = [CommandGroup("title", [_DestinationCommand])]
+    dispatcher = Dispatcher("appname", groups, allow_abbrev=False)
+    dispatcher.pre_parse_args(["somecommand", "--dest", "foo"])
+
+    with pytest.raises(ArgumentParsingError, match="unrecognized arguments: --dest"):
+        dispatcher.load_command(None)
+
+
+def test_dispatcher_allow_abbrev_disabled_full_option():
+    """Full long options still work if allow_abbrev is False."""
+    groups = [CommandGroup("title", [_DestinationCommand])]
+    dispatcher = Dispatcher("appname", groups, allow_abbrev=False)
+    dispatcher.pre_parse_args(["somecommand", "--destination", "foo"])
+    dispatcher.load_command(None)
+
+    assert dispatcher.parsed_args().destination == "foo"
+
+
 def test_dispatcher_command_default_simple():
     """Support for a default command when nothing is passed."""
     cmd1 = create_command("somecommand1")
