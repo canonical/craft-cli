@@ -752,6 +752,25 @@ def test_basecommand_mandatory_attribute_overview():
     )
 
 
+def test_basecommand_overview_blank_docstring():
+    """A docstring with only whitespace doesn't count as an overview."""
+
+    class TestCommand(BaseCommand):
+        """ """
+
+        help_msg = "help message"
+        name = "test"
+
+        def run(self, parsed_args):
+            pass
+
+    with pytest.raises(ValueError) as exc_cm:  # noqa: PT011
+        TestCommand(None)
+    assert (
+        str(exc_cm.value) == "Bad command configuration: missing value in 'overview'."
+    )
+
+
 def test_basecommand_overview_from_docstring():
     """Use the command's docstring if the overview attribute isn't defined."""
 

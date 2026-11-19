@@ -164,9 +164,9 @@ class BaseCommand:
 
         # use the command's own docstring if it doesn't define an overview, wrapped
         # in newlines like the usual ``textwrap.dedent("""...""")`` overviews
-        doc = type(self).__doc__
+        doc = inspect.cleandoc(type(self).__doc__ or "")
         if not hasattr(self, "overview") and doc:
-            self.overview = f"\n{inspect.cleandoc(doc)}\n"
+            self.overview = f"\n{doc}\n"
 
         # validate attributes
         mandatory = ("name", "help_msg", "overview")
