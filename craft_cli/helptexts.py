@@ -119,6 +119,70 @@ def process_overview_for_markdown(text: str) -> str:
     return "\n".join(result)
 
 
+# Directives whose body is literal text rather than nested directives, so a
+# marker-like line inside their body (e.g. ``.. note::`` inside an example
+# ``.. code-block::``) is content to keep, not a marker to strip.
+_LITERAL_DIRECTIVES = frozenset({"code", "code-block", "raw", "parsed-literal"})
+_DIRECTIVE_MARKER_RE = re.compile(r"(?P<indent>[ \t]*)\.\. (?P<name>[a-zA-Z][\w-]*)::")
+
+
+def _strip_sphinx_markup(text: str) -> str:
+    """Strip Sphinx roles and directives from plain help text.
+
+    Overviews are shared between terminal help and rendered docs, so app
+    authors write them with Sphinx markup. In plain terminal help that
+    markup would show literally, so it is removed here while the readable
+    text is kept:
+
+    - roles ``:role:`text```, ``:domain:role:`text``` and explicit-title
+      roles ``:role:`Title <target>``` become ``text`` / ``Title``; a
+      leading ``~`` shows only the last component, as Sphinx renders it.
+    - directive marker lines (``.. note::``, ``.. code-block:: python``)
+      are removed, keeping the directive content. Marker-like lines inside
+      a literal directive body (``code``, ``code-block``, ``raw``,
+      ``parsed-literal``) are content, not markers, so they are kept.
+    """
+    result = []
+    # Indent of the literal directive marker whose body we are inside, or None.
+    # A body ends at the first non-blank line dedented to the marker level.
+    literal_indent = None
+    for line in text.split("\n"):
+        match = _DIRECTIVE_MARKER_RE.match(line)
+        if match is not None:
+            indent = len(match.group("indent"))
+            if literal_indent is not None and indent > literal_indent:
+                # marker-like line nested in a literal directive body
+                result.append(line)
+                continue
+            literal_indent = None
+            if match.group("name") in _LITERAL_DIRECTIVES:
+                literal_indent = indent
+            continue
+        if literal_indent is not None and line.strip():
+            line_indent = len(line) - len(line.lstrip(" \t"))
+            if line_indent <= literal_indent:
+                literal_indent = None
+        result.append(line)
+    text = "\n".join(result)
+
+    def _role_replacement(match: re.Match[str]) -> str:
+        content = match.group(1)
+        # explicit title form: "Title <target>"
+        title_match = re.match(r"(.+?)\s*<[^>]*>$", content)
+        if title_match:
+            content = title_match.group(1)
+        # "~" prefix means "show only the last component"
+        if content.startswith("~"):
+            content = content[1:].rsplit(".", 1)[-1]
+        return content
+
+    return re.sub(
+        r":(?:[a-zA-Z][\w+.-]*:)?[a-zA-Z][\w-]*:`([^`]+)`",
+        _role_replacement,
+        text,
+    )
+
+
 class HelpBuilder:
     """Produce the different help texts."""
 
@@ -325,6 +389,8 @@ class HelpBuilder:
         # Remove reST-style double backticks
         # Match _only_ double backticks, never triples
         overview = re.sub(r"(?<!`)``(?!`)", "", overview)
+        # Remove Sphinx roles and directives, keeping the readable text
+        overview = _strip_sphinx_markup(overview)
         textblocks.append(f"Summary:{overview}")
 
         # column alignment is dictated by longest options title
