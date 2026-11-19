@@ -425,6 +425,14 @@ class Printer:
         else:
             units = ""
 
+        if message.bar_total == 0:
+            # The total is unknown: show only how much is done so far, with
+            # no bar and no percentage.
+            line = f"{maybe_cr}{text} {message.bar_progress}{units}"
+            _safe_print(line, end="", flush=True, file=message.stream)
+            self.unfinished_stream = message.stream
+            return
+
         numerical_progress = f"{message.bar_progress}/{message.bar_total}"
         bar_percentage = min(message.bar_progress / message.bar_total, 1)
 

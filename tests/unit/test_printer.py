@@ -670,6 +670,35 @@ def test_writebarterminal_simple_exceeding(capsys, monkeypatch, log_filepath):
     assert out == "test text [███████████████████] 120/100"
 
 
+def test_writebarterminal_zero_total(capsys, monkeypatch, log_filepath):
+    """A zero total means the total is unknown: show only the progress so far."""
+    monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
+    printer = Printer(log_filepath)
+
+    msg = _MessageInfo(sys.stdout, "test text", bar_progress=50, bar_total=0)
+    printer._write_bar_terminal(msg)
+    assert printer.unfinished_stream == sys.stdout
+
+    out, err = capsys.readouterr()
+    assert not err
+    assert out == "test text 50"
+
+
+def test_writebarterminal_zero_total_with_units(capsys, monkeypatch, log_filepath):
+    """A zero total with units shows the progress and the units, and no bar."""
+    monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
+    printer = Printer(log_filepath)
+
+    msg = _MessageInfo(
+        sys.stdout, "test text", bar_progress=5, bar_total=0, bar_units="items"
+    )
+    printer._write_bar_terminal(msg)
+
+    out, err = capsys.readouterr()
+    assert not err
+    assert out == "test text 5 items"
+
+
 def test_writebarterminal_too_long_text(capsys, monkeypatch, log_filepath):
     """No space for the bar because the text is too long."""
     monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 20)
