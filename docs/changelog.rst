@@ -15,6 +15,8 @@ New features:
 
 - If a command doesn't define the ``overview`` attribute, its class docstring
   is now used as the overview.
+- If a command doesn't define the ``help_msg`` attribute, the first paragraph
+  of its class docstring is now used as the help message.
 
 .. _release-3.5.0:
 

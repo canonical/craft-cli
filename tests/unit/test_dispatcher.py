@@ -717,11 +717,9 @@ def test_basecommand_mandatory_attribute_name():
 
 
 def test_basecommand_mandatory_attribute_help_message():
-    """BaseCommand subclasses must override the help_message attribute."""
+    """BaseCommand subclasses without a docstring must define the help_msg attribute."""
 
     class TestCommand(BaseCommand):
-        """Specifically defined command."""
-
         overview = "fake overview"
         name = "test"
 
@@ -769,6 +767,23 @@ def test_basecommand_overview_blank_docstring():
     assert (
         str(exc_cm.value) == "Bad command configuration: missing value in 'overview'."
     )
+
+
+@pytest.mark.parametrize("docstring", [" ", "   \n   ", "\n\t\n    "])
+def test_basecommand_whitespace_docstring_is_ignored(docstring):
+    """A docstring with only whitespace fills in neither help_msg nor overview."""
+    test_command = type(
+        "TestCommand",
+        (BaseCommand,),
+        {"__doc__": docstring, "name": "test", "run": lambda self, parsed_args: None},
+    )
+
+    assert "help_msg" not in vars(test_command)
+    assert "overview" not in vars(test_command)
+    with pytest.raises(
+        ValueError, match="Bad command configuration: missing value in 'help_msg'."
+    ):
+        test_command(None)
 
 
 def test_basecommand_overview_from_docstring():
@@ -860,6 +875,122 @@ def test_basecommand_overview_takes_priority_over_docstring():
             pass
 
     assert TestCommand(None).overview == "explicit overview"
+
+
+def test_basecommand_help_msg_from_docstring():
+    """Use the docstring's first paragraph, as one line, if help_msg isn't defined."""
+
+    class TestCommand(BaseCommand):
+        """Do the test thing
+        across two lines.
+
+        Longer description.
+        """
+
+        name = "test"
+
+        def run(self, parsed_args):
+            pass
+
+    assert TestCommand.help_msg == "Do the test thing across two lines."
+    assert TestCommand(None).help_msg == "Do the test thing across two lines."
+
+
+def test_basecommand_help_msg_takes_priority_over_docstring():
+    """An explicit help_msg is used instead of the docstring."""
+
+    class TestCommand(BaseCommand):
+        """Docstring."""
+
+        help_msg = "explicit help"
+        name = "test"
+
+        def run(self, parsed_args):
+            pass
+
+    assert TestCommand(None).help_msg == "explicit help"
+    assert TestCommand(None).overview == "\nDocstring.\n"
+
+
+def test_basecommand_docstring_attrs_not_inherited_from_parent_docstring():
+    """A subclass without a docstring doesn't get its parent's docstring values."""
+
+    class ParentCommand(BaseCommand):
+        """Parent command docstring."""
+
+        name = "parent"
+
+    class TestCommand(ParentCommand):
+        overview = "overview"
+
+    with pytest.raises(
+        ValueError, match="Bad command configuration: missing value in 'help_msg'."
+    ):
+        TestCommand(None)
+    assert ParentCommand.help_msg == "Parent command docstring."
+
+
+def test_basecommand_docstring_attrs_replaced_by_child_docstring():
+    """A subclass with its own docstring uses it over its parent's docstring."""
+
+    class ParentCommand(BaseCommand):
+        """Parent command."""
+
+        name = "parent"
+
+    class TestCommand(ParentCommand):
+        """Child command."""
+
+    assert TestCommand.help_msg == "Child command."
+    assert TestCommand.overview == "\nChild command.\n"
+
+
+def test_basecommand_explicit_parent_attrs_win_over_child_docstring():
+    """Values defined explicitly in a parent are inherited, not replaced."""
+
+    class ParentCommand(BaseCommand):
+        help_msg = "parent help"
+        overview = "parent overview"
+        name = "parent"
+
+    class TestCommand(ParentCommand):
+        """Child command."""
+
+    assert TestCommand.help_msg == "parent help"
+    assert TestCommand.overview == "parent overview"
+
+
+def test_basecommand_help_msg_from_docstring_in_help_listing():
+    """The help listing, which reads classes without instantiating, shows it."""
+
+    class DocstringCommand(BaseCommand):
+        """Do the test thing.
+
+        Longer description.
+        """
+
+        name = "test"
+        common = True
+
+        def run(self, parsed_args):
+            pass
+
+    class HelpMsgCommand(DocstringCommand):
+        help_msg = "Do the test thing."
+
+    options = [("-h, --help", "Show this help message and exit.")]
+    texts = []
+    for cmd in (DocstringCommand, HelpMsgCommand):
+        groups = [CommandGroup("group", [cmd])]
+        help_builder = HelpBuilder("testapp", "general summary", groups)
+        texts.append(
+            (
+                help_builder.get_full_help(options),
+                help_builder.get_detailed_help(options),
+            )
+        )
+    assert texts[0] == texts[1]
+    assert "Do the test thing." in texts[0][0]
 
 
 @pytest.mark.parametrize("cmd_name", ["name", None])

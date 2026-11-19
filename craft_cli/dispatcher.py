@@ -130,8 +130,9 @@ class BaseCommand:
     """Base class to build application commands.
 
     Subclass this to create a new command; the subclass must define the ``name``,
-    ``help_msg``, and ``overview`` attributes. If ``overview`` isn't defined, the
-    subclass's docstring is used instead. Additionally, it may override the
+    ``help_msg``, and ``overview`` attributes. If ``help_msg`` or ``overview`` isn't
+    defined, the subclass's own docstring is used instead: its first paragraph for
+    ``help_msg`` and all of it for ``overview``. Additionally, it may override the
     ``common`` and ``hidden`` attributes to change from their default values.
 
     The subclass may also override some methods for the proper command behaviour (see each
@@ -145,7 +146,8 @@ class BaseCommand:
     """The identifier in the command line, like "build" or "pack"."""
 
     help_msg: str
-    """A one-line help message for user documentation."""
+    """A one-line help message for user documentation. If not defined, the first
+      paragraph of the command class's docstring is used."""
 
     overview: str
     """Longer, multi-line text with the whole command description. If not defined,
@@ -159,14 +161,41 @@ class BaseCommand:
     """Do not show in help texts, useful for aliases or deprecated commands (defaults
       to False)."""
 
+    _docstring_attrs: frozenset[str] = frozenset()
+    """Attributes this class filled in from its own docstring."""
+
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        super().__init_subclass__(**kwargs)
+
+        # Fill in ``help_msg`` and ``overview`` from the command's own docstring
+        # when they aren't defined. This is done on the class (not the instance)
+        # because the help listing reads ``help_msg`` before instantiating.
+        doc = inspect.cleandoc(vars(cls).get("__doc__") or "").strip()
+        defaults = {
+            # the first paragraph, as a single line
+            "help_msg": " ".join(doc.split("\n\n")[0].split()),
+            # wrapped in newlines like the usual ``textwrap.dedent("""...""")``
+            "overview": f"\n{doc}\n",
+        }
+        filled = set()
+        for attr_name, default in defaults.items():
+            if attr_name in vars(cls):
+                continue  # defined explicitly in this class
+            owner = next((c for c in cls.__mro__[1:] if attr_name in vars(c)), None)
+            if owner is not None and attr_name not in vars(owner).get(
+                "_docstring_attrs", ()
+            ):
+                continue  # defined explicitly in a parent class
+            if doc:
+                setattr(cls, attr_name, default)
+                filled.add(attr_name)
+            elif owner is not None:
+                # don't inherit a value that came from a parent's docstring
+                setattr(cls, attr_name, None)
+        cls._docstring_attrs = frozenset(filled)
+
     def __init__(self, config: dict[str, Any] | None) -> None:
         self.config = config
-
-        # use the command's own docstring if it doesn't define an overview, wrapped
-        # in newlines like the usual ``textwrap.dedent("""...""")`` overviews
-        doc = inspect.cleandoc(type(self).__doc__ or "")
-        if not hasattr(self, "overview") and doc:
-            self.overview = f"\n{doc}\n"
 
         # validate attributes
         mandatory = ("name", "help_msg", "overview")
