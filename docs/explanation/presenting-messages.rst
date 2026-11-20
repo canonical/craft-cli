@@ -65,9 +65,10 @@ command (e.g. a download or provisioning step).
 It receives a ``text`` that should reflect the operation that is about to start, a
 ``total`` that will be the number to reach when the operation is completed, and
 optionally a ``delta=False`` to indicate that calls to ``.advance`` method should pass
-the total so far (by default is True, which implies that calls to ``.advance`` indicates
-the delta in the operation progress). Returns a context manager with the  ``.advance``
-method to call on each progress.
+the total so far (by default is True, which implies that calls to ``.advance`` indicate
+the delta in the operation progress). A ``total`` of ``0`` means the total is unknown:
+in that case no bar or percentage is shown, only the amount done so far. Returns a
+context manager with the  ``.advance`` method to call on each progress.
 
 ::
 
