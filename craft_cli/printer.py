@@ -428,7 +428,11 @@ class Printer:
         if message.bar_total == 0:
             # The total is unknown: show only how much is done so far, with
             # no bar and no percentage.
-            line = f"{maybe_cr}{text} {message.bar_progress}{units}"
+            content = f"{text} {message.bar_progress}{units}"
+            # Overwriting a previous ephemeral line: clear the rest of it,
+            # so no stale characters survive a shorter line.
+            content = _fill_line(content) if maybe_cr == "\r" else content
+            line = f"{maybe_cr}{content}"
             _safe_print(line, end="", flush=True, file=message.stream)
             self.unfinished_stream = message.stream
             return
