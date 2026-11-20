@@ -699,6 +699,26 @@ def test_writebarterminal_zero_total_with_units(capsys, monkeypatch, log_filepat
     assert out == "test text 5 items"
 
 
+def test_writebarterminal_zero_total_overwrites_previous(
+    capsys, monkeypatch, log_filepath, ansi_escape_support
+):
+    """A zero total overwriting a previous line clears the rest of it."""
+    monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
+    printer = Printer(log_filepath)
+    printer.prv_msg = _MessageInfo(sys.stdout, "previous text", ephemeral=True)
+
+    msg = _MessageInfo(sys.stdout, "test text", bar_progress=50, bar_total=0)
+    printer._write_bar_terminal(msg)
+
+    out, err = capsys.readouterr()
+    assert not err
+    if ansi_escape_support:
+        assert out == f"\rtest text 50{printermod.ANSI_CLEAR_LINE_TO_END}"
+    else:
+        # No ANSI support: the line is padded with spaces to the terminal width.
+        assert out == "\rtest text 50" + " " * (40 - len("test text 50") - 1)
+
+
 def test_writebarterminal_too_long_text(capsys, monkeypatch, log_filepath):
     """No space for the bar because the text is too long."""
     monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 20)
