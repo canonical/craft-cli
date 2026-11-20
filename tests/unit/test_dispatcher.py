@@ -726,11 +726,9 @@ def test_basecommand_mandatory_attribute_help_message():
         def run(self, parsed_args):
             pass
 
-    with pytest.raises(ValueError) as exc_cm:  # noqa: PT011
+    expected = "Bad command configuration: missing value in 'help_msg'."
+    with pytest.raises(ValueError, match=expected):
         TestCommand(None)
-    assert (
-        str(exc_cm.value) == "Bad command configuration: missing value in 'help_msg'."
-    )
 
 
 def test_basecommand_mandatory_attribute_overview():
@@ -743,11 +741,9 @@ def test_basecommand_mandatory_attribute_overview():
         def run(self, parsed_args):
             pass
 
-    with pytest.raises(ValueError) as exc_cm:  # noqa: PT011
+    expected = "Bad command configuration: missing value in 'overview'."
+    with pytest.raises(ValueError, match=expected):
         TestCommand(None)
-    assert (
-        str(exc_cm.value) == "Bad command configuration: missing value in 'overview'."
-    )
 
 
 def test_basecommand_overview_blank_docstring():
@@ -762,28 +758,36 @@ def test_basecommand_overview_blank_docstring():
         def run(self, parsed_args):
             pass
 
-    with pytest.raises(ValueError) as exc_cm:  # noqa: PT011
+    expected = "Bad command configuration: missing value in 'overview'."
+    with pytest.raises(ValueError, match=expected):
         TestCommand(None)
-    assert (
-        str(exc_cm.value) == "Bad command configuration: missing value in 'overview'."
-    )
 
 
-@pytest.mark.parametrize("docstring", [" ", "   \n   ", "\n\t\n    "])
-def test_basecommand_whitespace_docstring_is_ignored(docstring):
+def test_basecommand_whitespace_docstring_is_ignored():
     """A docstring with only whitespace fills in neither help_msg nor overview."""
-    test_command = type(
-        "TestCommand",
-        (BaseCommand,),
-        {"__doc__": docstring, "name": "test", "run": lambda self, parsed_args: None},
-    )
 
-    assert "help_msg" not in vars(test_command)
-    assert "overview" not in vars(test_command)
-    with pytest.raises(
-        ValueError, match="Bad command configuration: missing value in 'help_msg'."
-    ):
-        test_command(None)
+    class NewlinesCommand(BaseCommand):
+        """\n   \n"""
+
+        name = "test"
+
+        def run(self, parsed_args):
+            pass
+
+    class TabsCommand(BaseCommand):
+        """\t\n\t"""
+
+        name = "test"
+
+        def run(self, parsed_args):
+            pass
+
+    expected = "Bad command configuration: missing value in 'help_msg'."
+    for command_class in (NewlinesCommand, TabsCommand):
+        assert "help_msg" not in vars(command_class)
+        assert "overview" not in vars(command_class)
+        with pytest.raises(ValueError, match=expected):
+            command_class(None)
 
 
 def test_basecommand_overview_from_docstring():
@@ -848,17 +852,18 @@ def test_basecommand_overview_not_inherited_from_parent_docstring():
     class ParentCommand(BaseCommand):
         """Parent command docstring."""
 
-    class TestCommand(ParentCommand):
-        help_msg = "help message"
-        name = "test"
+    expected = (
+        "Bad command configuration: TestCommand doesn't define 'overview' "
+        "and has no docstring to take it from."
+    )
+    with pytest.raises(ValueError, match=expected):
 
-        def run(self, parsed_args):
-            pass
+        class TestCommand(ParentCommand):
+            help_msg = "help message"
+            name = "test"
 
-    with pytest.raises(
-        ValueError, match="Bad command configuration: missing value in 'overview'."
-    ):
-        TestCommand(None)
+            def run(self, parsed_args):
+                pass
 
 
 def test_basecommand_overview_takes_priority_over_docstring():
@@ -920,13 +925,15 @@ def test_basecommand_docstring_attrs_not_inherited_from_parent_docstring():
 
         name = "parent"
 
-    class TestCommand(ParentCommand):
-        overview = "overview"
+    expected = (
+        "Bad command configuration: TestCommand doesn't define 'help_msg' "
+        "and has no docstring to take it from."
+    )
+    with pytest.raises(ValueError, match=expected):
 
-    with pytest.raises(
-        ValueError, match="Bad command configuration: missing value in 'help_msg'."
-    ):
-        TestCommand(None)
+        class TestCommand(ParentCommand):
+            overview = "overview"
+
     assert ParentCommand.help_msg == "Parent command docstring."
 
 
@@ -943,6 +950,40 @@ def test_basecommand_docstring_attrs_replaced_by_child_docstring():
 
     assert TestCommand.help_msg == "Child command."
     assert TestCommand.overview == "\nChild command.\n"
+
+
+def test_basecommand_child_of_docstring_command_defining_both_attrs():
+    """A subclass without a docstring is fine if it defines both values."""
+
+    class ParentCommand(BaseCommand):
+        """Parent command."""
+
+        name = "parent"
+
+    class TestCommand(ParentCommand):
+        help_msg = "child help"
+        overview = "child overview"
+
+    assert TestCommand.help_msg == "child help"
+    assert TestCommand.overview == "child overview"
+
+
+def test_basecommand_intermediate_class_without_docstring():
+    """A base class without a docstring or values doesn't stop its subclasses."""
+
+    class IntermediateCommand(BaseCommand):
+        pass
+
+    class TestCommand(IntermediateCommand):
+        """Child command."""
+
+        name = "test"
+
+        def run(self, parsed_args):
+            pass
+
+    assert TestCommand(None).help_msg == "Child command."
+    assert TestCommand(None).overview == "\nChild command.\n"
 
 
 def test_basecommand_explicit_parent_attrs_win_over_child_docstring():
@@ -977,6 +1018,7 @@ def test_basecommand_help_msg_from_docstring_in_help_listing():
 
     class HelpMsgCommand(DocstringCommand):
         help_msg = "Do the test thing."
+        overview = "\nDo the test thing.\n\nLonger description.\n"
 
     options = [("-h, --help", "Show this help message and exit.")]
     texts = []
