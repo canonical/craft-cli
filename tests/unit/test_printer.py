@@ -670,6 +670,55 @@ def test_writebarterminal_simple_exceeding(capsys, monkeypatch, log_filepath):
     assert out == "test text [███████████████████] 120/100"
 
 
+def test_writebarterminal_zero_total(capsys, monkeypatch, log_filepath):
+    """A zero total means the total is unknown: show only the progress so far."""
+    monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
+    printer = Printer(log_filepath)
+
+    msg = _MessageInfo(sys.stdout, "test text", bar_progress=50, bar_total=0)
+    printer._write_bar_terminal(msg)
+    assert printer.unfinished_stream == sys.stdout
+
+    out, err = capsys.readouterr()
+    assert not err
+    assert out == "test text 50"
+
+
+def test_writebarterminal_zero_total_with_units(capsys, monkeypatch, log_filepath):
+    """A zero total with units shows the progress and the units, and no bar."""
+    monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
+    printer = Printer(log_filepath)
+
+    msg = _MessageInfo(
+        sys.stdout, "test text", bar_progress=5, bar_total=0, bar_units="items"
+    )
+    printer._write_bar_terminal(msg)
+
+    out, err = capsys.readouterr()
+    assert not err
+    assert out == "test text 5 items"
+
+
+def test_writebarterminal_zero_total_overwrites_previous(
+    capsys, monkeypatch, log_filepath, ansi_escape_support
+):
+    """A zero total overwriting a previous line clears the rest of it."""
+    monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 40)
+    printer = Printer(log_filepath)
+    printer.prv_msg = _MessageInfo(sys.stdout, "previous text", ephemeral=True)
+
+    msg = _MessageInfo(sys.stdout, "test text", bar_progress=50, bar_total=0)
+    printer._write_bar_terminal(msg)
+
+    out, err = capsys.readouterr()
+    assert not err
+    if ansi_escape_support:
+        assert out == f"\rtest text 50{printermod.ANSI_CLEAR_LINE_TO_END}"
+    else:
+        # No ANSI support: the line is padded with spaces to the terminal width.
+        assert out == "\rtest text 50" + " " * (40 - len("test text 50") - 1)
+
+
 def test_writebarterminal_too_long_text(capsys, monkeypatch, log_filepath):
     """No space for the bar because the text is too long."""
     monkeypatch.setattr(printermod, "_get_terminal_width", lambda: 20)
