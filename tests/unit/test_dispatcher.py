@@ -28,6 +28,7 @@ from craft_cli.dispatcher import (
     GlobalArgument,
 )
 from craft_cli.errors import ArgumentParsingError
+from craft_cli.helptexts import HelpBuilder, OutputFormat
 
 from tests.factory import create_command
 
@@ -716,29 +717,40 @@ def test_basecommand_mandatory_attribute_name():
 
 
 def test_basecommand_mandatory_attribute_help_message():
-    """BaseCommand subclasses must override the help_message attribute."""
+    """BaseCommand subclasses without a docstring must define the help_msg attribute."""
 
     class TestCommand(BaseCommand):
-        """Specifically defined command."""
-
         overview = "fake overview"
         name = "test"
 
         def run(self, parsed_args):
             pass
 
-    with pytest.raises(ValueError) as exc_cm:  # noqa: PT011
+    expected = "Bad command configuration: missing value in 'help_msg'."
+    with pytest.raises(ValueError, match=expected):
         TestCommand(None)
-    assert (
-        str(exc_cm.value) == "Bad command configuration: missing value in 'help_msg'."
-    )
 
 
 def test_basecommand_mandatory_attribute_overview():
-    """BaseCommand subclasses must override the overview attribute."""
+    """BaseCommand subclasses without a docstring must define the overview attribute."""
 
     class TestCommand(BaseCommand):
-        """Specifically defined command."""
+        help_msg = "help message"
+        name = "test"
+
+        def run(self, parsed_args):
+            pass
+
+    expected = "Bad command configuration: missing value in 'overview'."
+    with pytest.raises(ValueError, match=expected):
+        TestCommand(None)
+
+
+def test_basecommand_overview_blank_docstring():
+    """A docstring with only whitespace doesn't count as an overview."""
+
+    class TestCommand(BaseCommand):
+        """ """
 
         help_msg = "help message"
         name = "test"
@@ -746,11 +758,281 @@ def test_basecommand_mandatory_attribute_overview():
         def run(self, parsed_args):
             pass
 
-    with pytest.raises(ValueError) as exc_cm:  # noqa: PT011
+    expected = "Bad command configuration: missing value in 'overview'."
+    with pytest.raises(ValueError, match=expected):
         TestCommand(None)
-    assert (
-        str(exc_cm.value) == "Bad command configuration: missing value in 'overview'."
+
+
+def test_basecommand_whitespace_docstring_is_ignored():
+    """A docstring with only whitespace fills in neither help_msg nor overview."""
+
+    class NewlinesCommand(BaseCommand):
+        """\n   \n"""
+
+        name = "test"
+
+        def run(self, parsed_args):
+            pass
+
+    class TabsCommand(BaseCommand):
+        """\t\n\t"""
+
+        name = "test"
+
+        def run(self, parsed_args):
+            pass
+
+    expected = "Bad command configuration: missing value in 'help_msg'."
+    for command_class in (NewlinesCommand, TabsCommand):
+        assert "help_msg" not in vars(command_class)
+        assert "overview" not in vars(command_class)
+        with pytest.raises(ValueError, match=expected):
+            command_class(None)
+
+
+def test_basecommand_overview_from_docstring():
+    """Use the command's docstring if the overview attribute isn't defined."""
+
+    class TestCommand(BaseCommand):
+        """Do the test thing.
+
+        Longer description of
+        the test thing.
+        """
+
+        help_msg = "help message"
+        name = "test"
+
+        def run(self, parsed_args):
+            pass
+
+    command = TestCommand(None)
+    assert command.overview == (
+        "\nDo the test thing.\n\nLonger description of\nthe test thing.\n"
     )
+
+
+@pytest.mark.parametrize("output_format", list(OutputFormat))
+def test_basecommand_overview_from_docstring_help(output_format):
+    """A docstring overview is shown in the help like a regular overview."""
+
+    class DocstringCommand(BaseCommand):
+        """Do the test thing.
+
+        Longer description.
+        """
+
+        help_msg = "help message"
+        name = "test"
+
+        def run(self, parsed_args):
+            pass
+
+    class OverviewCommand(DocstringCommand):
+        overview = textwrap.dedent(
+            """
+            Do the test thing.
+
+            Longer description.
+            """
+        )
+
+    options = [("-h, --help", "Show this help message and exit.")]
+    texts = []
+    for cmd in (DocstringCommand, OverviewCommand):
+        groups = [CommandGroup("group", [cmd])]
+        help_builder = HelpBuilder("testapp", "general summary", groups)
+        texts.append(help_builder.get_command_help(cmd(None), options, output_format))
+    assert texts[0] == texts[1]
+
+
+def test_basecommand_overview_not_inherited_from_parent_docstring():
+    """Don't use a parent class's docstring as the overview."""
+
+    class ParentCommand(BaseCommand):
+        """Parent command docstring."""
+
+    expected = (
+        "Bad command configuration: TestCommand doesn't define 'overview' "
+        "and has no docstring to take it from."
+    )
+    with pytest.raises(ValueError, match=expected):
+
+        class TestCommand(ParentCommand):
+            help_msg = "help message"
+            name = "test"
+
+            def run(self, parsed_args):
+                pass
+
+
+def test_basecommand_overview_takes_priority_over_docstring():
+    """An explicit overview is used instead of the docstring."""
+
+    class TestCommand(BaseCommand):
+        """Docstring."""
+
+        help_msg = "help message"
+        name = "test"
+        overview = "explicit overview"
+
+        def run(self, parsed_args):
+            pass
+
+    assert TestCommand(None).overview == "explicit overview"
+
+
+def test_basecommand_help_msg_from_docstring():
+    """Use the docstring's first paragraph, as one line, if help_msg isn't defined."""
+
+    class TestCommand(BaseCommand):
+        """Do the test thing
+        across two lines.
+
+        Longer description.
+        """
+
+        name = "test"
+
+        def run(self, parsed_args):
+            pass
+
+    assert TestCommand.help_msg == "Do the test thing across two lines."
+    assert TestCommand(None).help_msg == "Do the test thing across two lines."
+
+
+def test_basecommand_help_msg_takes_priority_over_docstring():
+    """An explicit help_msg is used instead of the docstring."""
+
+    class TestCommand(BaseCommand):
+        """Docstring."""
+
+        help_msg = "explicit help"
+        name = "test"
+
+        def run(self, parsed_args):
+            pass
+
+    assert TestCommand(None).help_msg == "explicit help"
+    assert TestCommand(None).overview == "\nDocstring.\n"
+
+
+def test_basecommand_docstring_attrs_not_inherited_from_parent_docstring():
+    """A subclass without a docstring doesn't get its parent's docstring values."""
+
+    class ParentCommand(BaseCommand):
+        """Parent command docstring."""
+
+        name = "parent"
+
+    expected = (
+        "Bad command configuration: TestCommand doesn't define 'help_msg' "
+        "and has no docstring to take it from."
+    )
+    with pytest.raises(ValueError, match=expected):
+
+        class TestCommand(ParentCommand):
+            overview = "overview"
+
+    assert ParentCommand.help_msg == "Parent command docstring."
+
+
+def test_basecommand_docstring_attrs_replaced_by_child_docstring():
+    """A subclass with its own docstring uses it over its parent's docstring."""
+
+    class ParentCommand(BaseCommand):
+        """Parent command."""
+
+        name = "parent"
+
+    class TestCommand(ParentCommand):
+        """Child command."""
+
+    assert TestCommand.help_msg == "Child command."
+    assert TestCommand.overview == "\nChild command.\n"
+
+
+def test_basecommand_child_of_docstring_command_defining_both_attrs():
+    """A subclass without a docstring is fine if it defines both values."""
+
+    class ParentCommand(BaseCommand):
+        """Parent command."""
+
+        name = "parent"
+
+    class TestCommand(ParentCommand):
+        help_msg = "child help"
+        overview = "child overview"
+
+    assert TestCommand.help_msg == "child help"
+    assert TestCommand.overview == "child overview"
+
+
+def test_basecommand_intermediate_class_without_docstring():
+    """A base class without a docstring or values doesn't stop its subclasses."""
+
+    class IntermediateCommand(BaseCommand):
+        pass
+
+    class TestCommand(IntermediateCommand):
+        """Child command."""
+
+        name = "test"
+
+        def run(self, parsed_args):
+            pass
+
+    assert TestCommand(None).help_msg == "Child command."
+    assert TestCommand(None).overview == "\nChild command.\n"
+
+
+def test_basecommand_explicit_parent_attrs_win_over_child_docstring():
+    """Values defined explicitly in a parent are inherited, not replaced."""
+
+    class ParentCommand(BaseCommand):
+        help_msg = "parent help"
+        overview = "parent overview"
+        name = "parent"
+
+    class TestCommand(ParentCommand):
+        """Child command."""
+
+    assert TestCommand.help_msg == "parent help"
+    assert TestCommand.overview == "parent overview"
+
+
+def test_basecommand_help_msg_from_docstring_in_help_listing():
+    """The help listing, which reads classes without instantiating, shows it."""
+
+    class DocstringCommand(BaseCommand):
+        """Do the test thing.
+
+        Longer description.
+        """
+
+        name = "test"
+        common = True
+
+        def run(self, parsed_args):
+            pass
+
+    class HelpMsgCommand(DocstringCommand):
+        help_msg = "Do the test thing."
+        overview = "\nDo the test thing.\n\nLonger description.\n"
+
+    options = [("-h, --help", "Show this help message and exit.")]
+    texts = []
+    for cmd in (DocstringCommand, HelpMsgCommand):
+        groups = [CommandGroup("group", [cmd])]
+        help_builder = HelpBuilder("testapp", "general summary", groups)
+        texts.append(
+            (
+                help_builder.get_full_help(options),
+                help_builder.get_detailed_help(options),
+            )
+        )
+    assert texts[0] == texts[1]
+    assert "Do the test thing." in texts[0][0]
 
 
 @pytest.mark.parametrize("cmd_name", ["name", None])

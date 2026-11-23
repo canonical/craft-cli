@@ -20,6 +20,7 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import difflib
+import inspect
 from collections.abc import Callable, Sequence
 from typing import Any, Literal, NamedTuple, NoReturn
 
@@ -128,9 +129,14 @@ _DEFAULT_GLOBAL_ARGS = [
 class BaseCommand:
     """Base class to build application commands.
 
-    Subclass this to create a new command; the subclass must define the ``name``,
-    ``help_msg``, and ``overview`` attributes. Additionally, it may override the
-    ``common`` and ``hidden`` attributes to change from their default values.
+    Subclass this to create a new command; the subclass must define the ``name``
+    attribute. The ``help_msg`` and ``overview`` attributes are taken from the
+    subclass's own docstring (its first paragraph and all of it, respectively) unless
+    they're defined explicitly, in the subclass or a parent class. Values taken from
+    a docstring aren't inherited, so a subclass of a command that relies on its
+    docstring needs its own docstring or explicit values. Additionally, it may
+    override the ``common`` and ``hidden`` attributes to change from their default
+    values.
 
     The subclass may also override some methods for the proper command behaviour (see each
     method's docstring).
@@ -143,10 +149,12 @@ class BaseCommand:
     """The identifier in the command line, like "build" or "pack"."""
 
     help_msg: str
-    """A one-line help message for user documentation."""
+    """A one-line help message for user documentation. If not defined, the first
+      paragraph of the command class's own docstring is used."""
 
     overview: str
-    """Longer, multi-line text with the whole command description."""
+    """Longer, multi-line text with the whole command description. If not defined,
+      the command class's own docstring is used."""
 
     common: bool = False
     """Whether this is a common/starter command, which are prioritized in the help
@@ -155,6 +163,50 @@ class BaseCommand:
     hidden: bool = False
     """Do not show in help texts, useful for aliases or deprecated commands (defaults
       to False)."""
+
+    _docstring_attrs: frozenset[str] = frozenset()
+    """Attributes this class filled in from its own docstring."""
+
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        super().__init_subclass__(**kwargs)
+
+        # Fill in ``help_msg`` and ``overview`` from the command's own docstring
+        # when they aren't defined. This is done on the class (not the instance)
+        # because the help listing reads ``help_msg`` without instantiating.
+        unset: dict[str, type | None] = {}
+        for attr_name in ("help_msg", "overview"):
+            if attr_name in vars(cls):
+                continue  # defined in this class
+            # find if any class in the MRO already provides the missing attr
+            provider = next((c for c in cls.__mro__[1:] if attr_name in vars(c)), None)
+            if provider is None or attr_name in vars(provider).get(
+                "_docstring_attrs", ()
+            ):
+                # not provided, or only from a parent's docstring, which doesn't
+                # describe this command
+                unset[attr_name] = provider
+
+        raw_doc = vars(cls).get("__doc__")
+        if not raw_doc or raw_doc.isspace():
+            for attr_name, provider in unset.items():
+                if provider is not None:
+                    raise ValueError(
+                        f"Bad command configuration: {cls.__name__} doesn't define "
+                        f"'{attr_name}' and has no docstring to take it from."
+                    )
+            # anything still unset is reported when the command is instantiated
+            return
+
+        doc = inspect.cleandoc(raw_doc)
+        defaults = {
+            # the first paragraph, as a single line
+            "help_msg": " ".join(doc.split("\n\n")[0].split()),
+            # wrapped in newlines like the usual ``textwrap.dedent("""...""")``
+            "overview": f"\n{doc}\n",
+        }
+        for attr_name in unset:
+            setattr(cls, attr_name, defaults[attr_name])
+        cls._docstring_attrs = frozenset(unset)
 
     def __init__(self, config: dict[str, Any] | None) -> None:
         self.config = config
