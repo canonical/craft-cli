@@ -50,7 +50,7 @@ dev = [
 docs = [
   "pytest>=8.4",  # pytest is imported by the code, which is parsed for api gen.
   "sphinx-lint==1.0.2",
-  "sphinx-toolbox==4.3.1",
+  "sphinx-toolbox==4.4.0",
   "sphinxext-rediraffe==0.3.0",
   { include-group = "docs-sphinx-stack" },
 ]
